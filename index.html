@@ -2,11 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Dual Mode con Logs</title>
+  <title>Agente IA - Prueba Colores</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #121212;
+      background: #0d47a1; /* azul fuerte */
       color: #fff;
       display: flex;
       justify-content: center;
@@ -17,7 +17,7 @@
     .chat-container {
       width: 400px;
       height: 600px;
-      background: #1e1e1e;
+      background: #1565c0; /* azul medio */
       border-radius: 15px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       display: flex;
@@ -25,7 +25,7 @@
       overflow: hidden;
     }
     .chat-header {
-      background: #ff9800;
+      background: #ffeb3b; /* amarillo */
       color: #000;
       padding: 15px;
       text-align: center;
@@ -43,14 +43,14 @@
       max-width: 80%;
     }
     .user {
-      background: #2196f3;
-      color: #fff;
+      background: #64b5f6;
+      color: #000;
       margin-left: auto;
       text-align: right;
     }
     .bot {
-      background: #333;
-      color: #fff;
+      background: #bbdefb;
+      color: #000;
       margin-right: auto;
       text-align: left;
     }
@@ -63,11 +63,11 @@
       padding: 10px;
       border: none;
       outline: none;
-      background: #222;
+      background: #0d47a1;
       color: #fff;
     }
     .chat-input button {
-      background: #ff9800;
+      background: #ffeb3b;
       color: #000;
       border: none;
       padding: 10px 15px;
@@ -75,10 +75,10 @@
       font-weight: bold;
     }
     .chat-input button:hover {
-      background: #e68900;
+      background: #fbc02d;
     }
     .mic-button {
-      background: #f44336;
+      background: #e91e63;
       color: #fff;
       border: none;
       padding: 10px 15px;
@@ -86,15 +86,15 @@
       font-weight: bold;
     }
     .mic-button:hover {
-      background: #d32f2f;
+      background: #ad1457;
     }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <div class="chat-header">🤖 Agente IA (Groq Dual Mode)</div>
+    <div class="chat-header">🤖 Agente IA (Prueba Colores)</div>
     <div class="chat-messages" id="chatMessages">
-      <div class="message bot">¡Hola! Puedo chatear o hablar contigo 👋</div>
+      <div class="message bot">🌟 Bienvenido, esta es la versión de prueba con colores azules y amarillos 🌟</div>
     </div>
     <div class="chat-input">
       <input type="text" id="userInput" placeholder="Escribe un mensaje...">
@@ -194,4 +194,3 @@
   </script>
 </body>
 </html>
-
