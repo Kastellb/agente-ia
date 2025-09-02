@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verificando versión para móvil</title>
   <style>
+    * { box-sizing: border-box; } /* ✅ clave para evitar desbordes */
+
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      height: 100vh;
+      height: 100dvh; /* ✅ mejor que 100vh en móviles */
       width: 100vw;
       display: flex;
       justify-content: center;
@@ -28,6 +30,7 @@
       text-align: center;
       font-weight: bold;
       font-size: 1.2em;
+      flex-shrink: 0;
     }
     .chat-messages {
       flex: 1;
@@ -56,19 +59,21 @@
     }
     .chat-input {
       display: flex;
+      gap: 6px;
       padding: 8px;
       background: #f0f0f0;
+      flex-shrink: 0; /* ✅ nunca se colapsa */
     }
     .chat-input input {
-      flex: 1;
+      flex: 1 1 auto;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 1em;
     }
     .chat-input button {
-      margin-left: 6px;
-      padding: 10px 14px;
+      flex: 0 0 auto; /* ✅ botones fijos */
+      padding: 10px 12px;
       border: none;
       border-radius: 4px;
       font-size: 1em;
@@ -78,11 +83,10 @@
     .mic-button { background: #e91e63; color: white; }
     .stop-button { background: #555; color: white; }
 
-    /* 📱 Ajustes móviles */
     @media (max-width: 600px) {
       .chat-header { font-size: 1.4em; }
       .chat-input input { font-size: 1.1em; }
-      .chat-input button { font-size: 1.2em; padding: 14px; }
+      .chat-input button { font-size: 1.2em; padding: 12px; }
     }
   </style>
 </head>
@@ -114,11 +118,14 @@
       botDiv.textContent = "Demo: " + input.value;
       document.getElementById("chatMessages").appendChild(botDiv);
       input.value = "";
+      document.getElementById('chatMessages').scrollTop =
+        document.getElementById('chatMessages').scrollHeight;
     }
     function startListening() { alert("🎤 Aquí iría el reconocimiento de voz"); }
   </script>
 </body>
 </html>
+
 
 
 
