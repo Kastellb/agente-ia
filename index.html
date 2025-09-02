@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Neumorfismo Real</title>
+  <title>Agente IA - Responsive + Voz Fix + Listas</title>
   <style>
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -14,8 +14,9 @@
       margin: 0;
     }
     .chat-container {
-      width: 420px;
-      height: 640px;
+      width: 95%;
+      max-width: 420px;
+      height: 90vh;
       background: #dde1e7;
       border-radius: 30px;
       box-shadow: 9px 9px 16px #b8bcc2,
@@ -41,14 +42,15 @@
       flex: 1;
       padding: 10px;
       overflow-y: auto;
+      font-size: 0.95em;
+      line-height: 1.4em;
+      white-space: pre-line; /* respetar saltos */
     }
     .message {
       margin: 10px 0;
       padding: 14px 18px;
       border-radius: 20px;
-      max-width: 80%;
-      font-size: 0.95em;
-      line-height: 1.4em;
+      max-width: 85%;
       word-wrap: break-word;
     }
     .user {
@@ -64,6 +66,7 @@
       margin-right: auto;
       box-shadow: 6px 6px 12px #a3b1c6,
                   -6px -6px 12px #ffffff;
+      white-space: pre-line; /* asegura saltos de línea */
     }
     .chat-input {
       display: flex;
@@ -100,15 +103,9 @@
       box-shadow: 8px 8px 16px #b8bcc2,
                   -8px -8px 16px #ffffff;
     }
-    .send-button {
-      color: #4da3ff;
-    }
-    .mic-button {
-      color: #e91e63;
-    }
-    .stop-button {
-      color: #666;
-    }
+    .send-button { color: #4da3ff; }
+    .mic-button { color: #e91e63; }
+    .stop-button { color: #666; }
   </style>
 </head>
 <body>
@@ -148,6 +145,11 @@
         return "en";
       }
       return null;
+    }
+
+    // ---- Formatear enumeraciones ----
+    function formatLists(text) {
+      return text.replace(/(\d+)\.\s*/g, "\n$1. ");
     }
 
     async function sendMessage(userMessage = null) {
@@ -198,11 +200,14 @@
         });
 
         const data = await response.json();
-        const reply = data.choices[0].message.content;
+        let reply = data.choices[0].message.content;
+
+        // Formatear enumeraciones
+        reply = formatLists(reply);
 
         botDiv.textContent = reply;
 
-        // limpiar texto antes de leer
+        // limpiar texto para voz
         let cleanReply = reply.replace(/[*_`#>/\\]/g, "").replace(/\s{2,}/g, " ");
 
         const utterance = new SpeechSynthesisUtterance(cleanReply);
@@ -212,7 +217,8 @@
           if (vozEsp) utterance.voice = vozEsp;
         } else {
           utterance.lang = "en-US";
-          const vozIng = availableVoices.find(v => v.name.includes("Google US English") || v.lang === "en-US");
+          let vozIng = availableVoices.find(v => v.name.includes("Google US English"));
+          if (!vozIng) vozIng = availableVoices.find(v => v.lang.startsWith("en"));
           if (vozIng) utterance.voice = vozIng;
         }
         speechSynthesis.speak(utterance);
@@ -251,6 +257,7 @@
   </script>
 </body>
 </html>
+
 
 
 
