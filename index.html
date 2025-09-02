@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Dual Mode</title>
+  <title>Agente IA - Dual Mode con Logs</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -167,17 +167,31 @@
 
       const recognition = new SpeechRecognition();
       recognition.lang = "es-ES";
+      recognition.interimResults = true;
       recognition.start();
 
+      recognition.onstart = function() {
+        console.log("🎙️ Escuchando... habla ahora");
+      };
+
       recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        sendMessage(transcript);
+        let transcript = event.results[0][0].transcript;
+        console.log("✅ Texto detectado:", transcript);
+        if (event.results[0].isFinal) {
+          console.log("📩 Enviando al chat:", transcript);
+          sendMessage(transcript);
+        }
       };
 
       recognition.onerror = function(event) {
-        console.error("Error en reconocimiento de voz:", event.error);
+        console.error("❌ Error en reconocimiento de voz:", event.error);
+      };
+
+      recognition.onend = function() {
+        console.log("🛑 Dejó de escuchar");
       };
     }
   </script>
 </body>
 </html>
+
