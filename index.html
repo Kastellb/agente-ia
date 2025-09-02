@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Responsive Total</title>
+  <title>Agente IA - Estricto Inglés/Español</title>
   <style>
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -211,7 +211,7 @@
             model: "llama-3.1-8b-instant",
             messages: [
               { role: "system", content: userLanguage === "en"
-                ? "You are an English coach. Always answer ONLY in English. Never use Spanish. Correct grammar and pronunciation, give clear explanations, and encourage the user."
+                ? "You are an English coach. You must ALWAYS respond ONLY in English. Never use Spanish words or explanations. Write natural, fluent English, as if you were a native teacher. Do not translate or mix Spanish."
                 : "Eres un coach de inglés. Responde SOLO en español. Nunca uses inglés. Sé claro, motivador y corrige cuando sea necesario." },
               { role: "user", content: msg }
             ]
@@ -270,9 +270,16 @@
         console.error("❌ Error:", event.error);
       };
     }
+
+    // 🔊 Mostrar voces disponibles en consola
+    setTimeout(() => {
+      console.log("🔊 Voces disponibles en este navegador:");
+      speechSynthesis.getVoices().forEach(v => console.log(v.name, v.lang));
+    }, 2000);
   </script>
 </body>
 </html>
+
 
 
 
