@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Con Stop Funcional</title>
+  <title>Agente IA - Selección Idioma + Stop</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -125,6 +125,25 @@
       speechSynthesis.cancel();
     }
 
+    // --- función auxiliar para detectar idioma ---
+    function detectarIdioma(msg) {
+      const lowerMsg = msg.toLowerCase();
+      if (
+        lowerMsg.includes("español") || 
+        lowerMsg.includes("espanol") || 
+        lowerMsg.includes("spanish")
+      ) {
+        return "es";
+      } else if (
+        lowerMsg.includes("inglés") || 
+        lowerMsg.includes("ingles") || 
+        lowerMsg.includes("english")
+      ) {
+        return "en";
+      }
+      return null;
+    }
+
     async function sendMessage(userMessage = null) {
       const input = document.getElementById('userInput');
       const msg = userMessage || input.value.trim();
@@ -142,11 +161,12 @@
 
       // Selección inicial de idioma
       if (!userLanguage) {
-        if (msg.toLowerCase().includes("español")) {
+        const idiomaDetectado = detectarIdioma(msg);
+        if (idiomaDetectado === "es") {
           userLanguage = "es";
           botDiv.textContent = "Perfecto, responderé en español 🇪🇸";
           return;
-        } else if (msg.toLowerCase().includes("inglés") || msg.toLowerCase().includes("english")) {
+        } else if (idiomaDetectado === "en") {
           userLanguage = "en";
           botDiv.textContent = "Great! I will answer in English 🇬🇧";
           return;
@@ -209,7 +229,7 @@
       }
 
       const recognition = new SpeechRecognition();
-      recognition.lang = "en-US"; 
+      recognition.lang = "es-ES"; // empieza en español, luego ya depende de la elección
       recognition.interimResults = false;
       recognition.start();
 
@@ -225,6 +245,7 @@
   </script>
 </body>
 </html>
+
 
 
 
