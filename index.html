@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Responsive + Voz Fix + Listas</title>
+  <title>Agente IA - Responsive Total</title>
   <style>
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -14,9 +14,10 @@
       margin: 0;
     }
     .chat-container {
-      width: 95%;
-      max-width: 420px;
-      height: 90vh;
+      width: 100%;
+      max-width: 500px;
+      height: 100vh;
+      max-height: 700px;
       background: #dde1e7;
       border-radius: 30px;
       box-shadow: 9px 9px 16px #b8bcc2,
@@ -24,7 +25,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      padding: 15px;
+      padding: 12px;
     }
     .chat-header {
       background: #dde1e7;
@@ -42,8 +43,8 @@
       flex: 1;
       padding: 10px;
       overflow-y: auto;
-      font-size: 0.95em;
-      line-height: 1.4em;
+      font-size: 1em;
+      line-height: 1.5em;
       white-space: pre-line; /* respetar saltos */
     }
     .message {
@@ -66,7 +67,7 @@
       margin-right: auto;
       box-shadow: 6px 6px 12px #a3b1c6,
                   -6px -6px 12px #ffffff;
-      white-space: pre-line; /* asegura saltos de línea */
+      white-space: pre-line;
     }
     .chat-input {
       display: flex;
@@ -79,7 +80,7 @@
     }
     .chat-input input {
       flex: 1;
-      padding: 12px;
+      padding: 14px;
       border: none;
       outline: none;
       background: transparent;
@@ -89,7 +90,7 @@
     .chat-input button {
       margin-left: 8px;
       border: none;
-      padding: 12px 15px;
+      padding: 14px 18px;
       border-radius: 50%;
       font-weight: bold;
       cursor: pointer;
@@ -97,6 +98,7 @@
       box-shadow: 6px 6px 12px #b8bcc2,
                   -6px -6px 12px #ffffff;
       transition: all 0.2s ease;
+      font-size: 1.2em;
     }
     .chat-input button:hover {
       transform: translateY(-2px);
@@ -106,6 +108,22 @@
     .send-button { color: #4da3ff; }
     .mic-button { color: #e91e63; }
     .stop-button { color: #666; }
+
+    /* 📱 Mejorar tamaño en móviles */
+    @media (max-width: 600px) {
+      .chat-container {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+      }
+      .chat-input button {
+        padding: 18px 20px;
+        font-size: 1.5em;
+      }
+      .chat-input input {
+        font-size: 1.1em;
+      }
+    }
   </style>
 </head>
 <body>
@@ -147,7 +165,6 @@
       return null;
     }
 
-    // ---- Formatear enumeraciones ----
     function formatLists(text) {
       return text.replace(/(\d+)\.\s*/g, "\n$1. ");
     }
@@ -193,7 +210,9 @@
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
             messages: [
-              { role: "system", content: "Eres un coach de inglés y asistente bilingüe. Si el usuario habla en inglés, corrige su gramática y pronunciación. No leas caracteres especiales como * o / en voz alta. Da retroalimentación motivadora. Si está en español, responde normalmente." },
+              { role: "system", content: userLanguage === "en"
+                ? "You are an English coach. Always answer ONLY in English. Never use Spanish. Correct grammar and pronunciation, give clear explanations, and encourage the user."
+                : "Eres un coach de inglés. Responde SOLO en español. Nunca uses inglés. Sé claro, motivador y corrige cuando sea necesario." },
               { role: "user", content: msg }
             ]
           })
@@ -202,12 +221,9 @@
         const data = await response.json();
         let reply = data.choices[0].message.content;
 
-        // Formatear enumeraciones
         reply = formatLists(reply);
-
         botDiv.textContent = reply;
 
-        // limpiar texto para voz
         let cleanReply = reply.replace(/[*_`#>/\\]/g, "").replace(/\s{2,}/g, " ");
 
         const utterance = new SpeechSynthesisUtterance(cleanReply);
@@ -257,6 +273,7 @@
   </script>
 </body>
 </html>
+
 
 
 
