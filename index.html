@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Selección Idioma + Stop</title>
+  <title>Agente IA - Idioma + Stop</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -165,7 +165,7 @@
         if (idiomaDetectado === "es") {
           userLanguage = "es";
           botDiv.textContent = "Perfecto, responderé en español 🇪🇸";
-          return;
+          return; // ✅ Solo confirma idioma y espera la siguiente pregunta
         } else if (idiomaDetectado === "en") {
           userLanguage = "en";
           botDiv.textContent = "Great! I will answer in English 🇬🇧";
@@ -229,7 +229,7 @@
       }
 
       const recognition = new SpeechRecognition();
-      recognition.lang = "es-ES"; // empieza en español, luego ya depende de la elección
+      recognition.lang = userLanguage === "en" ? "en-US" : "es-ES"; // 👈 idioma dinámico
       recognition.interimResults = false;
       recognition.start();
 
@@ -245,6 +245,7 @@
   </script>
 </body>
 </html>
+
 
 
 
