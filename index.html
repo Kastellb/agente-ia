@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Selección Idioma</title>
+  <title>Agente IA - Corrección Inglés</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -92,7 +92,7 @@
 </head>
 <body>
   <div class="chat-container">
-    <div class="chat-header">🤖 Agente IA Bilingüe</div>
+    <div class="chat-header">🤖 Agente IA Bilingüe + Corrección</div>
     <div class="chat-messages" id="chatMessages">
       <div class="message bot">👋 ¡Hola! ¿Quieres que responda en español o en inglés?</div>
     </div>
@@ -106,8 +106,14 @@
   <script>
     const API_KEY = "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";
 
-    // Guardamos preferencia de idioma
     let userLanguage = null;
+    let availableVoices = [];
+
+    // Precargar voces
+    function loadVoices() {
+      availableVoices = speechSynthesis.getVoices();
+    }
+    speechSynthesis.onvoiceschanged = loadVoices;
 
     async function sendMessage(userMessage = null) {
       const input = document.getElementById('userInput');
@@ -124,7 +130,7 @@
       botDiv.textContent = "🤔 pensando...";
       document.getElementById('chatMessages').appendChild(botDiv);
 
-      // Si aún no eligió idioma
+      // Selección inicial de idioma
       if (!userLanguage) {
         if (msg.toLowerCase().includes("español")) {
           userLanguage = "es";
@@ -150,7 +156,7 @@
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
             messages: [
-              { role: "system", content: `Eres un asistente educativo. Responde únicamente en ${userLanguage === "es" ? "español" : "inglés"}. Sé claro y motivador.` },
+              { role: "system", content: "Eres un coach de inglés y asistente bilingüe. Si el usuario escribe o habla en inglés, corrige su gramática y pronunciación. Señala palabras mal escritas o mal pronunciadas, muestra la forma correcta y ofrece retroalimentación motivadora. Si el usuario está en español, responde normalmente en español o inglés según su elección." },
               { role: "user", content: msg }
             ]
           })
@@ -161,9 +167,17 @@
 
         botDiv.textContent = reply;
 
-        // Voz según idioma elegido
+        // Voz natural
         const utterance = new SpeechSynthesisUtterance(reply);
-        utterance.lang = userLanguage === "es" ? "es-ES" : "en-US";
+        if (userLanguage === "es") {
+          utterance.lang = "es-ES";
+          const vozEsp = availableVoices.find(v => v.name.includes("Google español") || v.lang === "es-ES");
+          if (vozEsp) utterance.voice = vozEsp;
+        } else {
+          utterance.lang = "en-US";
+          const vozIng = availableVoices.find(v => v.name.includes("Google US English") || v.lang === "en-US");
+          if (vozIng) utterance.voice = vozIng;
+        }
         speechSynthesis.speak(utterance);
 
       } catch (error) {
@@ -185,8 +199,8 @@
       }
 
       const recognition = new SpeechRecognition();
-      recognition.lang = "es-ES"; // primero en español, luego lo cambiamos dinámico
-      recognition.interimResults = false; // ✅ solo resultados finales
+      recognition.lang = "en-US"; // 👂 ponemos inglés para que detecte mejor
+      recognition.interimResults = false;
       recognition.start();
 
       recognition.onresult = function(event) {
@@ -201,3 +215,4 @@
   </script>
 </body>
 </html>
+
