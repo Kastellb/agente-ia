@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Responsive Total</title>
+  <title>Agente IA - Full Responsive</title>
   <style>
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -58,15 +58,11 @@
       background: #4da3ff;
       color: #fff;
       margin-left: auto;
-      box-shadow: 6px 6px 12px #a3b1c6,
-                  -6px -6px 12px #ffffff;
     }
     .bot {
       background: #f1f3f6;
       color: #333;
       margin-right: auto;
-      box-shadow: 6px 6px 12px #a3b1c6,
-                  -6px -6px 12px #ffffff;
       white-space: pre-line;
     }
     .chat-input {
@@ -74,8 +70,6 @@
       margin-top: 10px;
       background: #dde1e7;
       border-radius: 15px;
-      box-shadow: inset 5px 5px 10px #b8bcc2,
-                  inset -5px -5px 10px #ffffff;
       padding: 8px;
     }
     .chat-input input {
@@ -95,21 +89,13 @@
       font-weight: bold;
       cursor: pointer;
       background: #dde1e7;
-      box-shadow: 6px 6px 12px #b8bcc2,
-                  -6px -6px 12px #ffffff;
-      transition: all 0.2s ease;
       font-size: 1.2em;
-    }
-    .chat-input button:hover {
-      transform: translateY(-2px);
-      box-shadow: 8px 8px 16px #b8bcc2,
-                  -8px -8px 16px #ffffff;
     }
     .send-button { color: #4da3ff; }
     .mic-button { color: #e91e63; }
     .stop-button { color: #666; }
 
-    /* 📱 Estilos móviles */
+    /* 📱 Estilos móviles sin efectos */
     @media (max-width: 600px) {
       body {
         margin: 0;
@@ -128,27 +114,31 @@
         box-shadow: none;
       }
       .chat-header {
-        font-size: 1.4em;
-        padding: 20px;
+        font-size: 1.3em;
+        padding: 15px;
         border-radius: 0;
+        box-shadow: none;
       }
       .chat-input {
-        padding: 15px;
+        padding: 10px;
+        border-radius: 0;
+        box-shadow: none;
       }
       .chat-input input {
-        font-size: 1.2em;
-        padding: 16px;
+        font-size: 1.1em;
+        padding: 14px;
       }
       .chat-input button {
-        padding: 22px;
-        font-size: 1.6em;
+        padding: 18px;
+        font-size: 1.4em;
+        box-shadow: none;
       }
     }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <div class="chat-header">🤖 Agente IA Bilingüe + Corrección</div>
+    <div class="chat-header">🤖 Agente IA Bilingüe</div>
     <div class="chat-messages" id="chatMessages">
       <div class="message bot">👋 ¡Hola! ¿Quieres que responda en español o en inglés?</div>
     </div>
@@ -162,7 +152,6 @@
 
   <script>
     const API_KEY = "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";
-
     let userLanguage = null;
     let availableVoices = [];
 
@@ -171,23 +160,16 @@
     }
     speechSynthesis.onvoiceschanged = loadVoices;
 
-    function stopSpeaking() {
-      speechSynthesis.cancel();
-    }
+    function stopSpeaking() { speechSynthesis.cancel(); }
 
     function detectarIdioma(msg) {
       const lowerMsg = msg.toLowerCase();
-      if (lowerMsg.includes("español") || lowerMsg.includes("espanol") || lowerMsg.includes("spanish")) {
-        return "es";
-      } else if (lowerMsg.includes("inglés") || lowerMsg.includes("ingles") || lowerMsg.includes("english")) {
-        return "en";
-      }
+      if (lowerMsg.includes("español") || lowerMsg.includes("espanol") || lowerMsg.includes("spanish")) return "es";
+      else if (lowerMsg.includes("inglés") || lowerMsg.includes("ingles") || lowerMsg.includes("english")) return "en";
       return null;
     }
 
-    function formatLists(text) {
-      return text.replace(/(\d+)\.\s*/g, "\n$1. ");
-    }
+    function formatLists(text) { return text.replace(/(\d+)\.\s*/g, "\n$1. "); }
 
     async function sendMessage(userMessage = null) {
       const input = document.getElementById('userInput');
@@ -231,8 +213,8 @@
             model: "llama-3.1-8b-instant",
             messages: [
               { role: "system", content: userLanguage === "en"
-                ? "You are an English coach. You must ALWAYS respond ONLY in English. Never use Spanish words or explanations. Write natural, fluent English, as if you were a native teacher."
-                : "Eres un coach de inglés. Responde SOLO en español. Nunca uses inglés. Sé claro, motivador y corrige cuando sea necesario." },
+                ? "You are an English coach. ALWAYS respond ONLY in English. Do not use Spanish. Answer in fluent, natural English."
+                : "Eres un coach de inglés. Responde SOLO en español. Nunca uses inglés." },
               { role: "user", content: msg }
             ]
           })
@@ -240,13 +222,12 @@
 
         const data = await response.json();
         let reply = data.choices[0].message.content;
-
         reply = formatLists(reply);
         botDiv.textContent = reply;
 
         let cleanReply = reply.replace(/[*_`#>/\\]/g, "").replace(/\s{2,}/g, " ");
-
         const utterance = new SpeechSynthesisUtterance(cleanReply);
+
         if (userLanguage === "es") {
           utterance.lang = "es-ES";
           const vozEsp = availableVoices.find(v => v.name.includes("Google español") || v.lang === "es-ES");
@@ -264,49 +245,25 @@
         console.error(error);
       }
 
-      document.getElementById('chatMessages').scrollTop =
-        document.getElementById('chatMessages').scrollHeight;
-
+      document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
       input.value = "";
     }
 
     function startListening() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert("Tu navegador no soporta reconocimiento de voz 😢");
-        return;
-      }
+      if (!SpeechRecognition) { alert("Tu navegador no soporta voz 😢"); return; }
       const recognition = new SpeechRecognition();
       recognition.lang = userLanguage === "en" ? "en-US" : "es-ES";
       recognition.interimResults = false;
       recognition.start();
 
-      recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        sendMessage(transcript);
-      };
-
-      recognition.onerror = function(event) {
-        console.error("❌ Error:", event.error);
-      };
+      recognition.onresult = e => sendMessage(e.results[0][0].transcript);
+      recognition.onerror = e => console.error("❌ Error:", e.error);
     }
-
-    // 🔊 Mostrar voces disponibles
-    function listarVoces() {
-      const voces = speechSynthesis.getVoices();
-      console.clear();
-      console.log("🔊 Voces disponibles en este navegador:");
-      voces.forEach(v => console.log(v.name, v.lang));
-    }
-
-    window.onload = () => {
-      setTimeout(listarVoces, 1000);
-    };
-
-    document.addEventListener("click", listarVoces);
   </script>
 </body>
 </html>
+
 
 
 
