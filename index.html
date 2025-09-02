@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Depuración Voz</title>
+  <title>Agente IA - Bilingüe Paso 1</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -54,12 +54,6 @@
       margin-right: auto;
       text-align: left;
     }
-    .log {
-      background: #ffcc80;
-      color: #000;
-      font-size: 12px;
-      font-style: italic;
-    }
     .chat-input {
       display: flex;
       border-top: 1px solid #444;
@@ -98,9 +92,9 @@
 </head>
 <body>
   <div class="chat-container">
-    <div class="chat-header">🤖 Agente IA (Depuración Voz)</div>
+    <div class="chat-header">🤖 Agente IA Bilingüe</div>
     <div class="chat-messages" id="chatMessages">
-      <div class="message bot">🎙️ Haz clic en el micrófono y habla, verás aquí si capta audio.</div>
+      <div class="message bot">👋 ¡Hola! ¿Quieres que responda en español o en inglés?</div>
     </div>
     <div class="chat-input">
       <input type="text" id="userInput" placeholder="Escribe un mensaje...">
@@ -112,14 +106,8 @@
   <script>
     const API_KEY = "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";
 
-    function logMessage(msg) {
-      const logDiv = document.createElement('div');
-      logDiv.className = 'message log';
-      logDiv.textContent = msg;
-      document.getElementById('chatMessages').appendChild(logDiv);
-      document.getElementById('chatMessages').scrollTop =
-        document.getElementById('chatMessages').scrollHeight;
-    }
+    // Guardamos la preferencia de idioma del usuario
+    let userLanguage = null;
 
     async function sendMessage(userMessage = null) {
       const input = document.getElementById('userInput');
@@ -145,7 +133,10 @@
           },
           body: JSON.stringify({
             model: "llama-3.1-8b-instant",
-            messages: [{ role: "user", content: msg }]
+            messages: [
+              { role: "system", content: "Eres un asistente educativo bilingüe. Siempre empieza preguntando al usuario si quiere las respuestas en español o en inglés. Cuando lo indique, responde únicamente en ese idioma hasta que diga lo contrario. Si habla en español, responde en español; si habla en inglés, responde en inglés. Sé claro y motivador." },
+              { role: "user", content: msg }
+            ]
           })
         });
 
@@ -155,7 +146,7 @@
         botDiv.textContent = reply;
 
         const utterance = new SpeechSynthesisUtterance(reply);
-        utterance.lang = "es-ES";
+        utterance.lang = reply.match(/[a-zA-Z]/) ? "en-US" : "es-ES"; 
         speechSynthesis.speak(utterance);
 
       } catch (error) {
@@ -182,27 +173,26 @@
       recognition.start();
 
       recognition.onstart = function() {
-        logMessage("🎙️ Escuchando... habla ahora");
+        console.log("🎙️ Escuchando...");
       };
 
       recognition.onresult = function(event) {
         let transcript = event.results[0][0].transcript;
-        logMessage("✅ Detectado: " + transcript);
         if (event.results[0].isFinal) {
-          logMessage("📩 Enviando al chat: " + transcript);
           sendMessage(transcript);
         }
       };
 
       recognition.onerror = function(event) {
-        logMessage("❌ Error: " + event.error);
+        console.error("❌ Error:", event.error);
       };
 
       recognition.onend = function() {
-        logMessage("🛑 Dejó de escuchar");
+        console.log("🛑 Fin de escucha");
       };
     }
   </script>
 </body>
 </html>
+
 
