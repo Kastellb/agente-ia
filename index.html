@@ -81,9 +81,9 @@
 </head>
 <body>
   <div class="chat-container">
-    <div class="chat-header">🤖 Agente IA (Dark Mode)</div>
+    <div class="chat-header">🤖 Agente IA (Groq)</div>
     <div class="chat-messages" id="chatMessages">
-      <div class="message bot">¡Hola! Soy tu agente IA en modo oscuro 👋</div>
+      <div class="message bot">¡Hola! Soy tu agente IA con Groq 👋</div>
     </div>
     <div class="chat-input">
       <input type="text" id="userInput" placeholder="Escribe un mensaje...">
@@ -92,7 +92,9 @@
   </div>
 
   <script>
-    function sendMessage() {
+    const API_KEY = "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";
+
+    async function sendMessage() {
       const input = document.getElementById('userInput');
       const msg = input.value.trim();
       if (!msg) return;
@@ -103,14 +105,38 @@
       userDiv.textContent = msg;
       document.getElementById('chatMessages').appendChild(userDiv);
 
-      // Respuesta del bot
-      setTimeout(() => {
-        const botDiv = document.createElement('div');
-        botDiv.className = 'message bot';
-        botDiv.textContent = "Recibí tu mensaje en modo oscuro: " + msg;
-        document.getElementById('chatMessages').appendChild(botDiv);
-        document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
-      }, 500);
+      // Mostrar que el bot está pensando...
+      const botDiv = document.createElement('div');
+      botDiv.className = 'message bot';
+      botDiv.textContent = "🤔 pensando...";
+      document.getElementById('chatMessages').appendChild(botDiv);
+
+      // Llamada a Groq API
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [{ role: "user", content: msg }]
+          })
+        });
+
+        const data = await response.json();
+        const reply = data.choices[0].message.content;
+
+        // Cambiar el texto del bot por la respuesta real
+        botDiv.textContent = reply;
+      } catch (error) {
+        botDiv.textContent = "⚠️ Error conectando con Groq";
+        console.error(error);
+      }
+
+      document.getElementById('chatMessages').scrollTop =
+        document.getElementById('chatMessages').scrollHeight;
 
       input.value = "";
     }
