@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agente IA - Responsive + Voces</title>
+  <title>Agente IA - Responsive Total</title>
   <style>
     body {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -19,13 +19,13 @@
       height: 100vh;
       max-height: 700px;
       background: #dde1e7;
-      border-radius: 30px;
+      border-radius: 20px;
       box-shadow: 9px 9px 16px #b8bcc2,
                   -9px -9px 16px #ffffff;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      padding: 12px;
+      padding: 10px;
     }
     .chat-header {
       background: #dde1e7;
@@ -34,10 +34,10 @@
       text-align: center;
       font-weight: bold;
       font-size: 1.2em;
-      border-radius: 20px;
+      border-radius: 15px;
       box-shadow: inset 5px 5px 10px #b8bcc2,
                   inset -5px -5px 10px #ffffff;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .chat-messages {
       flex: 1;
@@ -48,8 +48,8 @@
       white-space: pre-line;
     }
     .message {
-      margin: 10px 0;
-      padding: 14px 18px;
+      margin: 8px 0;
+      padding: 12px 16px;
       border-radius: 20px;
       max-width: 85%;
       word-wrap: break-word;
@@ -73,7 +73,7 @@
       display: flex;
       margin-top: 10px;
       background: #dde1e7;
-      border-radius: 20px;
+      border-radius: 15px;
       box-shadow: inset 5px 5px 10px #b8bcc2,
                   inset -5px -5px 10px #ffffff;
       padding: 8px;
@@ -88,9 +88,9 @@
       color: #333;
     }
     .chat-input button {
-      margin-left: 8px;
+      margin-left: 6px;
       border: none;
-      padding: 14px 18px;
+      padding: 14px 16px;
       border-radius: 50%;
       font-weight: bold;
       cursor: pointer;
@@ -111,25 +111,40 @@
 
     /* 📱 Estilos móviles */
     @media (max-width: 600px) {
+      body {
+        height: 100%;
+        align-items: stretch;
+      }
       .chat-container {
         width: 100%;
-        height: 100vh;
-        border-radius: 0;
+        height: 100%;
+        max-width: none;
         max-height: none;
+        border-radius: 0;
+        padding: 0;
       }
-      .chat-input button {
-        padding: 20px 22px;
-        font-size: 1.6em;
+      .chat-header {
+        font-size: 1.4em;
+        padding: 20px;
+        border-radius: 0;
+      }
+      .chat-input {
+        padding: 12px;
       }
       .chat-input input {
         font-size: 1.2em;
+        padding: 16px;
+      }
+      .chat-input button {
+        padding: 20px;
+        font-size: 1.6em;
       }
     }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <div class="chat-header">🤖 Agente IA Bilingüe + Corrección</div>
+    <div class="chat-header">🤖 Agente IA Bilingüe</div>
     <div class="chat-messages" id="chatMessages">
       <div class="message bot">👋 ¡Hola! ¿Quieres que responda en español o en inglés?</div>
     </div>
@@ -212,7 +227,7 @@
             model: "llama-3.1-8b-instant",
             messages: [
               { role: "system", content: userLanguage === "en"
-                ? "You are an English coach. You must ALWAYS respond ONLY in English. Never use Spanish words or explanations. Write natural, fluent English, as if you were a native teacher. Do not translate or mix Spanish."
+                ? "You are an English coach. You must ALWAYS respond ONLY in English. Never use Spanish words or explanations. Write natural, fluent English, as if you were a native teacher."
                 : "Eres un coach de inglés. Responde SOLO en español. Nunca uses inglés. Sé claro, motivador y corrige cuando sea necesario." },
               { role: "user", content: msg }
             ]
@@ -272,7 +287,7 @@
       };
     }
 
-    // 🔊 Mostrar voces disponibles en consola
+    // 🔊 Mostrar voces disponibles
     function listarVoces() {
       const voces = speechSynthesis.getVoices();
       console.clear();
@@ -288,6 +303,7 @@
   </script>
 </body>
 </html>
+
 
 
 
