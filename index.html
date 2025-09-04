@@ -16,14 +16,26 @@
     }
     h2 {
       color: white;
-      margin: 15px 0;
+      margin: 15px 0 5px;
+    }
+    /* 🔊 Selector de voz */
+    #voiceSelect {
+      width: 95%;
+      max-width: 600px;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      margin-bottom: 10px;
+      background: #2563eb;
+      color: white;
     }
     #chat {
       width: 95%;
       max-width: 600px;
-      height: 65vh;
+      height: 60vh;
       border-radius: 12px;
-      background: #f0f2f5; /* fondo tipo WhatsApp */
+      background: #f0f2f5;
       overflow-y: auto;
       padding: 12px;
       margin-bottom: 10px;
@@ -43,16 +55,16 @@
       word-wrap: break-word;
       box-shadow: 0px 2px 4px rgba(0,0,0,0.2);
     }
+    .user-container { justify-content: flex-end; }
+    .bot-container { justify-content: flex-start; }
     .user {
       background: #1e40af;
       color: white;
-      margin-left: auto;
       border-bottom-right-radius: 5px;
     }
     .bot {
       background: #ffffff;
       color: black;
-      margin-right: auto;
       border-bottom-left-radius: 5px;
     }
     .avatar {
@@ -108,9 +120,12 @@
 <body>
   <h2>St. Mary's College</h2>
 
+  <!-- 🔊 Selector de voz -->
+  <select id="voiceSelect"></select>
+
   <div id="chat"></div>
 
-  <!-- Caja de texto para mensajes -->
+  <!-- Caja de texto -->
   <input id="inputBox" type="text" placeholder="Escribe tu mensaje..." />
 
   <!-- Botones -->
@@ -126,25 +141,49 @@
     const stopBtn = document.getElementById("stopBtn");
     const sendBtn = document.getElementById("sendBtn");
     const inputBox = document.getElementById("inputBox");
+    const voiceSelect = document.getElementById("voiceSelect");
 
     let currentLang = "es"; // idioma por defecto
+    let selectedVoice = null; // voz elegida por usuario
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = "es-ES";
     recognition.interimResults = false;
 
-    // ✅ Mensaje inicial automático
+    // ✅ Mensaje inicial
     window.onload = () => {
+      loadVoices();
       const welcome = "👋 Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
       addMessage(welcome, "bot");
       speak(welcome, "es");
     };
 
+    // Cargar voces
+    function loadVoices() {
+      const voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = "";
+      voices.forEach((voice, i) => {
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+      if (voices.length > 0) {
+        selectedVoice = voices[0];
+      }
+    }
+    speechSynthesis.onvoiceschanged = loadVoices;
+
+    voiceSelect.onchange = () => {
+      const voices = speechSynthesis.getVoices();
+      selectedVoice = voices[voiceSelect.value];
+    };
+
     micBtn.onclick = () => recognition.start();
     stopBtn.onclick = () => {
       recognition.stop();
-      speechSynthesis.cancel(); // detener voz
+      speechSynthesis.cancel();
     };
 
     recognition.onresult = (event) => {
@@ -182,7 +221,7 @@
 
     function addMessage(text, sender) {
       const container = document.createElement("div");
-      container.classList.add("msg-container");
+      container.classList.add("msg-container", sender + "-container");
 
       const avatar = document.createElement("div");
       avatar.classList.add("avatar", sender);
@@ -225,10 +264,10 @@
     }
 
     function speak(text, lang) {
-      // 🔍 Limpiar símbolos fonéticos antes de hablar
       const cleanText = text.replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "");
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = lang === "en" ? "en-US" : "es-ES";
+      if (selectedVoice) utterance.voice = selectedVoice;
       speechSynthesis.speak(utterance);
     }
   </script>
