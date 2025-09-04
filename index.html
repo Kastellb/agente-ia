@@ -101,8 +101,7 @@
     #micBtn { background: #2563eb; color: white; }
     #stopBtn { background: #d9534f; color: white; }
     #sendBtn { background: #22c55e; color: white; }
-    #langBtn { background: #f59e0b; color: white; } /* Botón idioma */
-    #repeatBtn { background: #9333ea; color: white; } /* Botón repetir */
+    #langBtn { background: #f59e0b; color: white; }
     #inputBox {
       width: 95%;
       max-width: 600px;
@@ -132,7 +131,6 @@
     <button id="micBtn">🎤 Hablar</button>
     <button id="stopBtn">⏹️ Detener</button>
     <button id="langBtn">🌐 Cambiar idioma</button>
-    <button id="repeatBtn">🔁 Repetir</button>
   </div>
 
   <script>
@@ -141,13 +139,11 @@
     const stopBtn = document.getElementById("stopBtn");
     const sendBtn = document.getElementById("sendBtn");
     const langBtn = document.getElementById("langBtn");
-    const repeatBtn = document.getElementById("repeatBtn");
     const inputBox = document.getElementById("inputBox");
     const voiceSelect = document.getElementById("voiceSelect");
 
     let currentLang = "es"; 
     let selectedVoice = null;
-    let lastBotReply = ""; // ⚡ Guardar última respuesta del bot
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
@@ -157,22 +153,10 @@
     window.onload = () => {
       loadVoices();
 
-      const savedLang = localStorage.getItem("currentLang");
-      if (savedLang) {
-        currentLang = savedLang;
-        recognition.lang = currentLang === "en" ? "en-US" : "es-ES";
-
-        const welcome = currentLang === "en"
-          ? "Welcome back! Continuing in English."
-          : "¡Bienvenido de nuevo! Continuaremos en español.";
-
-        addMessage(welcome, "bot");
-        speak(welcome, currentLang);
-      } else {
-        const welcome = "Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
-        addMessage(welcome, "bot");
-        speak(welcome, "es");
-      }
+      // Siempre saludo inicial
+      const welcome = "Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
+      addMessage(welcome, "bot");
+      speak(welcome, "es");
     };
 
     function loadVoices() {
@@ -223,31 +207,20 @@
       }
     };
 
-    // ⚡ Nuevo: cambio rápido de idioma
+    // Cambio rápido de idioma
     langBtn.onclick = () => {
       if (currentLang === "es") {
         currentLang = "en";
         recognition.lang = "en-US";
-        localStorage.setItem("currentLang", currentLang);
         const msg = "Language switched. Now we continue in English.";
         addMessage(msg, "bot");
         speak(msg, "en");
       } else {
         currentLang = "es";
         recognition.lang = "es-ES";
-        localStorage.setItem("currentLang", currentLang);
         const msg = "Idioma cambiado. Ahora continuaremos en español.";
         addMessage(msg, "bot");
         speak(msg, "es");
-      }
-    };
-
-    // ⚡ Nuevo: repetir última respuesta
-    repeatBtn.onclick = () => {
-      if (lastBotReply) {
-        speak(lastBotReply, currentLang);
-      } else {
-        addMessage("⚠️ No hay respuesta previa para repetir.", "bot");
       }
     };
 
@@ -255,7 +228,6 @@
       if (text.toLowerCase().includes("inglés") || text.toLowerCase().includes("english")) {
         currentLang = "en";
         recognition.lang = "en-US";
-        localStorage.setItem("currentLang", currentLang);
 
         const msg = "Perfect! From now on, I will continue in English.";
         addMessage(msg, "bot");
@@ -263,7 +235,6 @@
       } else if (text.toLowerCase().includes("español") || text.toLowerCase().includes("spanish")) {
         currentLang = "es";
         recognition.lang = "es-ES";
-        localStorage.setItem("currentLang", currentLang);
 
         const msg = "Perfecto. Continuaremos en español.";
         addMessage(msg, "bot");
@@ -348,7 +319,6 @@
 
         const data = await response.json();
         const botText = data.reply || "⚠️ El bot no respondió.";
-        lastBotReply = botText; // ⚡ guardar última respuesta
         addMessage(botText, "bot");
         speak(botText, currentLang);
       } catch (err) {
