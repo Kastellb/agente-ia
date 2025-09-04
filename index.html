@@ -149,16 +149,31 @@
 
     window.onload = () => {
       loadVoices();
-      const welcome = "Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
-      addMessage(welcome, "bot");
-      speak(welcome, "es");
+
+      // ⚡ Recuperar idioma guardado
+      const savedLang = localStorage.getItem("currentLang");
+      if (savedLang) {
+        currentLang = savedLang;
+        recognition.lang = currentLang === "en" ? "en-US" : "es-ES";
+
+        const welcome = currentLang === "en"
+          ? "Welcome back! Continuing in English."
+          : "¡Bienvenido de nuevo! Continuaremos en español.";
+
+        addMessage(welcome, "bot");
+        speak(welcome, currentLang);
+      } else {
+        // Primer inicio
+        const welcome = "Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
+        addMessage(welcome, "bot");
+        speak(welcome, "es");
+      }
     };
 
     function loadVoices() {
       const voices = speechSynthesis.getVoices();
       voiceSelect.innerHTML = "";
 
-      // ⚡ Filtrar solo español e inglés
       const filtered = voices.filter(v => v.lang.startsWith("en") || v.lang.startsWith("es"));
 
       filtered.forEach((voice, i) => {
@@ -207,12 +222,16 @@
       if (text.toLowerCase().includes("inglés") || text.toLowerCase().includes("english")) {
         currentLang = "en";
         recognition.lang = "en-US";
+        localStorage.setItem("currentLang", currentLang); // ⚡ guardar
+
         const msg = "Perfect! From now on, I will continue in English.";
         addMessage(msg, "bot");
         speak(msg, "en");
       } else if (text.toLowerCase().includes("español") || text.toLowerCase().includes("spanish")) {
         currentLang = "es";
         recognition.lang = "es-ES";
+        localStorage.setItem("currentLang", currentLang); // ⚡ guardar
+
         const msg = "Perfecto. Continuaremos en español.";
         addMessage(msg, "bot");
         speak(msg, "es");
@@ -245,11 +264,9 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // Diccionario fonético y abreviaturas
     function preprocessText(text) {
       let processed = text;
 
-      // Evitar lectura doble de números
       processed = processed.replace(/\b1\s*one\b/gi, "one");
       processed = processed.replace(/\b2\s*two\b/gi, "two");
       processed = processed.replace(/\b3\s*three\b/gi, "three");
