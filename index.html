@@ -95,13 +95,12 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 🔗 Aquí usamos un proxy CORS
-    const PROXY_URL = "https://thingproxy.freeboard.io/fetch/";
-    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8iBAt27M4jO4vyxWFew6v5ili7sFBDUOWDV13bImOjW48I7g-uETeKIDWn3hPHaV0/exec";
+    // 🔗 URL del Worker (ajústala a tu URL real)
+    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev";
 
     async function sendToBot(userText) {
       try {
-        const response = await fetch(PROXY_URL + APP_SCRIPT_URL, {
+        const response = await fetch(WORKER_URL, {
           method: "POST",
           body: JSON.stringify({ text: userText }),
           headers: { "Content-Type": "application/json" },
@@ -125,3 +124,4 @@
   </script>
 </body>
 </html>
+
