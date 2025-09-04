@@ -157,21 +157,27 @@
     function loadVoices() {
       const voices = speechSynthesis.getVoices();
       voiceSelect.innerHTML = "";
-      voices.forEach((voice, i) => {
+
+      // ⚡ Filtrar solo español e inglés
+      const filtered = voices.filter(v => v.lang.startsWith("en") || v.lang.startsWith("es"));
+
+      filtered.forEach((voice, i) => {
         const option = document.createElement("option");
         option.value = i;
         option.textContent = `${voice.name} (${voice.lang})`;
         voiceSelect.appendChild(option);
       });
-      if (voices.length > 0) {
-        selectedVoice = voices[0];
+
+      if (filtered.length > 0) {
+        selectedVoice = filtered[0];
       }
     }
     speechSynthesis.onvoiceschanged = loadVoices;
 
     voiceSelect.onchange = () => {
       const voices = speechSynthesis.getVoices();
-      selectedVoice = voices[voiceSelect.value];
+      const filtered = voices.filter(v => v.lang.startsWith("en") || v.lang.startsWith("es"));
+      selectedVoice = filtered[voiceSelect.value];
     };
 
     micBtn.onclick = () => recognition.start();
@@ -240,31 +246,45 @@
     }
 
     // Diccionario fonético y abreviaturas
-    const dictionary = {
-      "Mr.": "Mister",
-      "Mrs.": "Misses",
-      "Ms.": "Miss",
-      "Dr.": "Doctor",
-      "St. Mary's": "Saint Mary's",
-      "College": "Col·lij",
-      "nine": "nain",
-      "one": "wan",
-      "two": "tu",
-      "three": "thrii",
-      "four": "for",
-      "five": "faiv",
-      "six": "siks",
-      "seven": "sevn",
-      "eight": "eit",
-      "ten": "ten"
-    };
-
     function preprocessText(text) {
       let processed = text;
+
+      // ⚡ Evitar lectura doble de números (1 one → one)
+      processed = processed.replace(/\b1\s*one\b/gi, "one");
+      processed = processed.replace(/\b2\s*two\b/gi, "two");
+      processed = processed.replace(/\b3\s*three\b/gi, "three");
+      processed = processed.replace(/\b4\s*four\b/gi, "four");
+      processed = processed.replace(/\b5\s*five\b/gi, "five");
+      processed = processed.replace(/\b6\s*six\b/gi, "six");
+      processed = processed.replace(/\b7\s*seven\b/gi, "seven");
+      processed = processed.replace(/\b8\s*eight\b/gi, "eight");
+      processed = processed.replace(/\b9\s*nine\b/gi, "nine");
+      processed = processed.replace(/\b10\s*ten\b/gi, "ten");
+
+      const dictionary = {
+        "Mr.": "Mister",
+        "Mrs.": "Misses",
+        "Ms.": "Miss",
+        "Dr.": "Doctor",
+        "St. Mary's": "Saint Mary's",
+        "College": "Col·lij",
+        "nine": "nain",
+        "one": "wan",
+        "two": "tu",
+        "three": "thrii",
+        "four": "for",
+        "five": "faiv",
+        "six": "siks",
+        "seven": "sevn",
+        "eight": "eit",
+        "ten": "ten"
+      };
+
       for (const key in dictionary) {
         const regex = new RegExp("\\b" + key.replace(".", "\\.") + "\\b", "gi");
         processed = processed.replace(regex, dictionary[key]);
       }
+
       return processed;
     }
 
@@ -290,10 +310,16 @@
       const cleanText = preprocessText(text).replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "");
       const utterance = new SpeechSynthesisUtterance(cleanText);
 
-      // ✅ Usar idioma de la voz seleccionada
-      if (selectedVoice) {
+      // ✅ Usar voz según idioma actual
+      const voices = speechSynthesis.getVoices();
+      const matchingVoices = voices.filter(v => v.lang.startsWith(lang === "en" ? "en" : "es"));
+
+      if (selectedVoice && selectedVoice.lang.startsWith(lang)) {
         utterance.voice = selectedVoice;
         utterance.lang = selectedVoice.lang;
+      } else if (matchingVoices.length > 0) {
+        utterance.voice = matchingVoices[0];
+        utterance.lang = matchingVoices[0].lang;
       } else {
         utterance.lang = lang === "en" ? "en-US" : "es-ES";
       }
@@ -303,4 +329,3 @@
   </script>
 </body>
 </html>
-
