@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🤖 Bot Maestro - Voz a Voz</title>
+  <title>🤖 Bot Maestro - St. Mary's College</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      background: #1e40af; /* Azul rey */
+      color: white;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -17,38 +18,41 @@
     }
     h2 {
       margin-bottom: 15px;
+      color: white;
     }
     #chat {
       width: 90%;
       max-width: 600px;
-      height: 65vh;
-      border: 2px solid #ccc;
+      height: 60vh;
       border-radius: 12px;
       background: #fff;
+      color: black;
       overflow-y: auto;
       padding: 12px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       display: flex;
       flex-direction: column;
     }
     .msg {
       margin: 8px 0;
-      padding: 8px 12px;
-      border-radius: 10px;
-      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 15px;
+      max-width: 75%;
       word-wrap: break-word;
+      color: white;
     }
     .user {
-      background: #cfe2ff;
+      background: #1e40af; /* Azul rey */
       align-self: flex-end;
     }
     .bot {
-      background: #e9ecef;
+      background: #1e40af; /* Azul rey */
       align-self: flex-start;
     }
     #controls {
       display: flex;
       gap: 10px;
+      margin-bottom: 10px;
     }
     button {
       padding: 10px 15px;
@@ -57,12 +61,20 @@
       cursor: pointer;
       font-size: 14px;
     }
-    #micBtn { background: #1e40af; color: white; }
+    #micBtn { background: #2563eb; color: white; }
     #stopBtn { background: #d9534f; color: white; }
+    #sendBtn { background: #22c55e; color: white; }
+    #inputBox {
+      width: 70%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <h2>🤖 Bot Maestro - Voz a Voz</h2>
+  <h2>🤖 Bot Maestro - St. Mary's College</h2>
 
   <div id="chat"></div>
 
@@ -71,10 +83,18 @@
     <button id="stopBtn">⏹️ Detener</button>
   </div>
 
+  <!-- Caja de texto para mensajes escritos -->
+  <div id="controls">
+    <input id="inputBox" type="text" placeholder="Escribe tu mensaje..." />
+    <button id="sendBtn">Enviar</button>
+  </div>
+
   <script>
     const chat = document.getElementById("chat");
     const micBtn = document.getElementById("micBtn");
     const stopBtn = document.getElementById("stopBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const inputBox = document.getElementById("inputBox");
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
@@ -82,12 +102,21 @@
     recognition.interimResults = false;
 
     micBtn.onclick = () => recognition.start();
-    stopBtn.onclick = () => recognition.stop();
+    stopBtn.onclick = () => recognition.stop(); // ✅ ahora detiene el reconocimiento
 
     recognition.onresult = (event) => {
       const userText = event.results[0][0].transcript;
       addMessage(userText, "user");
       sendToBot(userText);
+    };
+
+    sendBtn.onclick = () => {
+      const userText = inputBox.value.trim();
+      if (userText) {
+        addMessage(userText, "user");
+        sendToBot(userText);
+        inputBox.value = "";
+      }
     };
 
     function addMessage(text, sender) {
@@ -98,7 +127,6 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 🔗 Aquí está tu Worker funcionando como proxy
     const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev";
 
     async function sendToBot(userText) {
@@ -127,3 +155,4 @@
   </script>
 </body>
 </html>
+
