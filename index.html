@@ -143,18 +143,18 @@
     const inputBox = document.getElementById("inputBox");
     const voiceSelect = document.getElementById("voiceSelect");
 
-    let currentLang = "es"; // idioma por defecto
-    let selectedVoice = null; // voz elegida por usuario
+    let currentLang = "es"; 
+    let selectedVoice = null;
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = "es-ES";
     recognition.interimResults = false;
 
-    // ✅ Mensaje inicial
+    // ✅ Mensaje inicial sin emoji
     window.onload = () => {
       loadVoices();
-      const welcome = "👋 Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
+      const welcome = "Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
       addMessage(welcome, "bot");
       speak(welcome, "es");
     };
@@ -243,6 +243,7 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    // ⚡ URL del Worker (revisa que sea correcta en tu cuenta Cloudflare)
     const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev";
 
     async function sendToBot(userText) {
@@ -273,3 +274,4 @@
   </script>
 </body>
 </html>
+
