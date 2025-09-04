@@ -224,7 +224,6 @@
       const div = document.createElement("div");
       div.classList.add("msg", sender);
 
-      // Negritas en lugar de asteriscos
       const formatted = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
       div.innerHTML = formatted;
 
@@ -240,14 +239,24 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // Diccionario de abreviaturas y pronunciación
+    // Diccionario fonético y abreviaturas
     const dictionary = {
       "Mr.": "Mister",
       "Mrs.": "Misses",
       "Ms.": "Miss",
       "Dr.": "Doctor",
       "St. Mary's": "Saint Mary's",
-      "College": "Col·lij"
+      "College": "Col·lij",
+      "nine": "nain",
+      "one": "wan",
+      "two": "tu",
+      "three": "thrii",
+      "four": "for",
+      "five": "faiv",
+      "six": "siks",
+      "seven": "sevn",
+      "eight": "eit",
+      "ten": "ten"
     };
 
     function preprocessText(text) {
@@ -280,10 +289,18 @@
     function speak(text, lang) {
       const cleanText = preprocessText(text).replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "");
       const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = lang === "en" ? "en-US" : "es-ES";
-      if (selectedVoice) utterance.voice = selectedVoice;
+
+      // ✅ Usar idioma de la voz seleccionada
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+      } else {
+        utterance.lang = lang === "en" ? "en-US" : "es-ES";
+      }
+
       speechSynthesis.speak(utterance);
     }
   </script>
 </body>
 </html>
+
