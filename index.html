@@ -39,14 +39,15 @@
       border-radius: 15px;
       max-width: 75%;
       word-wrap: break-word;
-      color: white;
     }
     .user {
-      background: #1e40af;
+      background: #1e40af; /* Azul rey */
+      color: white;
       align-self: flex-end;
     }
     .bot {
-      background: #1e40af;
+      background: #e9ecef; /* Gris claro */
+      color: black;
       align-self: flex-start;
     }
     #controls {
@@ -111,8 +112,8 @@
 
     micBtn.onclick = () => recognition.start();
     stopBtn.onclick = () => {
-      recognition.stop(); // Detiene reconocimiento de voz
-      speechSynthesis.cancel(); // ✅ Detiene lectura en voz
+      recognition.stop();
+      speechSynthesis.cancel(); // ✅ Detener voz
     };
 
     recognition.onresult = (event) => {
@@ -166,5 +167,3 @@
   </script>
 </body>
 </html>
-
-
