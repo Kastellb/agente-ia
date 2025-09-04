@@ -35,7 +35,7 @@
       max-width: 600px;
       height: 60vh;
       border-radius: 12px;
-      background: #f0f2f5;
+      background: linear-gradient(135deg, #f9fafb, #e5e7eb); /* 💡 degradado sutil */
       overflow-y: auto;
       padding: 12px;
       margin-bottom: 10px;
@@ -153,7 +153,7 @@
     recognition.lang = "es-ES";
     recognition.interimResults = false;
 
-    // ✅ Mensaje inicial sin emoji
+    // ✅ Mensaje inicial
     window.onload = () => {
       loadVoices();
       const welcome = "Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
@@ -235,8 +235,7 @@
       // 🔑 Formateo de listas: saltos de línea + viñetas
       const formatted = text
         .replace(/\n/g, "\n")
-        .replace(/- /g, "• ")
-        .replace(/\* /g, "• ");
+        .replace(/- /g, "• "); // sin asteriscos extras
 
       div.textContent = formatted;
 
