@@ -176,6 +176,21 @@
     }
     speechSynthesis.onvoiceschanged = loadVoices;
 
+    // ⚡ sincroniza el selector de voz con el idioma elegido
+    function syncVoiceSelector(lang) {
+      const voices = speechSynthesis.getVoices();
+      const matchingVoices = voices.filter(v => v.lang.startsWith(lang));
+      if (matchingVoices.length > 0) {
+        selectedVoice = matchingVoices[0];
+        const index = Array.from(voiceSelect.options).findIndex(
+          opt => opt.textContent.includes(matchingVoices[0].name)
+        );
+        if (index >= 0) {
+          voiceSelect.selectedIndex = index;
+        }
+      }
+    }
+
     voiceSelect.onchange = () => {
       const voices = speechSynthesis.getVoices();
       const filtered = voices.filter(v => v.lang.startsWith("en") || v.lang.startsWith("es"));
@@ -205,28 +220,19 @@
       }
     };
 
-    // Selección automática de voz según idioma
-    function setVoiceForLang(lang) {
-      const voices = speechSynthesis.getVoices();
-      const matchingVoices = voices.filter(v => v.lang.startsWith(lang === "en" ? "en" : "es"));
-      if (matchingVoices.length > 0) {
-        selectedVoice = matchingVoices[0];
-      }
-    }
-
     // Cambio rápido de idioma
     langBtn.onclick = () => {
       if (currentLang === "es") {
         currentLang = "en";
         recognition.lang = "en-US";
-        setVoiceForLang("en");
+        syncVoiceSelector("en");
         const msg = "Language switched. Now we continue in English.";
         addMessage(msg, "bot");
         speak(msg, "en");
       } else {
         currentLang = "es";
         recognition.lang = "es-ES";
-        setVoiceForLang("es");
+        syncVoiceSelector("es");
         const msg = "Idioma cambiado. Ahora continuaremos en español.";
         addMessage(msg, "bot");
         speak(msg, "es");
@@ -234,24 +240,10 @@
     };
 
     function detectLanguage(text) {
-      // ⚡ Modo estricto: si mezclan idiomas, advertir
-      if (currentLang === "en" && /[áéíóúñ¿¡]/i.test(text)) {
-        const msg = "⚠️ Please ask me only in English, we are practicing English.";
-        addMessage(msg, "bot");
-        speak(msg, "en");
-        return;
-      }
-      if (currentLang === "es" && /\b(hello|hi|bye|thanks|please)\b/i.test(text)) {
-        const msg = "⚠️ Por favor escribe solo en español, estamos practicando español.";
-        addMessage(msg, "bot");
-        speak(msg, "es");
-        return;
-      }
-
       if (text.toLowerCase().includes("inglés") || text.toLowerCase().includes("english")) {
         currentLang = "en";
         recognition.lang = "en-US";
-        setVoiceForLang("en");
+        syncVoiceSelector("en");
 
         const msg = "Perfect! From now on, I will continue in English.";
         addMessage(msg, "bot");
@@ -259,7 +251,7 @@
       } else if (text.toLowerCase().includes("español") || text.toLowerCase().includes("spanish")) {
         currentLang = "es";
         recognition.lang = "es-ES";
-        setVoiceForLang("es");
+        syncVoiceSelector("es");
 
         const msg = "Perfecto. Continuaremos en español.";
         addMessage(msg, "bot");
@@ -297,7 +289,6 @@
     function preprocessText(text) {
       let processed = text;
 
-      // Eliminar duplicados "número + palabra"
       const numbers = {
         1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
         6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten",
@@ -311,7 +302,6 @@
         processed = processed.replace(regex, word);
       }
 
-      // Diccionario fonético
       const dictionary = {
         "Mr.": "Mister",
         "Mrs.": "Misses",
@@ -361,9 +351,8 @@
       const cleanText = preprocessText(text).replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "");
       const utterance = new SpeechSynthesisUtterance(cleanText);
 
-      // ⚡ Refuerzo: si la voz no coincide con idioma, selecciona automática
       if (!selectedVoice || !selectedVoice.lang.startsWith(lang)) {
-        setVoiceForLang(lang);
+        syncVoiceSelector(lang);
       }
 
       if (selectedVoice) {
