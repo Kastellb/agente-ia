@@ -8,52 +8,72 @@
     body {
       font-family: Arial, sans-serif;
       background: #1e40af; /* Azul rey */
-      color: white;
+      margin: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       height: 100vh;
-      margin: 0;
     }
     h2 {
-      margin-bottom: 15px;
       color: white;
+      margin: 15px 0;
     }
     #chat {
-      width: 90%;
+      width: 95%;
       max-width: 600px;
-      height: 60vh;
+      height: 65vh;
       border-radius: 12px;
-      background: #fff;
+      background: #f0f2f5; /* fondo tipo WhatsApp */
       overflow-y: auto;
       padding: 12px;
       margin-bottom: 10px;
       display: flex;
       flex-direction: column;
     }
-    .msg {
+    .msg-container {
+      display: flex;
+      align-items: flex-end;
       margin: 8px 0;
+      gap: 8px;
+    }
+    .msg {
       padding: 10px 14px;
-      border-radius: 15px;
-      max-width: 75%;
+      border-radius: 20px;
+      max-width: 70%;
       word-wrap: break-word;
+      box-shadow: 0px 2px 4px rgba(0,0,0,0.2);
     }
     .user {
       background: #1e40af;
       color: white;
-      align-self: flex-end;
+      margin-left: auto;
+      border-bottom-right-radius: 5px;
     }
     .bot {
-      background: #e9ecef;
+      background: #ffffff;
       color: black;
-      align-self: flex-start;
+      margin-right: auto;
+      border-bottom-left-radius: 5px;
     }
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .avatar.user { background: #1e40af; color: white; }
+    .avatar.bot { background: #e9ecef; color: black; }
     #controls {
+      width: 95%;
+      max-width: 600px;
       display: flex;
       gap: 10px;
       justify-content: center;
       margin-top: 5px;
+      margin-bottom: 10px;
       flex-wrap: wrap;
     }
     button {
@@ -69,29 +89,19 @@
     #stopBtn { background: #d9534f; color: white; }
     #sendBtn { background: #22c55e; color: white; }
     #inputBox {
-      width: 90%;
+      width: 95%;
+      max-width: 600px;
       padding: 10px;
       border-radius: 8px;
       border: none;
       font-size: 14px;
       margin-bottom: 8px;
     }
-
     /* 📱 Responsive */
     @media (max-width: 600px) {
-      body {
-        height: 100%;
-      }
-      #chat {
-        height: 70vh;
-      }
-      button {
-        font-size: 16px;
-        padding: 12px;
-      }
-      #inputBox {
-        font-size: 16px;
-      }
+      #chat { height: 70vh; }
+      button { font-size: 16px; padding: 12px; }
+      #inputBox { font-size: 16px; }
     }
   </style>
 </head>
@@ -103,7 +113,7 @@
   <!-- Caja de texto para mensajes -->
   <input id="inputBox" type="text" placeholder="Escribe tu mensaje..." />
 
-  <!-- Botones en una sola línea -->
+  <!-- Botones -->
   <div id="controls">
     <button id="sendBtn">Enviar</button>
     <button id="micBtn">🎤 Hablar</button>
@@ -171,10 +181,26 @@
     }
 
     function addMessage(text, sender) {
+      const container = document.createElement("div");
+      container.classList.add("msg-container");
+
+      const avatar = document.createElement("div");
+      avatar.classList.add("avatar", sender);
+      avatar.textContent = sender === "user" ? "👤" : "🤖";
+
       const div = document.createElement("div");
       div.classList.add("msg", sender);
       div.textContent = text;
-      chat.appendChild(div);
+
+      if (sender === "user") {
+        container.appendChild(div);
+        container.appendChild(avatar);
+      } else {
+        container.appendChild(avatar);
+        container.appendChild(div);
+      }
+
+      chat.appendChild(container);
       chat.scrollTop = chat.scrollHeight;
     }
 
@@ -199,11 +225,12 @@
     }
 
     function speak(text, lang) {
-      const utterance = new SpeechSynthesisUtterance(text);
+      // 🔍 Limpiar símbolos fonéticos antes de hablar
+      const cleanText = text.replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "");
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = lang === "en" ? "en-US" : "es-ES";
       speechSynthesis.speak(utterance);
     }
   </script>
 </body>
 </html>
-
