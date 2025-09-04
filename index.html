@@ -152,8 +152,6 @@
 
     window.onload = () => {
       loadVoices();
-
-      // Siempre saludo inicial
       const welcome = "Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
       addMessage(welcome, "bot");
       speak(welcome, "es");
@@ -207,17 +205,28 @@
       }
     };
 
+    // Selección automática de voz según idioma
+    function setVoiceForLang(lang) {
+      const voices = speechSynthesis.getVoices();
+      const matchingVoices = voices.filter(v => v.lang.startsWith(lang === "en" ? "en" : "es"));
+      if (matchingVoices.length > 0) {
+        selectedVoice = matchingVoices[0];
+      }
+    }
+
     // Cambio rápido de idioma
     langBtn.onclick = () => {
       if (currentLang === "es") {
         currentLang = "en";
         recognition.lang = "en-US";
+        setVoiceForLang("en");
         const msg = "Language switched. Now we continue in English.";
         addMessage(msg, "bot");
         speak(msg, "en");
       } else {
         currentLang = "es";
         recognition.lang = "es-ES";
+        setVoiceForLang("es");
         const msg = "Idioma cambiado. Ahora continuaremos en español.";
         addMessage(msg, "bot");
         speak(msg, "es");
@@ -225,9 +234,24 @@
     };
 
     function detectLanguage(text) {
+      // ⚡ Modo estricto: si mezclan idiomas, advertir
+      if (currentLang === "en" && /[áéíóúñ¿¡]/i.test(text)) {
+        const msg = "⚠️ Please ask me only in English, we are practicing English.";
+        addMessage(msg, "bot");
+        speak(msg, "en");
+        return;
+      }
+      if (currentLang === "es" && /\b(hello|hi|bye|thanks|please)\b/i.test(text)) {
+        const msg = "⚠️ Por favor escribe solo en español, estamos practicando español.";
+        addMessage(msg, "bot");
+        speak(msg, "es");
+        return;
+      }
+
       if (text.toLowerCase().includes("inglés") || text.toLowerCase().includes("english")) {
         currentLang = "en";
         recognition.lang = "en-US";
+        setVoiceForLang("en");
 
         const msg = "Perfect! From now on, I will continue in English.";
         addMessage(msg, "bot");
@@ -235,6 +259,7 @@
       } else if (text.toLowerCase().includes("español") || text.toLowerCase().includes("spanish")) {
         currentLang = "es";
         recognition.lang = "es-ES";
+        setVoiceForLang("es");
 
         const msg = "Perfecto. Continuaremos en español.";
         addMessage(msg, "bot");
@@ -336,15 +361,14 @@
       const cleanText = preprocessText(text).replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "");
       const utterance = new SpeechSynthesisUtterance(cleanText);
 
-      const voices = speechSynthesis.getVoices();
-      const matchingVoices = voices.filter(v => v.lang.startsWith(lang === "en" ? "en" : "es"));
+      // ⚡ Refuerzo: si la voz no coincide con idioma, selecciona automática
+      if (!selectedVoice || !selectedVoice.lang.startsWith(lang)) {
+        setVoiceForLang(lang);
+      }
 
-      if (selectedVoice && selectedVoice.lang.startsWith(lang)) {
+      if (selectedVoice) {
         utterance.voice = selectedVoice;
         utterance.lang = selectedVoice.lang;
-      } else if (matchingVoices.length > 0) {
-        utterance.voice = matchingVoices[0];
-        utterance.lang = matchingVoices[0].lang;
       } else {
         utterance.lang = lang === "en" ? "en-US" : "es-ES";
       }
@@ -354,4 +378,3 @@
   </script>
 </body>
 </html>
-
