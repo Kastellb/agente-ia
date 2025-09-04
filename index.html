@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bot Maestro - St. Mary's College</title>
   <style>
-    /* 🎨 ESTILOS BÁSICOS */
     body {
       font-family: Arial, sans-serif;
       background: #f9f9f9;
@@ -62,31 +61,18 @@
 <body>
   <h2>🤖 Bot Maestro - Voz a Voz</h2>
 
-  <!-- 💬 CONTENEDOR DE MENSAJES -->
   <div id="chat"></div>
 
-  <!-- 🎙️ CONTROLES DE VOZ -->
   <div id="controls">
     <button id="micBtn">🎤 Hablar</button>
     <button id="stopBtn">⏹️ Detener</button>
   </div>
 
   <script>
-    /***************************************
-     * BOT MAESTRO - ESTRUCTURA GENERAL
-     * -------------------------------------
-     * 1️⃣ Captura voz (Web Speech API)
-     * 2️⃣ Muestra texto del usuario en pantalla
-     * 3️⃣ Envía texto al backend (Apps Script Proxy Groq)
-     * 4️⃣ Muestra respuesta del bot
-     * 5️⃣ Reproduce respuesta en voz
-     ***************************************/
-
     const chat = document.getElementById("chat");
     const micBtn = document.getElementById("micBtn");
     const stopBtn = document.getElementById("stopBtn");
 
-    // 🎙️ Reconocimiento de voz
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = "es-ES";
@@ -101,7 +87,6 @@
       sendToBot(userText);
     };
 
-    // 💬 Agregar mensajes al chat
     function addMessage(text, sender) {
       const div = document.createElement("div");
       div.classList.add("msg", sender);
@@ -110,10 +95,13 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 🔗 Enviar mensaje al backend (Apps Script Proxy Groq)
+    // 🔗 Aquí usamos un proxy CORS
+    const PROXY_URL = "https://thingproxy.freeboard.io/fetch/";
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8iBAt27M4jO4vyxWFew6v5ili7sFBDUOWDV13bImOjW48I7g-uETeKIDWn3hPHaV0/exec";
+
     async function sendToBot(userText) {
       try {
-        const response = await fetch("https://script.google.com/macros/s/AKfycbx8iBAt27M4jO4vyxWFew6v5ili7sFBDUOWDV13bImOjW48I7g-uETeKIDWn3hPHaV0/exec", {
+        const response = await fetch(PROXY_URL + APP_SCRIPT_URL, {
           method: "POST",
           body: JSON.stringify({ text: userText }),
           headers: { "Content-Type": "application/json" },
@@ -129,10 +117,9 @@
       }
     }
 
-    // 🔊 Texto a voz (TTS)
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "es-ES"; // Cambia a "en-US" si quieres voz en inglés
+      utterance.lang = "es-ES";
       speechSynthesis.speak(utterance);
     }
   </script>
