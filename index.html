@@ -268,20 +268,25 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    // ✅ Preprocesar texto para pronunciación
     function preprocessText(text) {
       let processed = text;
 
-      processed = processed.replace(/\b1\s*one\b/gi, "one");
-      processed = processed.replace(/\b2\s*two\b/gi, "two");
-      processed = processed.replace(/\b3\s*three\b/gi, "three");
-      processed = processed.replace(/\b4\s*four\b/gi, "four");
-      processed = processed.replace(/\b5\s*five\b/gi, "five");
-      processed = processed.replace(/\b6\s*six\b/gi, "six");
-      processed = processed.replace(/\b7\s*seven\b/gi, "seven");
-      processed = processed.replace(/\b8\s*eight\b/gi, "eight");
-      processed = processed.replace(/\b9\s*nine\b/gi, "nine");
-      processed = processed.replace(/\b10\s*ten\b/gi, "ten");
+      // Eliminar duplicados "número + palabra"
+      const numbers = {
+        1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
+        6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten",
+        11: "eleven", 12: "twelve", 13: "thirteen", 14: "fourteen",
+        15: "fifteen", 16: "sixteen", 17: "seventeen", 18: "eighteen",
+        19: "nineteen", 20: "twenty"
+      };
 
+      for (const [digit, word] of Object.entries(numbers)) {
+        const regex = new RegExp(`\\b${digit}\\s*${word}\\b`, "gi");
+        processed = processed.replace(regex, word);
+      }
+
+      // Diccionario fonético
       const dictionary = {
         "Mr.": "Mister",
         "Mrs.": "Misses",
@@ -349,3 +354,4 @@
   </script>
 </body>
 </html>
+
