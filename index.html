@@ -249,7 +249,7 @@
     function preprocessText(text) {
       let processed = text;
 
-      // ⚡ Evitar lectura doble de números (1 one → one)
+      // Evitar lectura doble de números
       processed = processed.replace(/\b1\s*one\b/gi, "one");
       processed = processed.replace(/\b2\s*two\b/gi, "two");
       processed = processed.replace(/\b3\s*three\b/gi, "three");
@@ -292,7 +292,7 @@
       try {
         const response = await fetch("https://bot-maestro-proxy.kast-mercadeo.workers.dev/", {
           method: "POST",
-          body: JSON.stringify({ text: userText }),
+          body: JSON.stringify({ text: userText, lang: currentLang }), // ⚡ idioma incluido
           headers: { "Content-Type": "application/json" },
         });
 
@@ -310,7 +310,6 @@
       const cleanText = preprocessText(text).replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "");
       const utterance = new SpeechSynthesisUtterance(cleanText);
 
-      // ✅ Usar voz según idioma actual
       const voices = speechSynthesis.getVoices();
       const matchingVoices = voices.filter(v => v.lang.startsWith(lang === "en" ? "en" : "es"));
 
