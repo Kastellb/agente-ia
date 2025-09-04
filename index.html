@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🤖 Bot Maestro - St. Mary's College</title>
+  <title>St. Mary's College</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -42,17 +42,18 @@
       color: white;
     }
     .user {
-      background: #1e40af; /* Azul rey */
+      background: #1e40af;
       align-self: flex-end;
     }
     .bot {
-      background: #1e40af; /* Azul rey */
+      background: #1e40af;
       align-self: flex-start;
     }
     #controls {
       display: flex;
       gap: 10px;
-      margin-bottom: 10px;
+      justify-content: center;
+      margin-top: 5px;
     }
     button {
       padding: 10px 15px;
@@ -65,28 +66,28 @@
     #stopBtn { background: #d9534f; color: white; }
     #sendBtn { background: #22c55e; color: white; }
     #inputBox {
-      width: 70%;
+      width: 90%;
       padding: 10px;
       border-radius: 8px;
       border: none;
       font-size: 14px;
+      margin-bottom: 8px;
     }
   </style>
 </head>
 <body>
-  <h2>🤖 Bot Maestro - St. Mary's College</h2>
+  <h2>St. Mary's College</h2>
 
   <div id="chat"></div>
 
+  <!-- Caja de texto para mensajes -->
+  <input id="inputBox" type="text" placeholder="Escribe tu mensaje..." />
+
+  <!-- Botones en una sola línea -->
   <div id="controls">
+    <button id="sendBtn">Enviar</button>
     <button id="micBtn">🎤 Hablar</button>
     <button id="stopBtn">⏹️ Detener</button>
-  </div>
-
-  <!-- Caja de texto para mensajes escritos -->
-  <div id="controls">
-    <input id="inputBox" type="text" placeholder="Escribe tu mensaje..." />
-    <button id="sendBtn">Enviar</button>
   </div>
 
   <script>
@@ -101,8 +102,18 @@
     recognition.lang = "es-ES";
     recognition.interimResults = false;
 
+    // ✅ Mensaje inicial automático
+    window.onload = () => {
+      const welcome = "👋 Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
+      addMessage(welcome, "bot");
+      speak(welcome);
+    };
+
     micBtn.onclick = () => recognition.start();
-    stopBtn.onclick = () => recognition.stop(); // ✅ ahora detiene el reconocimiento
+    stopBtn.onclick = () => {
+      recognition.stop(); // Detiene reconocimiento de voz
+      speechSynthesis.cancel(); // ✅ Detiene lectura en voz
+    };
 
     recognition.onresult = (event) => {
       const userText = event.results[0][0].transcript;
@@ -155,4 +166,5 @@
   </script>
 </body>
 </html>
+
 
