@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🎓 St. Mary’s College – English Instructor (v1.8)</title>
+  <title>🎓 St. Mary’s College – English Instructor (v1.8.1)</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -72,7 +72,7 @@
   </style>
 </head>
 <body>
-  <header>🎓 St. Mary’s College – English Instructor (v1.8)</header>
+  <header>🎓 St. Mary’s College – English Instructor (v1.8.1)</header>
   <div id="chat"></div>
 
   <div id="controls">
@@ -98,6 +98,7 @@
     }
 
     function speak(text, lang="en-US") {
+      speechSynthesis.cancel(); // 🔴 detener cualquier voz previa
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
       speechSynthesis.speak(utterance);
@@ -106,7 +107,6 @@
     async function teacherResponse(userText) {
       let answer = "";
 
-      // Solo bloqueamos si es muy fuera de tema
       const offTopicKeywords = ["soccer", "football", "math", "politics", "cooking", "history"];
       if (offTopicKeywords.some(k => userText.toLowerCase().includes(k))) {
         answer = "⚠️ Let's stay focused. This lesson is only about greetings and introductions.";
@@ -127,7 +127,6 @@
           const data = await response.json();
           answer = data.reply;
         } catch {
-          // Fallback local si Groq falla
           const alternatives = [
             "We say 'Good morning' as a polite greeting until noon. 'Good day' is rarely used in modern English.",
             "Formal greetings show respect, like 'Good morning'. Informal greetings are casual, like 'Hi'.",
@@ -170,11 +169,15 @@
     }
 
     speakBtn.onclick = () => recognition && recognition.start();
-    stopBtn.onclick = () => recognition && recognition.stop();
+
+    // 🔴 Ahora sí: botón STOP corta voz y micrófono
+    stopBtn.onclick = () => {
+      if (recognition) recognition.stop();
+      speechSynthesis.cancel();
+    };
 
     // Mensaje inicial
     addMessage("👋 Welcome to St. Mary’s College! This is Lesson 1: Greetings and Introductions. Ask me anything about this topic, and I will teach and correct you.", "bot");
   </script>
 </body>
 </html>
-
