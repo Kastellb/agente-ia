@@ -43,8 +43,8 @@
 
     // Welcome message
     window.onload = () => {
-      addMessage("👋 Welcome! Please tell me which lesson you want to review (e.g., 'Lesson 10').", "bot");
-      speak("Welcome! Please tell me which lesson you want to review, for example Lesson 10.", "en-US");
+      addMessage("👋 Welcome! Please tell me which lesson you want to review (e.g., 'Lesson 1').", "bot");
+      speak("Welcome! Please tell me which lesson you want to review, for example Lesson 1.", "en-US");
     };
 
     // Add message to chat
@@ -56,28 +56,38 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // Send message to Worker
+    // Main message handler
     async function sendMessage(text) {
       if (!text) return;
       addMessage(text, "user");
       textInput.value = "";
 
-      // Detect if user is asking for a lesson
+      // ✅ Detect if user is asking for a lesson
       if (/lesson\s*\d+/i.test(text)) {
         const lessonNumber = parseInt(text.match(/\d+/)[0]);
         currentLesson = lessonNumber;
-        await evaluateLesson(lessonNumber - 1); // First evaluate previous lesson
-        return;
+
+        if (lessonNumber === 1) {
+          // First lesson → no evaluation
+          addMessage(`📘 Welcome to Lesson 1: Greetings and Introductions.`, "bot");
+          speak("Welcome to Lesson 1: Greetings and Introductions.", "en-US");
+          addMessage("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "bot");
+          speak("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "en-US");
+        } else {
+          // Other lessons → evaluate previous
+          await evaluateLesson(lessonNumber - 1);
+        }
+        return; // 🚨 Stop here, do not send to Groq
       }
 
-      // If asking for specific area
+      // ✅ If asking for a specific area of current lesson
       if (currentLesson && /(vocabulary|grammar|exercises|pronunciation)/i.test(text)) {
         const area = text.toLowerCase();
         await loadLesson(currentLesson, area);
-        return;
+        return; // 🚨 Stop here, do not send to Groq
       }
 
-      // Default: send to Worker (AI response)
+      // ✅ Default: send free question to Groq
       try {
         const res = await fetch(WORKER_URL, {
           method: "POST",
@@ -152,7 +162,7 @@
         const res = await fetch(`/lessons/lesson${prevLesson}.json`);
         const lesson = await res.json();
 
-        // Simple simulation: one random question
+        // Simple evaluation: one random exercise
         const ex = lesson.areas.exercises[Math.floor(Math.random() * lesson.areas.exercises.length)];
         addMessage(`Before Lesson ${currentLesson}, answer from Lesson ${prevLesson}:\n${ex.q}`, "bot");
         speak("Before moving to the next lesson, answer this question from the previous one.", "en-US");
@@ -168,4 +178,3 @@
   </script>
 </body>
 </html>
-
