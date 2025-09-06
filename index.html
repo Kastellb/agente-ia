@@ -13,15 +13,13 @@
     #chat { width: 95%; max-width: 600px; height: 60vh; border-radius: 12px;
       background: #f9fafb; overflow-y: auto; padding: 12px; margin-bottom: 10px;
       display: flex; flex-direction: column; box-shadow: 0px 4px 10px rgba(0,0,0,0.25);}
-    .msg-container { display: flex; flex-direction: column; margin: 8px 0; gap: 4px;}
+    .msg-container { display: flex; margin: 8px 0; }
     .msg { padding: 10px 14px; border-radius: 20px; max-width: 80%;
       word-wrap: break-word; box-shadow: 0px 2px 6px rgba(0,0,0,0.2);}
-    .user-container { align-items: flex-end; }
-    .bot-container { align-items: flex-start; }
+    .user-container { justify-content: flex-end; }
+    .bot-container { justify-content: flex-start; }
     .user { background: #1e40af; color: white; }
     .bot { background: #ffffff; color: black; }
-    .translate-btn { background: #f59e0b; color: white; border: none; border-radius: 8px;
-      font-size: 12px; padding: 4px 8px; cursor: pointer; margin-left: 40px;}
     #controls { width: 95%; max-width: 600px; display: flex; gap: 10px;
       justify-content: center; margin-top: 5px; margin-bottom: 10px;}
     button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer;
@@ -54,7 +52,7 @@
 
     let selectedVoice = null;
 
-    // Mensaje inicial SIEMPRE aparece en texto
+    // ⚡ Saludo inicial SIEMPRE visible
     const welcome = "📚 Welcome to St. Mary's College. Please select the lesson (for example: Lesson 1).";
     addMessage(welcome, "bot");
     speak(welcome);
@@ -65,6 +63,7 @@
     recognition.lang = "en-US";
     recognition.interimResults = false;
 
+    // Cargar voces
     function loadVoices() {
       const voices = speechSynthesis.getVoices();
       voiceSelect.innerHTML = "";
@@ -112,29 +111,12 @@
       div.classList.add("msg", sender);
       div.textContent = text;
 
-      if (sender === "bot") {
-        const translateBtn = document.createElement("button");
-        translateBtn.textContent = "🌐 Translate";
-        translateBtn.classList.add("translate-btn");
-        translateBtn.onclick = async () => {
-          const translation = await translateToSpanish(text);
-          const transDiv = document.createElement("div");
-          transDiv.classList.add("msg", "bot");
-          transDiv.style.background = "#f0f0f0";
-          transDiv.textContent = "🇪🇸 " + translation;
-          container.appendChild(transDiv);
-          chat.scrollTop = chat.scrollHeight;
-        };
-        container.appendChild(div);
-        container.appendChild(translateBtn);
-      } else {
-        container.appendChild(div);
-      }
-
+      container.appendChild(div);
       chat.appendChild(container);
       chat.scrollTop = chat.scrollHeight;
     }
 
+    // ⚡ URL del Worker
     const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev";
 
     async function sendToBot(userText) {
@@ -156,32 +138,17 @@
 
     function speak(text) {
       if (!text) return;
-      // Sustituciones fonéticas
       const fixes = { "College": "Collej", "St.": "Saint", "Mr.": "Mister" };
       let cleanText = text;
       for (const [wrong, fixed] of Object.entries(fixes)) {
         cleanText = cleanText.replace(new RegExp(wrong, "g"), fixed);
       }
-      cleanText = cleanText.replace(/[\u{1F300}-\u{1FAFF}]/gu, "").replace(/[\u{2600}-\u{27BF}]/g, "");
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = "en-US";
       if (selectedVoice) utterance.voice = selectedVoice;
       speechSynthesis.speak(utterance);
     }
-
-    async function translateToSpanish(text) {
-      try {
-        const res = await fetch("https://libretranslate.de/translate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ q: text, source: "en", target: "es", format: "text" })
-        });
-        const data = await res.json();
-        return data.translatedText;
-      } catch {
-        return "⚠️ Error translating.";
-      }
-    }
   </script>
 </body>
 </html>
+
