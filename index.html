@@ -4,7 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bot Maestro</title>
-  <link rel="stylesheet" href="style.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .chat-container {
+      width: 400px;
+      max-width: 95%;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+
+    .message {
+      margin: 10px 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background: #dcf8c6;
+      align-self: flex-end;
+    }
+
+    .bot {
+      background: #ececec;
+      align-self: flex-start;
+    }
+
+    .controls {
+      display: flex;
+      padding: 10px;
+      gap: 5px;
+    }
+
+    input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+  </style>
 </head>
 <body>
   <div class="chat-container">
@@ -18,8 +76,84 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const input = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+    const voiceBtn = document.getElementById("voice-btn");
+    const voiceSelect = document.getElementById("voice-select");
+
+    // Cargar voces disponibles
+    function loadVoices() {
+      const voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = voices.map((v, i) =>
+        `<option value="${i}">${v.name} (${v.lang})</option>`
+      ).join("");
+    }
+    speechSynthesis.onvoiceschanged = loadVoices;
+
+    // Enviar mensaje
+    sendBtn.addEventListener("click", () => {
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, "user");
+      input.value = "";
+      sendToBot(text);
+    });
+
+    // Agregar mensaje al chat
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.className = "message " + sender;
+      msg.textContent = text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Comunicación con Worker
+    async function sendToBot(text) {
+      addMessage("⏳ escribiendo...", "bot");
+
+      // Limpieza de emojis (regex corregido ✅)
+      text = text.replace(/[\u2600-\u27BF]/gu, "");
+
+      try {
+        const res = await fetch("https://tu-worker.cloudflare.workers.dev", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+
+        const data = await res.json();
+        document.querySelector(".bot:last-child").textContent = data.reply;
+        speak(data.reply);
+
+      } catch (err) {
+        document.querySelector(".bot:last-child").textContent =
+          "⚠️ Error de conexión con el servidor.";
+      }
+    }
+
+    // Hablar (TTS)
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voices = speechSynthesis.getVoices();
+      utterance.voice = voices[voiceSelect.value] || voices[0];
+      speechSynthesis.speak(utterance);
+    }
+
+    // Reconocimiento de voz (STT)
+    voiceBtn.addEventListener("click", () => {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "es-ES";
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        addMessage(text, "user");
+        sendToBot(text);
+      };
+    });
+  </script>
 </body>
 </html>
-
-
