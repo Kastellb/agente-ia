@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>St. Mary’s College – English Instructor (v1.4)</title>
+  <title>St. Mary’s College – English Instructor (v1.5)</title>
   <style>
     body { font-family: Arial, sans-serif; background: #1e3c72; margin:0; display:flex; flex-direction:column; height:100vh; }
     header { text-align:center; color:white; padding:10px; font-size:18px; background:#0d2b57; }
@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-  <header>🎓 St. Mary’s College – English Instructor (v1.4)</header>
+  <header>🎓 St. Mary’s College – English Instructor (v1.5)</header>
   <div id="chat"></div>
   <div id="controls">
     <input type="text" id="textInput" placeholder="Type your answer here...">
@@ -35,11 +35,7 @@
     const textInput = document.getElementById("textInput");
     const synth = window.speechSynthesis;
     let currentLesson = null;
-    let currentStep = 0;
-    let currentContent = [];
-    let mode = "teaching"; // teaching → practice
-
-    const numberWords = { one:1, two:2, to:2, too:2, three:3, four:4, for:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10 };
+    let lessonData = null;
 
     // 🎓 Welcome
     window.onload = () => {
@@ -60,114 +56,68 @@
       addMessage(text, "user");
       textInput.value = "";
 
-      // Normalize
-      let normalized = text.toLowerCase().replace(/listen|lessom|leccion|lessen|play some/gi, "lesson");
+      let normalized = text.toLowerCase().trim();
+      let lessonMatch = normalized.match(/lesson\s+(\d+)/i);
 
-      // Detect lesson request
-      let lessonMatch = normalized.match(/lesson\s+(\d+|[a-z]+)/i);
+      // Load lesson if user says "lesson x"
       if (lessonMatch) {
-        let lessonNumber = lessonMatch[1].toLowerCase();
-        lessonNumber = isNaN(lessonNumber) ? numberWords[lessonNumber] : parseInt(lessonNumber);
-
-        if (lessonNumber) {
-          currentLesson = lessonNumber;
-          currentStep = 0;
-          mode = "teaching";
-          await startLesson(lessonNumber);
-          return;
-        }
-      }
-
-      // Teaching phase → wait for "continue" or "practice"
-      if (mode === "teaching" && /continue|practice/i.test(normalized)) {
-        mode = "practice";
-        askNextQuestion();
+        currentLesson = parseInt(lessonMatch[1]);
+        await loadLesson(currentLesson);
         return;
       }
 
-      // Practice phase
-      if (mode === "practice" && currentContent.length > 0 && currentStep > 0) {
-        checkAnswer(text);
+      // If inside a lesson → answer with teaching role
+      if (lessonData) {
+        await teacherResponse(text);
         return;
       }
 
-      if (!currentLesson) {
-        addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
-        speak("Please choose a lesson first, for example Lesson 1.", "en-US");
+      addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
+      speak("Please choose a lesson first, for example Lesson 1.", "en-US");
+    }
+
+    async function loadLesson(num) {
+      const url = `${BASE_URL}/lesson${num}.json`;
+      try {
+        const res = await fetch(url);
+        lessonData = await res.json();
+
+        addMessage(`📘 Welcome to Lesson ${num}: ${lessonData.title}`, "bot");
+        speak(`Welcome to Lesson ${num}: ${lessonData.title}`, "en-US");
+
+        addMessage(`🎯 Objectives:\n- ${lessonData.objectives.join("\n- ")}`, "bot");
+        speak("Here are the objectives of this lesson.", "en-US");
+
+        addMessage(`📑 Topics:\n- ${lessonData.topics.join("\n- ")}`, "bot");
+        speak("Here are the topics we will study today.", "en-US");
+
+        addMessage("You can now ask me anything about this lesson: theory, examples, or practice. I will explain and help you reinforce.", "bot");
+        speak("You can now ask me anything about this lesson: theory, examples, or practice.", "en-US");
+
+      } catch {
+        addMessage("⚠️ Lesson not found or not uploaded yet.", "bot");
       }
     }
 
-    async function startLesson(lessonNumber) {
-      const attempts = [
-        `${BASE_URL}/lesson${lessonNumber}.json`,
-        `${BASE_URL}/lesson${lessonNumber.toString().padStart(2,"0")}.json`,
-        `${BASE_URL}/lesson${lessonNumber.toString().padStart(3,"0")}.json`
-      ];
+    async function teacherResponse(userText) {
+      // Simulated teaching logic (here se conecta con Groq o IA real)
+      // For now we only simulate:
+      let answer = "";
 
-      for (const url of attempts) {
-        try {
-          const res = await fetch(url);
-          if (!res.ok) continue;
-          const lesson = await res.json();
-
-          // Teaching phase
-          addMessage(`📘 Welcome to Lesson ${lessonNumber}: ${lesson.title}`, "bot");
-          speak(`Welcome to Lesson ${lessonNumber}: ${lesson.title}`, "en-US");
-
-          if (lesson.theory) {
-            addMessage(`📖 Theory:\n${lesson.theory}`, "bot");
-            speak(lesson.theory, "en-US");
-          }
-
-          addMessage(`🎯 Objectives:\n- ${lesson.objectives.join("\n- ")}`, "bot");
-          speak("Here are the objectives of this lesson.", "en-US");
-
-          addMessage(`📑 Topics:\n- ${lesson.topics.join("\n- ")}`, "bot");
-          speak("Here are the topics of this lesson.", "en-US");
-
-          addMessage("When you are ready, type or say 'continue' and we will start the practice.", "bot");
-          speak("When you are ready, say continue and we will start the practice.", "en-US");
-
-          currentContent = lesson.content;
-          currentStep = 0;
-          return;
-        } catch {}
-      }
-
-      addMessage("⚠️ Lesson not found or not uploaded yet.", "bot");
-    }
-
-    // Practice: ask next
-    function askNextQuestion() {
-      if (currentStep < currentContent.length) {
-        const q = currentContent[currentStep].question;
-        addMessage(`❓ ${q}`, "bot");
-        speak(q, "en-US");
+      if (/why/i.test(userText) && /greet/i.test(userText)) {
+        answer = "In English, greetings are polite ways to start communication. For example, 'Good morning' shows respect and sets a friendly tone.";
+      } else if (/informal/i.test(userText)) {
+        answer = "Informal greetings are used with friends or people you know well. Examples: 'Hi', 'Hello', 'What’s up?'.";
+      } else if (/formal/i.test(userText)) {
+        answer = "Formal greetings are used in professional or respectful contexts. Examples: 'Good morning', 'Good afternoon', 'Good evening'.";
       } else {
-        addMessage("✅ Great job! You have completed this lesson's practice.", "bot");
-        speak("Great job! You have completed this lesson's practice.", "en-US");
-        mode = "done";
-      }
-    }
-
-    // Check answer
-    function checkAnswer(userAnswer) {
-      const expected = currentContent[currentStep].answer.toLowerCase();
-      const user = userAnswer.toLowerCase();
-
-      if (user.includes(expected.split(" ")[0])) {
-        addMessage("👍 Correct! Well done.", "bot");
-        speak("Correct! Well done.", "en-US");
-      } else {
-        addMessage(`⚠️ Not quite. The correct answer is: "${currentContent[currentStep].answer}"`, "bot");
-        speak(`Not quite. The correct answer is: ${currentContent[currentStep].answer}`, "en-US");
+        answer = `This is related to the lesson: ${lessonData.title}. Let me explain: ${lessonData.theory}`;
       }
 
-      currentStep++;
-      askNextQuestion();
+      addMessage(answer, "bot");
+      speak(answer, "en-US");
     }
 
-    // Voice
     function speak(text, lang) {
       synth.cancel();
       const utter = new SpeechSynthesisUtterance(text);
@@ -183,10 +133,10 @@
       recognition.onerror = () => addMessage("⚠️ Speech not detected.", "bot");
     }
 
-    // Buttons
     document.getElementById("sendBtn").onclick = () => sendMessage(textInput.value);
     document.getElementById("talkBtn").onclick = () => startListening();
     document.getElementById("stopBtn").onclick = () => synth.cancel();
   </script>
 </body>
 </html>
+
