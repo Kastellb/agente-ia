@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>St. Mary’s College – English Instructor (v1.1)</title>
+  <title>St. Mary’s College – English Instructor (v1.2)</title>
   <style>
     body { font-family: Arial, sans-serif; background: #1e3c72; margin:0; display:flex; flex-direction:column; height:100vh; }
     header { text-align:center; color:white; padding:10px; font-size:18px; background:#0d2b57; }
@@ -17,15 +17,10 @@
     #sendBtn { background:#4CAF50; color:white; }
     #talkBtn { background:#2196F3; color:white; }
     #stopBtn { background:#f44336; color:white; }
-    @media (max-width:600px) {
-      header { font-size:16px; }
-      #textInput { font-size:14px; }
-      button { padding:8px; font-size:14px; }
-    }
   </style>
 </head>
 <body>
-  <header>🎓 St. Mary’s College – English Instructor (v1.1)</header>
+  <header>🎓 St. Mary’s College – English Instructor (v1.2)</header>
   <div id="chat"></div>
   <div id="controls">
     <input type="text" id="textInput" placeholder="Type your message...">
@@ -35,20 +30,18 @@
   </div>
 
   <script>
-    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
-    const BASE_URL = "https://www.leccion.datafast.pw/lessons"; // 🔹 RUTA FIJA AL HOSTING
+    const BASE_URL = "https://www.leccion.datafast.pw/lessons"; 
     const chat = document.getElementById("chat");
     const textInput = document.getElementById("textInput");
     const synth = window.speechSynthesis;
     let currentLesson = null;
 
-    // Diccionario de números
-    const numberWords = { one:1, two:2, to:2, too:2, three:3, four:4, for:4, five:5, six:6, sex:6, seven:7, eight:8, ate:8, nine:9, ten:10 };
+    const numberWords = { one:1, two:2, to:2, too:2, three:3, four:4, for:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10 };
 
     // 🎓 Bienvenida
     window.onload = () => {
-      addMessage("👋 Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review (e.g., 'Lesson 1' or 'Lesson one').", "bot");
-      speak("Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review, for example Lesson 1 or Lesson one.", "en-US");
+      addMessage("👋 Welcome to St. Mary’s College! Please tell me which lesson you want to review (e.g., 'Lesson 1' or 'Lesson one').", "bot");
+      speak("Welcome to St. Mary’s College! Please tell me which lesson you want to review, for example Lesson 1 or Lesson one.", "en-US");
     };
 
     function addMessage(text, sender) {
@@ -59,7 +52,6 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 🚀 Procesar mensajes
     async function sendMessage(text) {
       if (!text) return;
       addMessage(text, "user");
@@ -73,62 +65,62 @@
 
         if (lessonNumber) {
           currentLesson = lessonNumber;
-          if (lessonNumber === 1) {
-            addMessage("📘 Welcome to Lesson 1: Greetings and Introductions.", "bot");
-            speak("Welcome to Lesson 1: Greetings and Introductions.", "en-US");
-            addMessage("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "bot");
-            speak("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "en-US");
-          } else {
-            await evaluateLesson(lessonNumber - 1);
-          }
+          await loadLesson(lessonNumber, "intro");
           return;
         }
       }
 
-      // Áreas de lección
-      if (currentLesson && /(vocabulary|grammar|exercises|pronunciation)/i.test(text)) {
-        await loadLesson(currentLesson, text.toLowerCase());
+      // Mostrar secciones de la lección
+      if (currentLesson && /(objectives|topics|content)/i.test(text)) {
+        const area = text.toLowerCase();
+        await loadLesson(currentLesson, area);
         return;
       }
 
-      // Preguntas relacionadas
-      if (currentLesson) {
-        const related = /(vocabulary|grammar|exercise|pronunciation|rule|example|sentence)/i;
-        if (related.test(text)) {
-          await askGroq(text);
-        } else {
-          addMessage(`🙏 Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Vocabulary, Grammar, Exercises, or Pronunciation.`, "bot");
-          speak(`Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Vocabulary, Grammar, Exercises, or Pronunciation.`, "en-US");
-        }
-        return;
+      // Si no eligió lección
+      if (!currentLesson) {
+        addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
+        speak("Please choose a lesson first, for example Lesson 1.", "en-US");
+      } else {
+        addMessage(`🙏 Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Objectives, Topics, or Content.`, "bot");
+        speak(`Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Objectives, Topics, or Content.`, "en-US");
       }
-
-      addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
-      speak("Please choose a lesson first, for example Lesson 1.", "en-US");
     }
 
-    // Preguntar a Groq
-    async function askGroq(text) {
+    // 🔹 Cargar JSON en formato actual
+    async function loadLesson(lessonNumber, area) {
       try {
-        const res = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text })
-        });
-        const data = await res.json();
-        let reply = data.reply || "❌ No response.";
-        reply = cleanResponse(reply);
-        addMessage(reply, "bot");
-        speak(reply, "en-US");
+        const res = await fetch(`${BASE_URL}/lesson${lessonNumber}.json`);
+        const lesson = await res.json();
+
+        if (area === "intro") {
+          addMessage(`📘 Welcome to Lesson ${lessonNumber}: ${lesson.title}`, "bot");
+          speak(`Welcome to Lesson ${lessonNumber}: ${lesson.title}`, "en-US");
+          addMessage("What do you want to review: Objectives, Topics, or Content?", "bot");
+          speak("What do you want to review: Objectives, Topics, or Content?", "en-US");
+        } 
+        else if (area.includes("objectives")) {
+          addMessage(`🎯 Objectives:\n- ${lesson.objectives.join("\n- ")}`, "bot");
+          speak("Here are the objectives of this lesson.", "en-US");
+        } 
+        else if (area.includes("topics")) {
+          addMessage(`📖 Topics:\n- ${lesson.topics.join("\n- ")}`, "bot");
+          speak("Here are the topics of this lesson.", "en-US");
+        } 
+        else if (area.includes("content")) {
+          let text = "📝 Content:\n";
+          lesson.content.forEach(c => {
+            text += `Q: ${c.question}\nA: ${c.answer}\n\n`;
+          });
+          addMessage(text.trim(), "bot");
+          speak("Here is the content of this lesson.", "en-US");
+        }
       } catch {
-        addMessage("⚠️ Connection error.", "bot");
+        addMessage("⚠️ Lesson not found or not uploaded yet.", "bot");
       }
     }
 
-    function cleanResponse(text) {
-      return text.replace(/[\u{1F600}-\u{1F6FF}]/gu, "").replace(/\*+/g, "").trim();
-    }
-
+    // Voz
     function speak(text, lang) {
       synth.cancel();
       const utter = new SpeechSynthesisUtterance(text);
@@ -136,49 +128,13 @@
       synth.speak(utter);
     }
 
+    // Escuchar voz
     function startListening() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-US";
       recognition.start();
       recognition.onresult = (e) => sendMessage(e.results[0][0].transcript);
       recognition.onerror = () => addMessage("⚠️ Speech not detected.", "bot");
-    }
-
-    // 🔹 Cargar JSON desde Datafast
-    async function loadLesson(lessonNumber, area) {
-      try {
-        const res = await fetch(`${BASE_URL}/lesson${lessonNumber}.json`);
-        const lesson = await res.json();
-
-        if (area.includes("vocabulary")) {
-          addMessage(`📖 Vocabulary for Lesson ${lessonNumber}:\n${lesson.areas.vocabulary}`, "bot");
-          speak("Here is the vocabulary for this lesson.", "en-US");
-        } else if (area.includes("grammar")) {
-          addMessage(`📖 Grammar for Lesson ${lessonNumber}:\n${lesson.areas.grammar}`, "bot");
-          speak("Here is the grammar explanation.", "en-US");
-        } else if (area.includes("exercises")) {
-          addMessage("📝 Let's practice! Answer these exercises:", "bot");
-          lesson.areas.exercises.forEach(ex => addMessage(ex.q, "bot"));
-          speak("Let's practice some exercises.", "en-US");
-        } else if (area.includes("pronunciation")) {
-          addMessage(`🔊 Pronunciation tips:\n${lesson.areas.pronunciation}`, "bot");
-          speak("Here are the pronunciation tips.", "en-US");
-        }
-      } catch {
-        addMessage("⚠️ Lesson not found or not uploaded yet.", "bot");
-      }
-    }
-
-    async function evaluateLesson(prevLesson) {
-      try {
-        const res = await fetch(`${BASE_URL}/lesson${prevLesson}.json`);
-        const lesson = await res.json();
-        const ex = lesson.areas.exercises[Math.floor(Math.random() * lesson.areas.exercises.length)];
-        addMessage(`Before Lesson ${currentLesson}, answer from Lesson ${prevLesson}:\n${ex.q}`, "bot");
-        speak("Before moving to the next lesson, answer this question from the previous one.", "en-US");
-      } catch {
-        addMessage("⚠️ Could not load previous lesson.", "bot");
-      }
     }
 
     // Botones
@@ -188,3 +144,4 @@
   </script>
 </body>
 </html>
+
