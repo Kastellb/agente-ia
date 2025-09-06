@@ -35,19 +35,19 @@
   </div>
 
   <script>
-    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; // Your Worker URL
+    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; 
     const chat = document.getElementById("chat");
     const textInput = document.getElementById("textInput");
     const synth = window.speechSynthesis;
     let currentLesson = null;
 
-    // Welcome message
+    // 🎓 Welcome message
     window.onload = () => {
-      addMessage("👋 Welcome! Please tell me which lesson you want to review (e.g., 'Lesson 1').", "bot");
-      speak("Welcome! Please tell me which lesson you want to review, for example Lesson 1.", "en-US");
+      addMessage("👋 Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review (e.g., 'Lesson 1').", "bot");
+      speak("Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review, for example Lesson 1.", "en-US");
     };
 
-    // Add message to chat
+    // ✅ Add message to chat
     function addMessage(text, sender) {
       const div = document.createElement("div");
       div.className = `bubble ${sender}`;
@@ -56,54 +56,76 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // Main message handler
+    // ✅ Main message handler
     async function sendMessage(text) {
       if (!text) return;
       addMessage(text, "user");
       textInput.value = "";
 
-      // ✅ Detect if user is asking for a lesson
+      // Lesson detection
       if (/lesson\s*\d+/i.test(text)) {
         const lessonNumber = parseInt(text.match(/\d+/)[0]);
         currentLesson = lessonNumber;
 
         if (lessonNumber === 1) {
-          // First lesson → no evaluation
-          addMessage(`📘 Welcome to Lesson 1: Greetings and Introductions.`, "bot");
+          addMessage("📘 Welcome to Lesson 1: Greetings and Introductions.", "bot");
           speak("Welcome to Lesson 1: Greetings and Introductions.", "en-US");
           addMessage("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "bot");
           speak("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "en-US");
         } else {
-          // Other lessons → evaluate previous
           await evaluateLesson(lessonNumber - 1);
         }
-        return; // 🚨 Stop here, do not send to Groq
+        return;
       }
 
-      // ✅ If asking for a specific area of current lesson
+      // Lesson areas
       if (currentLesson && /(vocabulary|grammar|exercises|pronunciation)/i.test(text)) {
         const area = text.toLowerCase();
         await loadLesson(currentLesson, area);
-        return; // 🚨 Stop here, do not send to Groq
+        return;
       }
 
-      // ✅ Default: send free question to Groq
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text })
-        });
-        const data = await res.json();
-        const reply = data.reply || "❌ No response.";
-        addMessage(reply, "bot");
-        speak(reply, "en-US");
-      } catch {
-        addMessage("⚠️ Connection error.", "bot");
+      // Free questions: only if related
+      if (currentLesson) {
+        const related = /(vocabulary|grammar|exercise|pronunciation|rule|example|sentence)/i;
+        if (related.test(text)) {
+          // Related → Groq explanation
+          try {
+            const res = await fetch(WORKER_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text })
+            });
+            const data = await res.json();
+            let reply = data.reply || "❌ No response.";
+            reply = cleanResponse(reply);
+            addMessage(reply, "bot");
+            speak(reply, "en-US");
+          } catch {
+            addMessage("⚠️ Connection error.", "bot");
+          }
+        } else {
+          // Not related → block politely
+          addMessage(`🙏 Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Vocabulary, Grammar, Exercises, or Pronunciation.`, "bot");
+          speak(`Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Vocabulary, Grammar, Exercises, or Pronunciation.`, "en-US");
+        }
+        return;
       }
+
+      // If no lesson yet
+      addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
+      speak("Please choose a lesson first, for example Lesson 1.", "en-US");
     }
 
-    // Speak function
+    // ✅ Clean Groq responses (remove emojis, symbols)
+    function cleanResponse(text) {
+      return text
+        .replace(/[\u{1F600}-\u{1F6FF}]/gu, "")  // emojis
+        .replace(/\*+/g, "")                     // asterisks
+        .trim();
+    }
+
+    // ✅ Speak function
     function speak(text, lang) {
       synth.cancel();
       const utter = new SpeechSynthesisUtterance(text);
@@ -111,7 +133,7 @@
       synth.speak(utter);
     }
 
-    // Speech recognition
+    // ✅ Speech recognition
     function startListening() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-US";
@@ -123,7 +145,7 @@
       recognition.onerror = () => addMessage("⚠️ Speech not detected.", "bot");
     }
 
-    // Load lesson JSON and show only requested area
+    // ✅ Load lesson JSON by area
     async function loadLesson(lessonNumber, area) {
       try {
         const res = await fetch(`/lessons/lesson${lessonNumber}.json`);
@@ -145,12 +167,12 @@
           addMessage(`🔊 Pronunciation tips:\n${lesson.areas.pronunciation}`, "bot");
           speak("Here are the pronunciation tips.", "en-US");
         }
-      } catch (err) {
+      } catch {
         addMessage("⚠️ Lesson not found.", "bot");
       }
     }
 
-    // Evaluate previous lesson before allowing next
+    // ✅ Evaluate previous lesson
     async function evaluateLesson(prevLesson) {
       if (prevLesson <= 0) {
         addMessage("This is the first lesson, no previous evaluation required.", "bot");
@@ -162,7 +184,6 @@
         const res = await fetch(`/lessons/lesson${prevLesson}.json`);
         const lesson = await res.json();
 
-        // Simple evaluation: one random exercise
         const ex = lesson.areas.exercises[Math.floor(Math.random() * lesson.areas.exercises.length)];
         addMessage(`Before Lesson ${currentLesson}, answer from Lesson ${prevLesson}:\n${ex.q}`, "bot");
         speak("Before moving to the next lesson, answer this question from the previous one.", "en-US");
@@ -171,7 +192,7 @@
       }
     }
 
-    // Button events
+    // ✅ Buttons
     document.getElementById("sendBtn").onclick = () => sendMessage(textInput.value);
     document.getElementById("talkBtn").onclick = () => startListening();
     document.getElementById("stopBtn").onclick = () => synth.cancel();
