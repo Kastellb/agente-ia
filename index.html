@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -44,20 +44,20 @@
     }
     .msg-container {
       display: flex;
-      align-items: flex-end;
+      flex-direction: column;
       margin: 8px 0;
-      gap: 8px;
+      gap: 4px;
     }
     .msg {
       padding: 10px 14px;
       border-radius: 20px;
-      max-width: 70%;
+      max-width: 80%;
       word-wrap: break-word;
       box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
       white-space: pre-line;
     }
-    .user-container { justify-content: flex-end; }
-    .bot-container { justify-content: flex-start; }
+    .user-container { align-items: flex-end; }
+    .bot-container { align-items: flex-start; }
     .user {
       background: #1e40af;
       color: white;
@@ -79,6 +79,16 @@
     }
     .avatar.user { background: #1e40af; color: white; }
     .avatar.bot { background: #e9ecef; color: black; }
+    .translate-btn {
+      background: #f59e0b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 4px 8px;
+      cursor: pointer;
+      margin-left: 40px;
+    }
     #controls {
       width: 95%;
       max-width: 600px;
@@ -101,7 +111,6 @@
     #micBtn { background: #2563eb; color: white; }
     #stopBtn { background: #d9534f; color: white; }
     #sendBtn { background: #22c55e; color: white; }
-    #langBtn { background: #f59e0b; color: white; }
     #inputBox {
       width: 95%;
       max-width: 600px;
@@ -122,14 +131,13 @@
   <div id="chat"></div>
 
   <!-- Caja de texto -->
-  <input id="inputBox" type="text" placeholder="Escribe tu mensaje..." />
+  <input id="inputBox" type="text" placeholder="Write your message..." />
 
   <!-- Botones -->
   <div id="controls">
-    <button id="sendBtn">Enviar</button>
-    <button id="micBtn">🎤 Hablar</button>
-    <button id="stopBtn">⏹️ Detener</button>
-    <button id="langBtn">🌐 Cambiar idioma</button>
+    <button id="sendBtn">Send</button>
+    <button id="micBtn">🎤 Speak</button>
+    <button id="stopBtn">⏹️ Stop</button>
   </div>
 
   <script>
@@ -139,42 +147,40 @@
     const sendBtn = document.getElementById("sendBtn");
     const inputBox = document.getElementById("inputBox");
     const voiceSelect = document.getElementById("voiceSelect");
-    const langBtn = document.getElementById("langBtn");
 
-    let currentLang = "es"; 
     let selectedVoice = null;
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.lang = "es-ES";
+    recognition.lang = "en-US";
     recognition.interimResults = false;
 
-    // ✅ Mensaje inicial
+    // ✅ Mensaje inicial en inglés
     window.onload = () => {
       loadVoices();
-      const welcome = "Bienvenido a St. Mary's College. Por favor selecciona la lección con la que deseas trabajar (ejemplo: Lesson 1).";
+      const welcome = "📚 Welcome to St. Mary's College. Please select the lesson (for example: Lesson 1).";
       addMessage(welcome, "bot");
-      speak(welcome, "es");
+      speak(welcome, "en");
     };
 
     // Cargar voces
     function loadVoices() {
       const voices = speechSynthesis.getVoices();
       voiceSelect.innerHTML = "";
-      voices.forEach((voice, i) => {
+      voices.filter(v => v.lang.startsWith("en")).forEach((voice, i) => {
         const option = document.createElement("option");
         option.value = i;
         option.textContent = `${voice.name} (${voice.lang})`;
         voiceSelect.appendChild(option);
       });
       if (voices.length > 0) {
-        selectedVoice = voices[0];
+        selectedVoice = voices.find(v => v.lang.startsWith("en"));
       }
     }
     speechSynthesis.onvoiceschanged = loadVoices;
 
     voiceSelect.onchange = () => {
-      const voices = speechSynthesis.getVoices();
+      const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith("en"));
       selectedVoice = voices[voiceSelect.value];
     };
 
@@ -199,22 +205,6 @@
       }
     };
 
-    langBtn.onclick = () => {
-      if (currentLang === "es") {
-        currentLang = "en";
-        recognition.lang = "en-US";
-        const msg = "✅ Language switched. Now we continue in English.";
-        addMessage(msg, "bot");
-        speak(msg, "en");
-      } else {
-        currentLang = "es";
-        recognition.lang = "es-ES";
-        const msg = "✅ Idioma cambiado. Continuamos en español.";
-        addMessage(msg, "bot");
-        speak(msg, "es");
-      }
-    };
-
     function addMessage(text, sender) {
       const container = document.createElement("div");
       container.classList.add("msg-container", sender + "-container");
@@ -225,16 +215,28 @@
 
       const div = document.createElement("div");
       div.classList.add("msg", sender);
+      div.textContent = text;
 
-      const formatted = text.replace(/\n/g, "\n");
-      div.textContent = formatted;
-
-      if (sender === "user") {
-        container.appendChild(div);
+      if (sender === "bot") {
+        // Botón de traducción
+        const translateBtn = document.createElement("button");
+        translateBtn.textContent = "🌐 Translate";
+        translateBtn.classList.add("translate-btn");
+        translateBtn.onclick = async () => {
+          const translation = await translateToSpanish(text);
+          const transDiv = document.createElement("div");
+          transDiv.classList.add("msg", "bot");
+          transDiv.style.background = "#f0f0f0";
+          transDiv.textContent = "🇪🇸 " + translation;
+          container.appendChild(transDiv);
+          chat.scrollTop = chat.scrollHeight;
+        };
         container.appendChild(avatar);
+        container.appendChild(div);
+        container.appendChild(translateBtn);
       } else {
-        container.appendChild(avatar);
         container.appendChild(div);
+        container.appendChild(avatar);
       }
 
       chat.appendChild(container);
@@ -248,47 +250,56 @@
       try {
         const response = await fetch(WORKER_URL, {
           method: "POST",
-          body: JSON.stringify({ text: userText, lang: currentLang }),
+          body: JSON.stringify({ text: userText, lang: "en" }), // siempre en inglés
           headers: { "Content-Type": "application/json" },
         });
 
         const data = await response.json();
-        const botText = data.reply || "⚠️ El bot no respondió.";
+        const botText = data.reply || "⚠️ The bot did not respond.";
         addMessage(botText, "bot");
-        speak(botText, currentLang);
+        speak(botText, "en");
       } catch (err) {
         console.error(err);
-        addMessage("❌ Error de conexión con el bot.", "bot");
+        addMessage("❌ Connection error with the bot.", "bot");
       }
     }
 
+    // 🔊 Función speak: todo en inglés
     function speak(text, lang) {
-      // Sustituciones fonéticas para que SpeechSynthesis lea mejor
-      const phoneticFixes = {
-        "College": "Collej",
-        "college": "collej",
-        "St. Mary’s": "Saint Mary’s",
-        "St.": "Saint",
-        "Mr.": "Mister"
-      };
-
-      let cleanText = text;
-      for (const [wrong, fixed] of Object.entries(phoneticFixes)) {
-        cleanText = cleanText.replace(new RegExp(wrong, "g"), fixed);
-      }
-
       // Eliminar emojis y símbolos
-      cleanText = cleanText
+      let cleanText = text
         .replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "")
         .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
         .replace(/[\u{2600}-\u{27BF}]/g, "")
         .replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, "");
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = lang === "en" ? "en-US" : "es-ES";
+      utterance.lang = "en-US";
       if (selectedVoice) utterance.voice = selectedVoice;
       speechSynthesis.speak(utterance);
+    }
+
+    // 🌐 Traducción usando libretranslate
+    async function translateToSpanish(text) {
+      try {
+        const res = await fetch("https://libretranslate.de/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            q: text,
+            source: "en",
+            target: "es",
+            format: "text"
+          })
+        });
+        const data = await res.json();
+        return data.translatedText;
+      } catch (e) {
+        console.error("Translation error:", e);
+        return "⚠️ Error translating.";
+      }
     }
   </script>
 </body>
 </html>
+
