@@ -39,7 +39,7 @@
 
     // 🎓 Welcome
     window.onload = () => {
-      addMessage("👋 Welcome to St. Mary’s College! Please tell me which lesson you want to review (e.g., 'Lesson 1').", "bot");
+      addMessage("👋 Welcome to St. Mary’s College! Please tell me which lesson you want to review (e.g., 'Lesson 1' or 'Lesson one').", "bot");
       speak("Welcome to St. Mary’s College! Please tell me which lesson you want to review, for example Lesson 1.", "en-US");
     };
 
@@ -57,16 +57,28 @@
       textInput.value = "";
 
       let normalized = text.toLowerCase().trim();
-      let lessonMatch = normalized.match(/lesson\s+(\d+)/i);
 
-      // Load lesson if user says "lesson x"
+      // 🔹 Diccionario de números escritos en inglés
+      const numbers = {
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+        "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10
+      };
+
+      // 🔹 Buscar "lesson" + número o palabra
+      let lessonMatch = normalized.match(/lesson\s+(\d+|one|two|three|four|five|six|seven|eight|nine|ten)/i);
+
       if (lessonMatch) {
-        currentLesson = parseInt(lessonMatch[1]);
+        let lessonKey = lessonMatch[1];
+        if (isNaN(lessonKey)) {
+          currentLesson = numbers[lessonKey];  // palabra → número
+        } else {
+          currentLesson = parseInt(lessonKey); // número directo
+        }
         await loadLesson(currentLesson);
         return;
       }
 
-      // If inside a lesson → answer with teaching role
+      // Si ya hay lección cargada → responder como profesor
       if (lessonData) {
         await teacherResponse(text);
         return;
@@ -85,14 +97,14 @@
         addMessage(`📘 Welcome to Lesson ${num}: ${lessonData.title}`, "bot");
         speak(`Welcome to Lesson ${num}: ${lessonData.title}`, "en-US");
 
+        addMessage(`📖 Theory:\n${lessonData.theory}`, "bot");
+        speak("Here is the main theory of this lesson.", "en-US");
+
         addMessage(`🎯 Objectives:\n- ${lessonData.objectives.join("\n- ")}`, "bot");
-        speak("Here are the objectives of this lesson.", "en-US");
-
         addMessage(`📑 Topics:\n- ${lessonData.topics.join("\n- ")}`, "bot");
-        speak("Here are the topics we will study today.", "en-US");
 
-        addMessage("You can now ask me anything about this lesson: theory, examples, or practice. I will explain and help you reinforce.", "bot");
-        speak("You can now ask me anything about this lesson: theory, examples, or practice.", "en-US");
+        addMessage("Now you can ask me anything about this lesson. I will explain and help you reinforce the content.", "bot");
+        speak("Now you can ask me anything about this lesson. I will explain and help you reinforce the content.", "en-US");
 
       } catch {
         addMessage("⚠️ Lesson not found or not uploaded yet.", "bot");
@@ -100,8 +112,6 @@
     }
 
     async function teacherResponse(userText) {
-      // Simulated teaching logic (here se conecta con Groq o IA real)
-      // For now we only simulate:
       let answer = "";
 
       if (/why/i.test(userText) && /greet/i.test(userText)) {
@@ -139,4 +149,3 @@
   </script>
 </body>
 </html>
-
