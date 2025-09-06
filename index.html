@@ -1,47 +1,53 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bot Maestro - St. Mary’s College</title>
+  <title>Bot Maestro – English Instructor</title>
   <style>
     body { font-family: Arial, sans-serif; background: #1e3c72; margin:0; display:flex; flex-direction:column; height:100vh; }
-    #chat { flex:1; background:#f1f1f1; padding:10px; overflow-y:auto; display:flex; flex-direction:column; }
-    .bubble { padding:10px; margin:5px; border-radius:10px; max-width:70%; }
+    header { text-align:center; color:white; padding:10px; font-size:18px; background:#0d2b57; }
+    #chat { flex:1; background:#f9f9f9; padding:10px; overflow-y:auto; display:flex; flex-direction:column; }
+    .bubble { padding:10px; margin:5px; border-radius:10px; max-width:75%; line-height:1.4; }
     .user { background:#4CAF50; color:#fff; align-self:flex-end; }
-    .bot { background:#2196F3; color:#fff; align-self:flex-start; }
+    .bot { background:#2196F3; color:#fff; align-self:flex-start; white-space:pre-line; }
     #controls { display:flex; background:#fff; padding:10px; }
     #textInput { flex:1; padding:10px; border:1px solid #ccc; border-radius:5px; }
     button { margin-left:5px; padding:10px; border:none; border-radius:5px; cursor:pointer; }
     #sendBtn { background:#4CAF50; color:white; }
     #talkBtn { background:#2196F3; color:white; }
     #stopBtn { background:#f44336; color:white; }
+    @media (max-width:600px) {
+      header { font-size:16px; }
+      #textInput { font-size:14px; }
+      button { padding:8px; font-size:14px; }
+    }
   </style>
 </head>
 <body>
-  <h2 style="text-align:center; color:white; padding:10px;">🤖 Bot Maestro - St. Mary’s College</h2>
+  <header>🤖 Bot Maestro – English Instructor</header>
   <div id="chat"></div>
   <div id="controls">
-    <input type="text" id="textInput" placeholder="Escribe tu mensaje...">
-    <button id="sendBtn">Enviar</button>
-    <button id="talkBtn">Hablar</button>
-    <button id="stopBtn">Detener</button>
+    <input type="text" id="textInput" placeholder="Type your message...">
+    <button id="sendBtn">Send</button>
+    <button id="talkBtn">Speak</button>
+    <button id="stopBtn">Stop</button>
   </div>
 
   <script>
-    // ⚡ URL de tu Worker REAL
-    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
-
+    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; // Your Worker URL
     const chat = document.getElementById("chat");
     const textInput = document.getElementById("textInput");
     const synth = window.speechSynthesis;
+    let currentLesson = null;
 
-    // Saludo inicial
+    // Welcome message
     window.onload = () => {
-      addMessage("👋 Hola, soy el Bot Maestro. ¿Quieres hablar en inglés o en español?", "bot");
-      speak("Hola, soy el Bot Maestro. ¿Quieres hablar en inglés o en español?", "es-ES");
+      addMessage("👋 Welcome! Please tell me which lesson you want to review (e.g., 'Lesson 10').", "bot");
+      speak("Welcome! Please tell me which lesson you want to review, for example Lesson 10.", "en-US");
     };
 
+    // Add message to chat
     function addMessage(text, sender) {
       const div = document.createElement("div");
       div.className = `bubble ${sender}`;
@@ -50,11 +56,28 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    // Send message to Worker
     async function sendMessage(text) {
       if (!text) return;
       addMessage(text, "user");
       textInput.value = "";
 
+      // Detect if user is asking for a lesson
+      if (/lesson\s*\d+/i.test(text)) {
+        const lessonNumber = parseInt(text.match(/\d+/)[0]);
+        currentLesson = lessonNumber;
+        await evaluateLesson(lessonNumber - 1); // First evaluate previous lesson
+        return;
+      }
+
+      // If asking for specific area
+      if (currentLesson && /(vocabulary|grammar|exercises|pronunciation)/i.test(text)) {
+        const area = text.toLowerCase();
+        await loadLesson(currentLesson, area);
+        return;
+      }
+
+      // Default: send to Worker (AI response)
       try {
         const res = await fetch(WORKER_URL, {
           method: "POST",
@@ -62,14 +85,15 @@
           body: JSON.stringify({ text })
         });
         const data = await res.json();
-        const reply = data.reply || "❌ Error en la respuesta";
+        const reply = data.reply || "❌ No response.";
         addMessage(reply, "bot");
-        speak(reply, reply.match(/[a-zA-Z]/) ? "en-US" : "es-ES");
-      } catch (err) {
-        addMessage("⚠️ Error de conexión con el servidor", "bot");
+        speak(reply, "en-US");
+      } catch {
+        addMessage("⚠️ Connection error.", "bot");
       }
     }
 
+    // Speak function
     function speak(text, lang) {
       synth.cancel();
       const utter = new SpeechSynthesisUtterance(text);
@@ -77,20 +101,71 @@
       synth.speak(utter);
     }
 
+    // Speech recognition
     function startListening() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = "es-ES";
+      recognition.lang = "en-US";
       recognition.start();
       recognition.onresult = (e) => {
         const text = e.results[0][0].transcript;
         sendMessage(text);
       };
-      recognition.onerror = () => addMessage("⚠️ No se detectó audio", "bot");
+      recognition.onerror = () => addMessage("⚠️ Speech not detected.", "bot");
     }
 
+    // Load lesson JSON and show only requested area
+    async function loadLesson(lessonNumber, area) {
+      try {
+        const res = await fetch(`/lessons/lesson${lessonNumber}.json`);
+        const lesson = await res.json();
+
+        if (area.includes("vocabulary")) {
+          addMessage(`📖 Vocabulary for Lesson ${lessonNumber}:\n${lesson.areas.vocabulary}`, "bot");
+          speak("Here is the vocabulary for this lesson.", "en-US");
+        } else if (area.includes("grammar")) {
+          addMessage(`📖 Grammar for Lesson ${lessonNumber}:\n${lesson.areas.grammar}`, "bot");
+          speak("Here is the grammar explanation.", "en-US");
+        } else if (area.includes("exercises")) {
+          addMessage("📝 Let's practice! Answer these exercises:", "bot");
+          lesson.areas.exercises.forEach(ex => {
+            addMessage(ex.q, "bot");
+          });
+          speak("Let's practice some exercises.", "en-US");
+        } else if (area.includes("pronunciation")) {
+          addMessage(`🔊 Pronunciation tips:\n${lesson.areas.pronunciation}`, "bot");
+          speak("Here are the pronunciation tips.", "en-US");
+        }
+      } catch (err) {
+        addMessage("⚠️ Lesson not found.", "bot");
+      }
+    }
+
+    // Evaluate previous lesson before allowing next
+    async function evaluateLesson(prevLesson) {
+      if (prevLesson <= 0) {
+        addMessage("This is the first lesson, no previous evaluation required.", "bot");
+        speak("This is the first lesson, no previous evaluation required.", "en-US");
+        return;
+      }
+
+      try {
+        const res = await fetch(`/lessons/lesson${prevLesson}.json`);
+        const lesson = await res.json();
+
+        // Simple simulation: one random question
+        const ex = lesson.areas.exercises[Math.floor(Math.random() * lesson.areas.exercises.length)];
+        addMessage(`Before Lesson ${currentLesson}, answer from Lesson ${prevLesson}:\n${ex.q}`, "bot");
+        speak("Before moving to the next lesson, answer this question from the previous one.", "en-US");
+      } catch {
+        addMessage("⚠️ Could not load previous lesson.", "bot");
+      }
+    }
+
+    // Button events
     document.getElementById("sendBtn").onclick = () => sendMessage(textInput.value);
     document.getElementById("talkBtn").onclick = () => startListening();
     document.getElementById("stopBtn").onclick = () => synth.cancel();
   </script>
 </body>
 </html>
+
