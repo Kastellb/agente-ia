@@ -5,135 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>St. Mary's College</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #1e40af;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100vh;
-    }
-    h2 {
-      color: white;
-      margin: 15px 0 5px;
-    }
-    #voiceSelect {
-      width: 95%;
-      max-width: 600px;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 14px;
-      margin-bottom: 10px;
-      background: #2563eb;
-      color: white;
-    }
-    #chat {
-      width: 95%;
-      max-width: 600px;
-      height: 60vh;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #f9fafb, #e5e7eb);
-      overflow-y: auto;
-      padding: 12px;
-      margin-bottom: 10px;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0px 4px 10px rgba(0,0,0,0.25);
-    }
-    .msg-container {
-      display: flex;
-      flex-direction: column;
-      margin: 8px 0;
-      gap: 4px;
-    }
-    .msg {
-      padding: 10px 14px;
-      border-radius: 20px;
-      max-width: 80%;
-      word-wrap: break-word;
-      box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
-      white-space: pre-line;
-    }
+    body { font-family: Arial, sans-serif; background: #1e40af; margin: 0;
+      display: flex; flex-direction: column; align-items: center; height: 100vh;}
+    h2 { color: white; margin: 15px 0 5px; }
+    #voiceSelect { width: 95%; max-width: 600px; padding: 10px; border-radius: 8px;
+      border: none; font-size: 14px; margin-bottom: 10px; background: #2563eb; color: white;}
+    #chat { width: 95%; max-width: 600px; height: 60vh; border-radius: 12px;
+      background: linear-gradient(135deg,#f9fafb,#e5e7eb); overflow-y: auto;
+      padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.25);}
+    .msg-container { display: flex; flex-direction: column; margin: 8px 0; gap: 4px;}
+    .msg { padding: 10px 14px; border-radius: 20px; max-width: 80%;
+      word-wrap: break-word; box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+      white-space: pre-line;}
     .user-container { align-items: flex-end; }
     .bot-container { align-items: flex-start; }
-    .user {
-      background: #1e40af;
-      color: white;
-      border-bottom-right-radius: 5px;
-    }
-    .bot {
-      background: #ffffff;
-      color: black;
-      border-bottom-left-radius: 5px;
-    }
-    .avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-    }
-    .avatar.user { background: #1e40af; color: white; }
-    .avatar.bot { background: #e9ecef; color: black; }
-    .translate-btn {
-      background: #f59e0b;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      padding: 4px 8px;
-      cursor: pointer;
-      margin-left: 40px;
-    }
-    #controls {
-      width: 95%;
-      max-width: 600px;
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-top: 5px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      flex: 1;
-      min-width: 90px;
-    }
-    #micBtn { background: #2563eb; color: white; }
-    #stopBtn { background: #d9534f; color: white; }
-    #sendBtn { background: #22c55e; color: white; }
-    #inputBox {
-      width: 95%;
-      max-width: 600px;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
+    .user { background: #1e40af; color: white; border-bottom-right-radius: 5px; }
+    .bot { background: #ffffff; color: black; border-bottom-left-radius: 5px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 16px;}
+    .avatar.user { background: #1e40af; color: white;}
+    .avatar.bot { background: #e9ecef; color: black;}
+    .translate-btn { background: #f59e0b; color: white; border: none; border-radius: 8px;
+      font-size: 12px; padding: 4px 8px; cursor: pointer; margin-left: 40px;}
+    #controls { width: 95%; max-width: 600px; display: flex; gap: 10px;
+      justify-content: center; margin-top: 5px; margin-bottom: 10px; flex-wrap: wrap;}
+    button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer;
+      font-size: 14px; flex: 1; min-width: 90px;}
+    #micBtn { background: #2563eb; color: white;}
+    #stopBtn { background: #d9534f; color: white;}
+    #sendBtn { background: #22c55e; color: white;}
+    #inputBox { width: 95%; max-width: 600px; padding: 10px; border-radius: 8px;
+      border: none; font-size: 14px; margin-bottom: 8px;}
   </style>
 </head>
 <body>
   <h2>St. Mary's College</h2>
-
-  <!-- Selector de voz -->
   <select id="voiceSelect"></select>
-
   <div id="chat"></div>
-
-  <!-- Caja de texto -->
   <input id="inputBox" type="text" placeholder="Write your message..." />
-
-  <!-- Botones -->
   <div id="controls">
     <button id="sendBtn">Send</button>
     <button id="micBtn">🎤 Speak</button>
@@ -155,40 +65,42 @@
     recognition.lang = "en-US";
     recognition.interimResults = false;
 
-    // ✅ Mensaje inicial en inglés
-    window.onload = () => {
-      loadVoices();
+    // ⚡ Mensaje inicial se dispara cuando ya hay voces
+    function initWelcome() {
       const welcome = "📚 Welcome to St. Mary's College. Please select the lesson (for example: Lesson 1).";
       addMessage(welcome, "bot");
-      speak(welcome, "en");
-    };
+      speak(welcome);
+    }
 
-    // Cargar voces
+    // Cargar voces filtradas en inglés
     function loadVoices() {
       const voices = speechSynthesis.getVoices();
       voiceSelect.innerHTML = "";
-      voices.filter(v => v.lang.startsWith("en")).forEach((voice, i) => {
+      const englishVoices = voices.filter(v => v.lang.startsWith("en"));
+      englishVoices.forEach((voice, i) => {
         const option = document.createElement("option");
         option.value = i;
         option.textContent = `${voice.name} (${voice.lang})`;
         voiceSelect.appendChild(option);
       });
-      if (voices.length > 0) {
-        selectedVoice = voices.find(v => v.lang.startsWith("en"));
+      if (englishVoices.length > 0) {
+        selectedVoice = englishVoices[0];
+      }
+      // mostrar saludo solo la primera vez
+      if (!chat.dataset.started) {
+        initWelcome();
+        chat.dataset.started = "true";
       }
     }
     speechSynthesis.onvoiceschanged = loadVoices;
 
     voiceSelect.onchange = () => {
-      const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith("en"));
-      selectedVoice = voices[voiceSelect.value];
+      const englishVoices = speechSynthesis.getVoices().filter(v => v.lang.startsWith("en"));
+      selectedVoice = englishVoices[voiceSelect.value];
     };
 
     micBtn.onclick = () => recognition.start();
-    stopBtn.onclick = () => {
-      recognition.stop();
-      speechSynthesis.cancel();
-    };
+    stopBtn.onclick = () => { recognition.stop(); speechSynthesis.cancel(); };
 
     recognition.onresult = (event) => {
       const userText = event.results[0][0].transcript;
@@ -218,7 +130,6 @@
       div.textContent = text;
 
       if (sender === "bot") {
-        // Botón de traducción
         const translateBtn = document.createElement("button");
         translateBtn.textContent = "🌐 Translate";
         translateBtn.classList.add("translate-btn");
@@ -238,36 +149,39 @@
         container.appendChild(div);
         container.appendChild(avatar);
       }
-
       chat.appendChild(container);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // ⚡ URL del Worker
     const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev";
 
     async function sendToBot(userText) {
       try {
         const response = await fetch(WORKER_URL, {
           method: "POST",
-          body: JSON.stringify({ text: userText, lang: "en" }), // siempre en inglés
+          body: JSON.stringify({ text: userText, lang: "en" }),
           headers: { "Content-Type": "application/json" },
         });
-
         const data = await response.json();
         const botText = data.reply || "⚠️ The bot did not respond.";
         addMessage(botText, "bot");
-        speak(botText, "en");
+        speak(botText);
       } catch (err) {
         console.error(err);
         addMessage("❌ Connection error with the bot.", "bot");
       }
     }
 
-    // 🔊 Función speak: todo en inglés
-    function speak(text, lang) {
+    function speak(text) {
+      if (!text) return;
+      // Sustituciones fonéticas
+      const phoneticFixes = { "College": "Collej", "college": "collej", "St.": "Saint", "Mr.": "Mister" };
+      let cleanText = text;
+      for (const [wrong, fixed] of Object.entries(phoneticFixes)) {
+        cleanText = cleanText.replace(new RegExp(wrong, "g"), fixed);
+      }
       // Eliminar emojis y símbolos
-      let cleanText = text
+      cleanText = cleanText
         .replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "")
         .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
         .replace(/[\u{2600}-\u{27BF}]/g, "")
@@ -279,18 +193,12 @@
       speechSynthesis.speak(utterance);
     }
 
-    // 🌐 Traducción usando libretranslate
     async function translateToSpanish(text) {
       try {
         const res = await fetch("https://libretranslate.de/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            q: text,
-            source: "en",
-            target: "es",
-            format: "text"
-          })
+          body: JSON.stringify({ q: text, source: "en", target: "es", format: "text" })
         });
         const data = await res.json();
         return data.translatedText;
@@ -302,4 +210,3 @@
   </script>
 </body>
 </html>
-
