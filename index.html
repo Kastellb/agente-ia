@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>St. Mary’s College – English Instructor (v1.2.2)</title>
+  <title>St. Mary’s College – English Instructor (v1.2.3)</title>
   <style>
     body { font-family: Arial, sans-serif; background: #1e3c72; margin:0; display:flex; flex-direction:column; height:100vh; }
     header { text-align:center; color:white; padding:10px; font-size:18px; background:#0d2b57; }
@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-  <header>🎓 St. Mary’s College – English Instructor (v1.2.2)</header>
+  <header>🎓 St. Mary’s College – English Instructor (v1.2.3)</header>
   <div id="chat"></div>
   <div id="controls">
     <input type="text" id="textInput" placeholder="Type your message...">
@@ -57,8 +57,12 @@
       addMessage(text, "user");
       textInput.value = "";
 
+      // 🔹 Normalizar texto (corrige errores de reconocimiento de voz)
+      let normalized = text.toLowerCase()
+        .replace(/listen|lessom|leccion|lessen|play some/gi, "lesson");
+
       // Detectar "lesson"
-      let lessonMatch = text.match(/lesson\s+(\d+|[a-z]+)/i);
+      let lessonMatch = normalized.match(/lesson\s+(\d+|[a-z]+)/i);
       if (lessonMatch) {
         let lessonNumber = lessonMatch[1].toLowerCase();
         lessonNumber = isNaN(lessonNumber) ? numberWords[lessonNumber] : parseInt(lessonNumber);
@@ -71,8 +75,8 @@
       }
 
       // Mostrar secciones de la lección
-      if (currentLesson && /(objectives|topics|content)/i.test(text)) {
-        const area = text.toLowerCase();
+      if (currentLesson && /(objectives|topics|content)/i.test(normalized)) {
+        const area = normalized;
         await loadLesson(currentLesson, area);
         return;
       }
@@ -96,9 +100,9 @@
 
       for (const url of attempts) {
         try {
-          console.log("🔎 Trying:", url); // 👈 Depuración
+          console.log("🔎 Trying:", url);
           const res = await fetch(url);
-          if (!res.ok) continue; // probar siguiente
+          if (!res.ok) continue;
           const lesson = await res.json();
 
           if (area === "intro") {
@@ -123,7 +127,7 @@
             addMessage(text.trim(), "bot");
             speak("Here is the content of this lesson.", "en-US");
           }
-          return; // ✅ se cargó, no hace falta seguir
+          return;
         } catch (err) {
           console.warn("❌ Failed to load from:", url, err);
         }
