@@ -1,163 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>St. Mary's College</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #1e40af; margin: 0;
-      display: flex; flex-direction: column; align-items: center; height: 100vh;}
-    h2 { color: white; margin: 15px 0 5px; }
-    #voiceSelect { width: 95%; max-width: 600px; padding: 10px; border-radius: 8px;
-      border: none; font-size: 14px; margin-bottom: 10px; background: #2563eb; color: white;}
-    #chat { width: 95%; max-width: 600px; height: 60vh; border-radius: 12px;
-      background: #f9fafb; overflow-y: auto; padding: 12px; margin-bottom: 10px;
-      display: flex; flex-direction: column; box-shadow: 0px 4px 10px rgba(0,0,0,0.25);}
-    .msg-container { display: flex; margin: 8px 0; }
-    .msg { padding: 10px 14px; border-radius: 20px; max-width: 70%;
-      word-wrap: break-word; box-shadow: 0px 2px 6px rgba(0,0,0,0.2);}
-    .user-container { justify-content: flex-end; }
-    .bot-container { justify-content: flex-start; }
-    .user { background: #1e40af; color: white; }
-    .bot { background: #ffffff; color: black; }
-    #controls { width: 95%; max-width: 600px; display: flex; gap: 10px;
-      justify-content: center; margin-top: 5px; margin-bottom: 10px;}
-    button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer;
-      font-size: 14px; flex: 1; min-width: 90px;}
-    #micBtn { background: #2563eb; color: white;}
-    #stopBtn { background: #d9534f; color: white;}
-    #sendBtn { background: #22c55e; color: white;}
-    #inputBox { width: 95%; max-width: 600px; padding: 10px; border-radius: 8px;
-      border: none; font-size: 14px; margin-bottom: 8px;}
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot Maestro</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>St. Mary's College</h2>
-  <select id="voiceSelect"></select>
-  <div id="chat"></div>
-  <input id="inputBox" type="text" placeholder="Write your message..." />
-  <div id="controls">
-    <button id="sendBtn">Send</button>
-    <button id="micBtn">🎤 Speak</button>
-    <button id="stopBtn">⏹️ Stop</button>
+  <div class="chat-container">
+    <div id="chat-box" class="chat-box"></div>
+
+    <div class="controls">
+      <input type="text" id="user-input" placeholder="Escribe un mensaje...">
+      <button id="send-btn">Enviar</button>
+      <button id="voice-btn">🎤</button>
+      <select id="voice-select"></select>
+    </div>
   </div>
 
-  <script>
-    const chat = document.getElementById("chat");
-    const micBtn = document.getElementById("micBtn");
-    const stopBtn = document.getElementById("stopBtn");
-    const sendBtn = document.getElementById("sendBtn");
-    const inputBox = document.getElementById("inputBox");
-    const voiceSelect = document.getElementById("voiceSelect");
-
-    let selectedVoice = null;
-
-    // ✅ Initial greeting
-    window.onload = () => {
-      loadVoices();
-      const welcome = "Welcome to St. Mary's College. Please select the lesson you want to practice (for example: Lesson 1).";
-      addMessage(welcome, "bot");
-      speak(welcome);
-    };
-
-    // 🎤 Speech recognition (English only)
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-
-    // 🔊 Load voices (only English)
-    function loadVoices() {
-      const voices = speechSynthesis.getVoices();
-      voiceSelect.innerHTML = "";
-      const englishVoices = voices.filter(v => v.lang.startsWith("en"));
-      englishVoices.forEach((voice, i) => {
-        const option = document.createElement("option");
-        option.value = i;
-        option.textContent = `${voice.name} (${voice.lang})`;
-        voiceSelect.appendChild(option);
-      });
-      if (englishVoices.length > 0) selectedVoice = englishVoices[0];
-    }
-    speechSynthesis.onvoiceschanged = loadVoices;
-
-    voiceSelect.onchange = () => {
-      const englishVoices = speechSynthesis.getVoices().filter(v => v.lang.startsWith("en"));
-      selectedVoice = englishVoices[voiceSelect.value];
-    };
-
-    micBtn.onclick = () => recognition.start();
-    stopBtn.onclick = () => { recognition.stop(); speechSynthesis.cancel(); };
-
-    recognition.onresult = (event) => {
-      const userText = event.results[0][0].transcript;
-      addMessage(userText, "user");
-      sendToBot(userText);
-    };
-
-    sendBtn.onclick = () => {
-      const userText = inputBox.value.trim();
-      if (userText) {
-        addMessage(userText, "user");
-        sendToBot(userText);
-        inputBox.value = "";
-      }
-    };
-
-    function addMessage(text, sender) {
-      const container = document.createElement("div");
-      container.classList.add("msg-container", sender + "-container");
-      const div = document.createElement("div");
-      div.classList.add("msg", sender);
-      div.textContent = text;
-      container.appendChild(div);
-      chat.appendChild(container);
-      chat.scrollTop = chat.scrollHeight;
-    }
-
-    // ⚡ Worker URL
-    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev";
-
-    async function sendToBot(userText) {
-      try {
-        const response = await fetch(WORKER_URL, {
-          method: "POST",
-          body: JSON.stringify({ text: userText, lang: "en" }),
-          headers: { "Content-Type": "application/json" },
-        });
-        const data = await response.json();
-        const botText = data.reply || "⚠️ The bot did not respond.";
-        addMessage(botText, "bot");
-        speak(botText);
-      } catch (err) {
-        console.error(err);
-        addMessage("❌ Connection error with the bot.", "bot");
-      }
-    }
-
-    // 🔊 Speak (English only, emoji + fix rules)
-    function speak(text) {
-      if (!text) return;
-
-      // Phonetic fixes
-      const fixes = { "College": "Collej", "St.": "Saint", "Mr.": "Mister" };
-      let cleanText = text;
-      for (const [wrong, fixed] of Object.entries(fixes)) {
-        cleanText = cleanText.replace(new RegExp(wrong, "g"), fixed);
-      }
-
-      // Remove emojis and symbols
-      cleanText = cleanText
-        .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
-        .replace(/[\u{2600}-\u{27BF}]/g, "")
-        .replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, "");
-
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = "en-US";
-      if (selectedVoice) utterance.voice = selectedVoice;
-      speechSynthesis.speak(utterance);
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
+
 
