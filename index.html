@@ -41,13 +41,21 @@
     const synth = window.speechSynthesis;
     let currentLesson = null;
 
-    // 🎓 Welcome
-    window.onload = () => {
-      addMessage("👋 Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review (e.g., 'Lesson 1').", "bot");
-      speak("Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review, for example Lesson 1.", "en-US");
+    // Map words → numbers
+    const numberWords = {
+      one:1, two:2, three:3, four:4, five:5,
+      six:6, seven:7, eight:8, nine:9, ten:10,
+      eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15,
+      sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20
     };
 
-    // Add message to chat
+    // 🎓 Welcome
+    window.onload = () => {
+      addMessage("👋 Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review (e.g., 'Lesson 1' or 'Lesson one').", "bot");
+      speak("Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review, for example Lesson 1 or Lesson one.", "en-US");
+    };
+
+    // Add message
     function addMessage(text, sender) {
       const div = document.createElement("div");
       div.className = `bubble ${sender}`;
@@ -56,55 +64,63 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 🚀 Main message handler
+    // 🚀 Main handler
     async function sendMessage(text) {
       if (!text) return;
       addMessage(text, "user");
       textInput.value = "";
 
-      // ✅ If asking for a lesson
-      if (/lesson\s*\d+/i.test(text)) {
-        const lessonNumber = parseInt(text.match(/\d+/)[0]);
-        currentLesson = lessonNumber;
+      // ✅ Detect if lesson requested (number or word)
+      let lessonMatch = text.match(/lesson\s*(\d+|[a-z]+)/i);
+      if (lessonMatch) {
+        let lessonNumber = lessonMatch[1];
 
-        if (lessonNumber === 1) {
-          addMessage("📘 Welcome to Lesson 1: Greetings and Introductions.", "bot");
-          speak("Welcome to Lesson 1: Greetings and Introductions.", "en-US");
-          addMessage("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "bot");
-          speak("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "en-US");
+        if (isNaN(lessonNumber)) {
+          lessonNumber = numberWords[lessonNumber.toLowerCase()] || null;
         } else {
-          await evaluateLesson(lessonNumber - 1);
+          lessonNumber = parseInt(lessonNumber);
         }
-        return;
+
+        if (lessonNumber) {
+          currentLesson = lessonNumber;
+
+          if (lessonNumber === 1) {
+            addMessage("📘 Welcome to Lesson 1: Greetings and Introductions.", "bot");
+            speak("Welcome to Lesson 1: Greetings and Introductions.", "en-US");
+            addMessage("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "bot");
+            speak("What do you want to review: Vocabulary, Grammar, Exercises, or Pronunciation?", "en-US");
+          } else {
+            await evaluateLesson(lessonNumber - 1);
+          }
+          return;
+        }
       }
 
-      // ✅ If asking for lesson areas
+      // ✅ Lesson areas
       if (currentLesson && /(vocabulary|grammar|exercises|pronunciation)/i.test(text)) {
         const area = text.toLowerCase();
         await loadLesson(currentLesson, area);
         return;
       }
 
-      // ✅ If already in a lesson
+      // ✅ Related questions only
       if (currentLesson) {
         const related = /(vocabulary|grammar|exercise|pronunciation|rule|example|sentence)/i;
         if (related.test(text)) {
-          // Related → allow Groq explanation
           await askGroq(text);
         } else {
-          // Not related → polite block
           addMessage(`🙏 Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Vocabulary, Grammar, Exercises, or Pronunciation.`, "bot");
           speak(`Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Vocabulary, Grammar, Exercises, or Pronunciation.`, "en-US");
         }
         return;
       }
 
-      // ✅ If no lesson chosen
+      // If no lesson chosen
       addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
       speak("Please choose a lesson first, for example Lesson 1.", "en-US");
     }
 
-    // Ask Groq (only for lesson-related questions)
+    // Ask Groq
     async function askGroq(text) {
       try {
         const res = await fetch(WORKER_URL, {
@@ -122,7 +138,7 @@
       }
     }
 
-    // Clean Groq responses
+    // Clean Groq
     function cleanResponse(text) {
       return text.replace(/[\u{1F600}-\u{1F6FF}]/gu, "").replace(/\*+/g, "").trim();
     }
@@ -135,7 +151,7 @@
       synth.speak(utter);
     }
 
-    // Speech recognition
+    // Listen
     function startListening() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-US";
@@ -199,3 +215,4 @@
   </script>
 </body>
 </html>
+
