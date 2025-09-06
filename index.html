@@ -1,32 +1,118 @@
-const GROQ_API_KEY = "TU_API_KEY_AQUI"; // 🔑 pega aquí tu API Key
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bot Maestro</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .bubble {
+      max-width: 70%;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      color: #fff;
+    }
+    .user {
+      align-self: flex-end;
+      background: #4CAF50;
+    }
+    .bot {
+      align-self: flex-start;
+      background: #2196F3;
+    }
+    #controls {
+      display: flex;
+      padding: 10px;
+      background: #fff;
+    }
+    #textInput {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      margin-left: 5px;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background: #2196F3;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat"></div>
+  <div id="controls">
+    <input type="text" id="textInput" placeholder="Escribe un mensaje...">
+    <button onclick="sendMessage()">Enviar</button>
+    <button onclick="startListening()">🎤</button>
+  </div>
 
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const userText = data.text;
+  <script>
+    const WORKER_URL = "https://TU-WORKER.cloudflare.workers.dev"; // ⚡ pon aquí la URL de tu Worker
 
-    const response = UrlFetchApp.fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "post",
-      headers: {
-        "Authorization": "Bearer " + GROQ_API_KEY,
-        "Content-Type": "application/json",
-      },
-      payload: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages: [{ role: "user", content: userText }],
-      }),
-    });
+    const chat = document.getElementById("chat");
+    const textInput = document.getElementById("textInput");
+    const synth = window.speechSynthesis;
 
-    const result = JSON.parse(response.getContentText());
-    const reply = result.choices[0].message.content;
+    function addMessage(text, sender) {
+      const div = document.createElement("div");
+      div.className = `bubble ${sender}`;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
-    return ContentService.createTextOutput(
-      JSON.stringify({ reply })
-    ).setMimeType(ContentService.MimeType.JSON);
+    async function sendMessage() {
+      const text = textInput.value;
+      if (!text) return;
+      addMessage(text, "user");
+      textInput.value = "";
 
-  } catch (err) {
-    return ContentService.createTextOutput(
-      JSON.stringify({ reply: "❌ Error en Apps Script" })
-    ).setMimeType(ContentService.MimeType.JSON);
-  }
-}
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json();
+      const reply = data.reply || "❌ Error en la respuesta";
+      addMessage(reply, "bot");
+      speak(reply);
+    }
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = text.match(/[a-zA-Z]/) ? "en-US" : "es-ES";
+      synth.speak(utterance);
+    }
+
+    function startListening() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "es-ES";
+      recognition.start();
+      recognition.onresult = (e) => {
+        textInput.value = e.results[0][0].transcript;
+        sendMessage();
+      };
+    }
+  </script>
+</body>
+</html>
