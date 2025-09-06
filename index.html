@@ -152,7 +152,7 @@
     // ✅ Mensaje inicial
     window.onload = () => {
       loadVoices();
-      const welcome = "📚 Bienvenido a St. Mary's College. Por favor selecciona la lección con la que deseas trabajar (ejemplo: Lesson 1).";
+      const welcome = "Bienvenido a St. Mary's College. Por favor selecciona la lección con la que deseas trabajar (ejemplo: Lesson 1).";
       addMessage(welcome, "bot");
       speak(welcome, "es");
     };
@@ -263,9 +263,26 @@
     }
 
     function speak(text, lang) {
-      const cleanText = text
-        .replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "")   // quita símbolos fonéticos
-        .replace(/[\u{1F300}-\u{1FAFF}]/gu, ""); // quita emojis
+      // Sustituciones fonéticas para que SpeechSynthesis lea mejor
+      const phoneticFixes = {
+        "College": "Collej",
+        "college": "collej",
+        "St. Mary’s": "Saint Mary’s",
+        "St.": "Saint",
+        "Mr.": "Mister"
+      };
+
+      let cleanText = text;
+      for (const [wrong, fixed] of Object.entries(phoneticFixes)) {
+        cleanText = cleanText.replace(new RegExp(wrong, "g"), fixed);
+      }
+
+      // Eliminar emojis y símbolos
+      cleanText = cleanText
+        .replace(/[\/\[\]\{\}\(\)\|ˈˌː]/g, "")
+        .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
+        .replace(/[\u{2600}-\u{27BF}]/g, "")
+        .replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, "");
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = lang === "en" ? "en-US" : "es-ES";
