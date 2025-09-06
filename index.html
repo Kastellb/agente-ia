@@ -1,216 +1,32 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>St. Mary's College - Bot Maestro</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0d47a1; /* azul de fondo */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
+const GROQ_API_KEY = "TU_API_KEY_AQUI"; // 🔑 pega aquí tu API Key
 
-    .chat-container {
-      width: 420px;
-      max-width: 95%;
-      background: #f1f1f1;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      height: 550px;
-      box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
-    }
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const userText = data.text;
 
-    .chat-box {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      font-size: 14px;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .message {
-      margin: 6px 0;
-      padding: 10px 14px;
-      border-radius: 10px;
-      max-width: 75%;
-      word-wrap: break-word;
-    }
-
-    .user {
-      background: #c8e6c9;
-      align-self: flex-end;
-    }
-
-    .bot {
-      background: #e0e0e0;
-      align-self: flex-start;
-    }
-
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 10px;
-      background: #f9f9f9;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 5px;
-    }
-
-    input {
-      flex: 1;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .send-btn { background: #2ecc71; }       /* verde */
-    .talk-btn { background: #1976d2; }       /* azul */
-    .stop-btn { background: #e74c3c; }       /* rojo */
-    .lang-btn { background: #f39c12; }       /* naranja */
-    .send-btn:hover { background: #27ae60; }
-    .talk-btn:hover { background: #1565c0; }
-    .stop-btn:hover { background: #c0392b; }
-    .lang-btn:hover { background: #d35400; }
-
-    .voice-select {
-      margin-top: 5px;
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-  </style>
-</head>
-<body>
-  <div class="chat-container">
-    <div id="chat-box" class="chat-box"></div>
-
-    <div class="controls">
-      <div class="input-row">
-        <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
-        <button class="send-btn" id="send-btn">Enviar</button>
-      </div>
-      <div class="input-row">
-        <button class="talk-btn" id="voice-btn">Hablar 🎤</button>
-        <button class="stop-btn" id="stop-btn">Detener ⏹️</button>
-        <button class="lang-btn" id="lang-btn">Cambiar idioma 🌍</button>
-      </div>
-      <select id="voice-select" class="voice-select"></select>
-    </div>
-  </div>
-
-  <script>
-    const chatBox = document.getElementById("chat-box");
-    const input = document.getElementById("user-input");
-    const sendBtn = document.getElementById("send-btn");
-    const voiceBtn = document.getElementById("voice-btn");
-    const stopBtn = document.getElementById("stop-btn");
-    const langBtn = document.getElementById("lang-btn");
-    const voiceSelect = document.getElementById("voice-select");
-
-    let recognition;
-    let currentLang = "es-ES"; // español por defecto
-
-    // Mostrar mensajes en pantalla
-    function addMessage(text, sender) {
-      const msg = document.createElement("div");
-      msg.className = "message " + sender;
-      msg.textContent = text;
-      chatBox.appendChild(msg);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // Enviar mensaje
-    sendBtn.addEventListener("click", () => {
-      const text = input.value.trim();
-      if (!text) return;
-      addMessage(text, "user");
-      input.value = "";
-      sendToBot(text);
+    const response = UrlFetchApp.fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "post",
+      headers: {
+        "Authorization": "Bearer " + GROQ_API_KEY,
+        "Content-Type": "application/json",
+      },
+      payload: JSON.stringify({
+        model: "llama3-8b-8192",
+        messages: [{ role: "user", content: userText }],
+      }),
     });
 
-    // Comunicación con Worker
-    async function sendToBot(text) {
-      addMessage("⏳ typing...", "bot");
-      try {
-        const res = await fetch("https://TU-WORKER-URL.workers.dev", { // 👈 cambia esto por tu URL real
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text })
-        });
+    const result = JSON.parse(response.getContentText());
+    const reply = result.choices[0].message.content;
 
-        const data = await res.json();
-        document.querySelector(".bot:last-child").textContent = data.reply;
-        speak(data.reply);
+    return ContentService.createTextOutput(
+      JSON.stringify({ reply })
+    ).setMimeType(ContentService.MimeType.JSON);
 
-      } catch (err) {
-        document.querySelector(".bot:last-child").textContent =
-          "⚠️ Error de conexión.";
-      }
-    }
-
-    // Text to Speech (TTS)
-    function speak(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      const voices = speechSynthesis.getVoices();
-      utterance.voice = voices[voiceSelect.value] || voices[0];
-      speechSynthesis.speak(utterance);
-    }
-
-    // Cargar voces disponibles
-    function loadVoices() {
-      const voices = speechSynthesis.getVoices();
-      voiceSelect.innerHTML = voices.map((v, i) =>
-        `<option value="${i}">${v.name} (${v.lang})</option>`
-      ).join("");
-    }
-    speechSynthesis.onvoiceschanged = loadVoices;
-
-    // Reconocimiento de voz (STT)
-    voiceBtn.addEventListener("click", () => {
-      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = currentLang;
-      recognition.start();
-
-      recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript;
-        addMessage(text, "user");
-        sendToBot(text);
-      };
-    });
-
-    // Detener reconocimiento
-    stopBtn.addEventListener("click", () => {
-      if (recognition) recognition.stop();
-    });
-
-    // Cambiar idioma
-    langBtn.addEventListener("click", () => {
-      currentLang = currentLang === "es-ES" ? "en-US" : "es-ES";
-      addMessage(`🌍 Language changed to: ${currentLang}`, "bot");
-    });
-
-    // Saludo inicial
-    window.onload = () => {
-      addMessage("👋 Welcome to St. Mary's College! Which lesson do you want to enter?", "bot");
-    };
-  </script>
-</body>
-</html>
+  } catch (err) {
+    return ContentService.createTextOutput(
+      JSON.stringify({ reply: "❌ Error en Apps Script" })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
