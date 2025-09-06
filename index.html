@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bot Maestro – English Instructor</title>
+  <title>St. Mary’s College – English Instructor (v1.0)</title>
   <style>
     body { font-family: Arial, sans-serif; background: #1e3c72; margin:0; display:flex; flex-direction:column; height:100vh; }
     header { text-align:center; color:white; padding:10px; font-size:18px; background:#0d2b57; }
@@ -25,7 +25,7 @@
   </style>
 </head>
 <body>
-  <header>🤖 Bot Maestro – English Instructor</header>
+  <header>🎓 St. Mary’s College – English Instructor (v1.0)</header>
   <div id="chat"></div>
   <div id="controls">
     <input type="text" id="textInput" placeholder="Type your message...">
@@ -41,21 +41,37 @@
     const synth = window.speechSynthesis;
     let currentLesson = null;
 
-    // Map words → numbers
+    // Diccionario con variantes de números (incluso errores comunes de pronunciación)
     const numberWords = {
-      one:1, two:2, three:3, four:4, five:5,
-      six:6, seven:7, eight:8, nine:9, ten:10,
-      eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15,
-      sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20
+      one:1, won:1,
+      two:2, to:2, too:2,
+      three:3, tree:3,
+      four:4, for:4, fore:4,
+      five:5,
+      six:6, sex:6,
+      seven:7,
+      eight:8, ate:8,
+      nine:9,
+      ten:10,
+      eleven:11,
+      twelve:12,
+      thirteen:13,
+      fourteen:14,
+      fifteen:15,
+      sixteen:16,
+      seventeen:17,
+      eighteen:18,
+      nineteen:19,
+      twenty:20
     };
 
-    // 🎓 Welcome
+    // 🎓 Mensaje de bienvenida
     window.onload = () => {
       addMessage("👋 Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review (e.g., 'Lesson 1' or 'Lesson one').", "bot");
       speak("Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review, for example Lesson 1 or Lesson one.", "en-US");
     };
 
-    // Add message
+    // Añadir mensaje al chat
     function addMessage(text, sender) {
       const div = document.createElement("div");
       div.className = `bubble ${sender}`;
@@ -64,21 +80,21 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // 🚀 Main handler
+    // 🚀 Procesar mensajes
     async function sendMessage(text) {
       if (!text) return;
       addMessage(text, "user");
       textInput.value = "";
 
-      // ✅ Detect if lesson requested (number or word)
-      let lessonMatch = text.match(/lesson\s*(\d+|[a-z]+)/i);
+      // ✅ Detectar lección (solo si lleva la palabra "lesson")
+      let lessonMatch = text.match(/lesson\s+(\d+|[a-z]+)/i);
       if (lessonMatch) {
-        let lessonNumber = lessonMatch[1];
+        let lessonNumber = lessonMatch[1].toLowerCase();
 
-        if (isNaN(lessonNumber)) {
-          lessonNumber = numberWords[lessonNumber.toLowerCase()] || null;
-        } else {
+        if (!isNaN(lessonNumber)) {
           lessonNumber = parseInt(lessonNumber);
+        } else {
+          lessonNumber = numberWords[lessonNumber] || null;
         }
 
         if (lessonNumber) {
@@ -96,14 +112,14 @@
         }
       }
 
-      // ✅ Lesson areas
+      // ✅ Pedir áreas de la lección
       if (currentLesson && /(vocabulary|grammar|exercises|pronunciation)/i.test(text)) {
         const area = text.toLowerCase();
         await loadLesson(currentLesson, area);
         return;
       }
 
-      // ✅ Related questions only
+      // ✅ Preguntas relacionadas
       if (currentLesson) {
         const related = /(vocabulary|grammar|exercise|pronunciation|rule|example|sentence)/i;
         if (related.test(text)) {
@@ -115,12 +131,12 @@
         return;
       }
 
-      // If no lesson chosen
+      // ✅ Si no se eligió lección
       addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
       speak("Please choose a lesson first, for example Lesson 1.", "en-US");
     }
 
-    // Ask Groq
+    // 🚀 Llamada a Groq (solo si es relacionado)
     async function askGroq(text) {
       try {
         const res = await fetch(WORKER_URL, {
@@ -138,12 +154,12 @@
       }
     }
 
-    // Clean Groq
+    // Limpiar respuestas Groq
     function cleanResponse(text) {
       return text.replace(/[\u{1F600}-\u{1F6FF}]/gu, "").replace(/\*+/g, "").trim();
     }
 
-    // Speak
+    // Hablar
     function speak(text, lang) {
       synth.cancel();
       const utter = new SpeechSynthesisUtterance(text);
@@ -151,7 +167,7 @@
       synth.speak(utter);
     }
 
-    // Listen
+    // Escuchar voz
     function startListening() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-US";
@@ -163,7 +179,7 @@
       recognition.onerror = () => addMessage("⚠️ Speech not detected.", "bot");
     }
 
-    // Load lesson JSON
+    // Cargar lección desde JSON
     async function loadLesson(lessonNumber, area) {
       try {
         const res = await fetch(`/lessons/lesson${lessonNumber}.json`);
@@ -188,7 +204,7 @@
       }
     }
 
-    // Evaluate previous lesson
+    // Evaluar lección previa
     async function evaluateLesson(prevLesson) {
       if (prevLesson <= 0) {
         addMessage("This is the first lesson, no previous evaluation required.", "bot");
@@ -208,11 +224,10 @@
       }
     }
 
-    // Buttons
+    // Botones
     document.getElementById("sendBtn").onclick = () => sendMessage(textInput.value);
     document.getElementById("talkBtn").onclick = () => startListening();
     document.getElementById("stopBtn").onclick = () => synth.cancel();
   </script>
 </body>
 </html>
-
