@@ -1,70 +1,45 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>St. Mary's College</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #1e40af;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100vh;
-    }
+    body { font-family: Arial, sans-serif; background: #1e40af; margin: 0;
+      display: flex; flex-direction: column; align-items: center; height: 100vh;}
     h2 { color: white; margin: 15px 0 5px; }
-    #voiceSelect {
-      width: 95%; max-width: 600px; padding: 10px;
-      border-radius: 8px; border: none; font-size: 14px;
-      margin-bottom: 10px; background: #2563eb; color: white;
-    }
-    #chat {
-      width: 95%; max-width: 600px; height: 60vh;
-      border-radius: 12px; background: #f9fafb;
-      overflow-y: auto; padding: 12px; margin-bottom: 10px;
-      display: flex; flex-direction: column;
-      box-shadow: 0px 4px 10px rgba(0,0,0,0.25);
-    }
+    #voiceSelect { width: 95%; max-width: 600px; padding: 10px; border-radius: 8px;
+      border: none; font-size: 14px; margin-bottom: 10px; background: #2563eb; color: white;}
+    #chat { width: 95%; max-width: 600px; height: 60vh; border-radius: 12px;
+      background: #f9fafb; overflow-y: auto; padding: 12px; margin-bottom: 10px;
+      display: flex; flex-direction: column; box-shadow: 0px 4px 10px rgba(0,0,0,0.25);}
     .msg-container { display: flex; margin: 8px 0; }
-    .msg {
-      padding: 10px 14px; border-radius: 20px;
-      max-width: 70%; word-wrap: break-word;
-      box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
-    }
+    .msg { padding: 10px 14px; border-radius: 20px; max-width: 70%;
+      word-wrap: break-word; box-shadow: 0px 2px 6px rgba(0,0,0,0.2);}
     .user-container { justify-content: flex-end; }
     .bot-container { justify-content: flex-start; }
     .user { background: #1e40af; color: white; }
     .bot { background: #ffffff; color: black; }
-    #controls {
-      width: 95%; max-width: 600px; display: flex;
-      gap: 10px; justify-content: center;
-      margin-top: 5px; margin-bottom: 10px;
-    }
-    button {
-      padding: 10px 15px; border: none; border-radius: 8px;
-      cursor: pointer; font-size: 14px; flex: 1; min-width: 90px;
-    }
-    #micBtn { background: #2563eb; color: white; }
-    #stopBtn { background: #d9534f; color: white; }
-    #sendBtn { background: #22c55e; color: white; }
-    #inputBox {
-      width: 95%; max-width: 600px; padding: 10px;
-      border-radius: 8px; border: none; font-size: 14px;
-      margin-bottom: 8px;
-    }
+    #controls { width: 95%; max-width: 600px; display: flex; gap: 10px;
+      justify-content: center; margin-top: 5px; margin-bottom: 10px;}
+    button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer;
+      font-size: 14px; flex: 1; min-width: 90px;}
+    #micBtn { background: #2563eb; color: white;}
+    #stopBtn { background: #d9534f; color: white;}
+    #sendBtn { background: #22c55e; color: white;}
+    #inputBox { width: 95%; max-width: 600px; padding: 10px; border-radius: 8px;
+      border: none; font-size: 14px; margin-bottom: 8px;}
   </style>
 </head>
 <body>
   <h2>St. Mary's College</h2>
   <select id="voiceSelect"></select>
   <div id="chat"></div>
-  <input id="inputBox" type="text" placeholder="Escribe tu mensaje..." />
+  <input id="inputBox" type="text" placeholder="Write your message..." />
   <div id="controls">
-    <button id="sendBtn">Enviar</button>
-    <button id="micBtn">🎤 Hablar</button>
-    <button id="stopBtn">⏹️ Detener</button>
+    <button id="sendBtn">Send</button>
+    <button id="micBtn">🎤 Speak</button>
+    <button id="stopBtn">⏹️ Stop</button>
   </div>
 
   <script>
@@ -76,38 +51,39 @@
     const voiceSelect = document.getElementById("voiceSelect");
 
     let selectedVoice = null;
-    let currentLang = "es";
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = "es-ES";
-    recognition.interimResults = false;
-
-    // ✅ Saludo inicial
+    // ✅ Initial greeting
     window.onload = () => {
       loadVoices();
-      const welcome = "📚 Bienvenido. ¿Deseas continuar la conversación en inglés o en español?";
+      const welcome = "📚 Welcome to St. Mary's College. Please select the lesson (for example: Lesson 1).";
       addMessage(welcome, "bot");
-      speak(welcome, "es");
+      speak(welcome);
     };
 
-    // Cargar voces
+    // 🎤 Speech recognition (English only)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+
+    // 🔊 Load voices
     function loadVoices() {
       const voices = speechSynthesis.getVoices();
       voiceSelect.innerHTML = "";
-      voices.forEach((voice, i) => {
+      const englishVoices = voices.filter(v => v.lang.startsWith("en"));
+      englishVoices.forEach((voice, i) => {
         const option = document.createElement("option");
         option.value = i;
         option.textContent = `${voice.name} (${voice.lang})`;
         voiceSelect.appendChild(option);
       });
-      if (voices.length > 0) selectedVoice = voices[0];
+      if (englishVoices.length > 0) selectedVoice = englishVoices[0];
     }
     speechSynthesis.onvoiceschanged = loadVoices;
 
     voiceSelect.onchange = () => {
-      const voices = speechSynthesis.getVoices();
-      selectedVoice = voices[voiceSelect.value];
+      const englishVoices = speechSynthesis.getVoices().filter(v => v.lang.startsWith("en"));
+      selectedVoice = englishVoices[voiceSelect.value];
     };
 
     micBtn.onclick = () => recognition.start();
@@ -116,7 +92,6 @@
     recognition.onresult = (event) => {
       const userText = event.results[0][0].transcript;
       addMessage(userText, "user");
-      detectLanguage(userText);
       sendToBot(userText);
     };
 
@@ -124,27 +99,10 @@
       const userText = inputBox.value.trim();
       if (userText) {
         addMessage(userText, "user");
-        detectLanguage(userText);
         sendToBot(userText);
         inputBox.value = "";
       }
     };
-
-    function detectLanguage(text) {
-      if (text.toLowerCase().includes("inglés") || text.toLowerCase().includes("english")) {
-        currentLang = "en";
-        recognition.lang = "en-US";
-        const msg = "Perfect! From now on, I will continue in English.";
-        addMessage(msg, "bot");
-        speak(msg, "en");
-      } else if (text.toLowerCase().includes("español") || text.toLowerCase().includes("spanish")) {
-        currentLang = "es";
-        recognition.lang = "es-ES";
-        const msg = "Perfecto. Continuaremos en español.";
-        addMessage(msg, "bot");
-        speak(msg, "es");
-      }
-    }
 
     function addMessage(text, sender) {
       const container = document.createElement("div");
@@ -157,29 +115,36 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    // ⚡ Worker URL
     const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev";
 
     async function sendToBot(userText) {
       try {
         const response = await fetch(WORKER_URL, {
           method: "POST",
-          body: JSON.stringify({ text: userText, lang: currentLang }),
+          body: JSON.stringify({ text: userText, lang: "en" }),
           headers: { "Content-Type": "application/json" },
         });
         const data = await response.json();
-        const botText = data.reply || "⚠️ El bot no respondió.";
+        const botText = data.reply || "⚠️ The bot did not respond.";
         addMessage(botText, "bot");
-        speak(botText, currentLang);
+        speak(botText);
       } catch (err) {
         console.error(err);
-        addMessage("❌ Error de conexión con el bot.", "bot");
+        addMessage("❌ Connection error with the bot.", "bot");
       }
     }
 
-    function speak(text, lang) {
+    // 🔊 Speak function (always English)
+    function speak(text) {
       if (!text) return;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang === "en" ? "en-US" : "es-ES";
+      const fixes = { "College": "Collej", "St.": "Saint", "Mr.": "Mister" };
+      let cleanText = text;
+      for (const [wrong, fixed] of Object.entries(fixes)) {
+        cleanText = cleanText.replace(new RegExp(wrong, "g"), fixed);
+      }
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = "en-US";
       if (selectedVoice) utterance.voice = selectedVoice;
       speechSynthesis.speak(utterance);
     }
