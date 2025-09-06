@@ -1,110 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>St. Mary’s College – English Instructor (v1.5)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎓 St. Mary’s College – English Instructor (v1.6)</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #1e3c72; margin:0; display:flex; flex-direction:column; height:100vh; }
-    header { text-align:center; color:white; padding:10px; font-size:18px; background:#0d2b57; }
-    #chat { flex:1; background:#f9f9f9; padding:10px; overflow-y:auto; display:flex; flex-direction:column; }
-    .bubble { padding:10px; margin:5px; border-radius:10px; max-width:75%; line-height:1.4; }
-    .user { background:#4CAF50; color:#fff; align-self:flex-end; }
-    .bot { background:#2196F3; color:#fff; align-self:flex-start; white-space:pre-line; }
-    #controls { display:flex; background:#fff; padding:10px; }
-    #textInput { flex:1; padding:10px; border:1px solid #ccc; border-radius:5px; }
-    button { margin-left:5px; padding:10px; border:none; border-radius:5px; cursor:pointer; }
-    #sendBtn { background:#4CAF50; color:white; }
-    #talkBtn { background:#2196F3; color:white; }
-    #stopBtn { background:#f44336; color:white; }
+    body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 0; }
+    header { background: #003366; color: #fff; text-align: center; padding: 10px; font-size: 18px; }
+    #chat { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+    .msg { margin: 8px 0; padding: 10px; border-radius: 8px; max-width: 75%; }
+    .bot { background: #0099ff; color: white; align-self: flex-start; }
+    .user { background: #00cc66; color: white; align-self: flex-end; margin-left: auto; }
+    #input-area { display: flex; justify-content: center; margin-top: 10px; }
+    #textInput { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+    button { margin-left: 5px; padding: 10px; border: none; border-radius: 6px; cursor: pointer; }
+    .send { background: #00cc66; color: white; }
+    .speak { background: #0099ff; color: white; }
+    .stop { background: #ff3333; color: white; }
   </style>
 </head>
 <body>
-  <header>🎓 St. Mary’s College – English Instructor (v1.5)</header>
+  <header>🎓 St. Mary’s College – English Instructor (v1.6)</header>
   <div id="chat"></div>
-  <div id="controls">
-    <input type="text" id="textInput" placeholder="Type your answer here...">
-    <button id="sendBtn">Send</button>
-    <button id="talkBtn">Speak</button>
-    <button id="stopBtn">Stop</button>
+  <div id="input-area">
+    <input type="text" id="textInput" placeholder="Type or speak your message..." />
+    <button class="send" onclick="sendMessage()">Send</button>
+    <button class="speak" onclick="startListening()">🎤 Speak</button>
+    <button class="stop" onclick="stopListening()">⏹ Stop</button>
   </div>
 
   <script>
-    const BASE_URL = "https://www.leccion.datafast.pw/lessons"; 
     const chat = document.getElementById("chat");
-    const textInput = document.getElementById("textInput");
-    const synth = window.speechSynthesis;
+    const input = document.getElementById("textInput");
     let currentLesson = null;
-    let lessonData = null;
-
-    // 🎓 Welcome
-    window.onload = () => {
-      addMessage("👋 Welcome to St. Mary’s College! Please tell me which lesson you want to review (e.g., 'Lesson 1' or 'Lesson one').", "bot");
-      speak("Welcome to St. Mary’s College! Please tell me which lesson you want to review, for example Lesson 1.", "en-US");
-    };
 
     function addMessage(text, sender) {
       const div = document.createElement("div");
-      div.className = `bubble ${sender}`;
-      div.textContent = text;
+      div.classList.add("msg", sender);
+      div.innerHTML = text;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    async function sendMessage(text) {
+    function speak(text, lang="en-US") {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      speechSynthesis.speak(utterance);
+    }
+
+    async function sendMessage(msg=null) {
+      let text = msg || input.value.trim();
       if (!text) return;
       addMessage(text, "user");
-      textInput.value = "";
+      input.value = "";
 
       let normalized = text.toLowerCase().trim();
 
-      // 🔹 Diccionario de números escritos en inglés
+      // Diccionario de números en inglés
       const numbers = {
         "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
         "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10
       };
 
-      // 🔹 Buscar "lesson" + número o palabra
+      // Detectar lección
       let lessonMatch = normalized.match(/lesson\s+(\d+|one|two|three|four|five|six|seven|eight|nine|ten)/i);
-
       if (lessonMatch) {
         let lessonKey = lessonMatch[1];
         if (isNaN(lessonKey)) {
-          currentLesson = numbers[lessonKey];  // palabra → número
+          currentLesson = numbers[lessonKey];
         } else {
-          currentLesson = parseInt(lessonKey); // número directo
+          currentLesson = parseInt(lessonKey);
         }
         await loadLesson(currentLesson);
         return;
       }
 
-      // Si ya hay lección cargada → responder como profesor
-      if (lessonData) {
+      // Si ya hay lección activa → modo profesor
+      if (currentLesson) {
         await teacherResponse(text);
-        return;
+      } else {
+        addMessage("Please choose a lesson first (e.g., 'Lesson 1').", "bot");
       }
-
-      addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
-      speak("Please choose a lesson first, for example Lesson 1.", "en-US");
     }
 
     async function loadLesson(num) {
-      const url = `${BASE_URL}/lesson${num}.json`;
       try {
-        const res = await fetch(url);
-        lessonData = await res.json();
+        const res = await fetch(`https://www.leccion.datafast.pw/lessons/lesson${num}.json`);
+        if (!res.ok) throw new Error("Lesson not found");
+        const lesson = await res.json();
 
-        addMessage(`📘 Welcome to Lesson ${num}: ${lessonData.title}`, "bot");
-        speak(`Welcome to Lesson ${num}: ${lessonData.title}`, "en-US");
-
-        addMessage(`📖 Theory:\n${lessonData.theory}`, "bot");
-        speak("Here is the main theory of this lesson.", "en-US");
-
-        addMessage(`🎯 Objectives:\n- ${lessonData.objectives.join("\n- ")}`, "bot");
-        addMessage(`📑 Topics:\n- ${lessonData.topics.join("\n- ")}`, "bot");
-
-        addMessage("Now you can ask me anything about this lesson. I will explain and help you reinforce the content.", "bot");
-        speak("Now you can ask me anything about this lesson. I will explain and help you reinforce the content.", "en-US");
+        let intro = `
+          📘 <b>Welcome to Lesson ${num}: ${lesson.title}</b><br><br>
+          📖 <b>Theory:</b> ${lesson.theory || "This lesson will guide you through the basics."}<br><br>
+          🎯 <b>Objectives:</b><br>- ${lesson.objectives.join("<br>- ")}<br><br>
+          📋 <b>Topics:</b><br>- ${lesson.topics.join("<br>- ")}<br><br>
+          When you are ready, type or say a question about this lesson and I will explain it to you.
+        `;
+        addMessage(intro, "bot");
+        speak(`Welcome to Lesson ${num}: ${lesson.title}. You can now ask me questions about this lesson.`, "en-US");
 
       } catch {
         addMessage("⚠️ Lesson not found or not uploaded yet.", "bot");
@@ -114,38 +107,64 @@
     async function teacherResponse(userText) {
       let answer = "";
 
-      if (/why/i.test(userText) && /greet/i.test(userText)) {
-        answer = "In English, greetings are polite ways to start communication. For example, 'Good morning' shows respect and sets a friendly tone.";
-      } else if (/informal/i.test(userText)) {
-        answer = "Informal greetings are used with friends or people you know well. Examples: 'Hi', 'Hello', 'What’s up?'.";
-      } else if (/formal/i.test(userText)) {
-        answer = "Formal greetings are used in professional or respectful contexts. Examples: 'Good morning', 'Good afternoon', 'Good evening'.";
+      // Si detecta fuera de tema
+      if (!/greet|hello|hi|formal|informal|introduc|name/i.test(userText)) {
+        answer = "⚠️ Let’s stay focused. Right now we are studying greetings and introductions.";
       } else {
-        answer = `This is related to the lesson: ${lessonData.title}. Let me explain: ${lessonData.theory}`;
+        // Usamos Groq vía proxy
+        try {
+          const response = await fetch("https://bot-maestro-proxy.kast-mercadeo.workers.dev/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: `You are an English teacher at St. Mary's College. 
+              The student asked: "${userText}". 
+              Please answer in English, explain clearly, give examples, 
+              and vary your explanation so it is not always identical. 
+              Stay strictly inside the lesson theme: Greetings and Introductions.`
+            })
+          });
+          const data = await response.json();
+          answer = data.reply;
+        } catch {
+          // Respuestas locales si falla Groq
+          const alternatives = [
+            "Formal greetings show respect, like 'Good morning'. Informal greetings are casual, like 'Hi'.",
+            "We use 'Good morning' in polite or professional contexts, while 'Hi' is for friends.",
+            "Both mean hello, but the tone and situation decide which one you should use."
+          ];
+          answer = alternatives[Math.floor(Math.random() * alternatives.length)];
+        }
       }
 
       addMessage(answer, "bot");
       speak(answer, "en-US");
     }
 
-    function speak(text, lang) {
-      synth.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = lang;
-      synth.speak(utter);
-    }
-
+    // 🎤 Speech recognition
+    let recognition;
     function startListening() {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("Your browser does not support speech recognition.");
+        return;
+      }
+      recognition = new webkitSpeechRecognition();
       recognition.lang = "en-US";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        sendMessage(transcript);
+      };
       recognition.start();
-      recognition.onresult = (e) => sendMessage(e.results[0][0].transcript);
-      recognition.onerror = () => addMessage("⚠️ Speech not detected.", "bot");
+    }
+    function stopListening() {
+      if (recognition) recognition.stop();
     }
 
-    document.getElementById("sendBtn").onclick = () => sendMessage(textInput.value);
-    document.getElementById("talkBtn").onclick = () => startListening();
-    document.getElementById("stopBtn").onclick = () => synth.cancel();
+    // Mensaje inicial
+    addMessage("👋 Welcome to St. Mary’s College! Please tell me which lesson you want to review (e.g., 'Lesson 1' or 'Lesson one').", "bot");
   </script>
 </body>
 </html>
