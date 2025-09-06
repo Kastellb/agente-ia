@@ -104,5 +104,115 @@
 
     <div class="controls">
       <div class="input-row">
-        <input type="text" id="user-inpu
+        <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
+        <button class="send-btn" id="send-btn">Enviar</button>
+      </div>
+      <div class="input-row">
+        <button class="talk-btn" id="voice-btn">Hablar 🎤</button>
+        <button class="stop-btn" id="stop-btn">Detener ⏹️</button>
+        <button class="lang-btn" id="lang-btn">Cambiar idioma 🌍</button>
+      </div>
+      <select id="voice-select" class="voice-select"></select>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const input = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+    const voiceBtn = document.getElementById("voice-btn");
+    const stopBtn = document.getElementById("stop-btn");
+    const langBtn = document.getElementById("lang-btn");
+    const voiceSelect = document.getElementById("voice-select");
+
+    let recognition;
+    let currentLang = "es-ES"; // español por defecto
+
+    // Mostrar mensajes en pantalla
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.className = "message " + sender;
+      msg.textContent = text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Enviar mensaje
+    sendBtn.addEventListener("click", () => {
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, "user");
+      input.value = "";
+      sendToBot(text);
+    });
+
+    // Comunicación con Worker
+    async function sendToBot(text) {
+      addMessage("⏳ escribiendo...", "bot");
+      try {
+        const res = await fetch("https://tu-worker.cloudflare.workers.dev", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+
+        const data = await res.json();
+        document.querySelector(".bot:last-child").textContent = data.reply;
+        speak(data.reply);
+
+      } catch (err) {
+        document.querySelector(".bot:last-child").textContent =
+          "⚠️ Error de conexión.";
+      }
+    }
+
+    // Text to Speech (TTS)
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voices = speechSynthesis.getVoices();
+      utterance.voice = voices[voiceSelect.value] || voices[0];
+      speechSynthesis.speak(utterance);
+    }
+
+    // Cargar voces disponibles
+    function loadVoices() {
+      const voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = voices.map((v, i) =>
+        `<option value="${i}">${v.name} (${v.lang})</option>`
+      ).join("");
+    }
+    speechSynthesis.onvoiceschanged = loadVoices;
+
+    // Reconocimiento de voz (STT)
+    voiceBtn.addEventListener("click", () => {
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = currentLang;
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        addMessage(text, "user");
+        sendToBot(text);
+      };
+    });
+
+    // Detener reconocimiento
+    stopBtn.addEventListener("click", () => {
+      if (recognition) recognition.stop();
+    });
+
+    // Cambiar idioma
+    langBtn.addEventListener("click", () => {
+      currentLang = currentLang === "es-ES" ? "en-US" : "es-ES";
+      addMessage(`🌍 Language changed to: ${currentLang}`, "bot");
+    });
+
+    // Saludo inicial
+    window.onload = () => {
+      addMessage("👋 Bienvenido. ¿Deseas continuar la conversación en inglés o en español?", "bot");
+    };
+  </script>
+</body>
+</html>
+
 
