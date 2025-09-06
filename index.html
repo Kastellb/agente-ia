@@ -55,7 +55,7 @@
     // ✅ Initial greeting
     window.onload = () => {
       loadVoices();
-      const welcome = "📚 Welcome to St. Mary's College. Please select the lesson (for example: Lesson 1).";
+      const welcome = "Welcome to St. Mary's College. Please select the lesson you want to practice (for example: Lesson 1).";
       addMessage(welcome, "bot");
       speak(welcome);
     };
@@ -66,7 +66,7 @@
     recognition.lang = "en-US";
     recognition.interimResults = false;
 
-    // 🔊 Load voices
+    // 🔊 Load voices (only English)
     function loadVoices() {
       const voices = speechSynthesis.getVoices();
       voiceSelect.innerHTML = "";
@@ -135,14 +135,23 @@
       }
     }
 
-    // 🔊 Speak function (always English)
+    // 🔊 Speak (English only, emoji + fix rules)
     function speak(text) {
       if (!text) return;
+
+      // Phonetic fixes
       const fixes = { "College": "Collej", "St.": "Saint", "Mr.": "Mister" };
       let cleanText = text;
       for (const [wrong, fixed] of Object.entries(fixes)) {
         cleanText = cleanText.replace(new RegExp(wrong, "g"), fixed);
       }
+
+      // Remove emojis and symbols
+      cleanText = cleanText
+        .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
+        .replace(/[\u{2600}-\u{27BF}]/g, "")
+        .replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, "");
+
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = "en-US";
       if (selectedVoice) utterance.voice = selectedVoice;
@@ -151,3 +160,4 @@
   </script>
 </body>
 </html>
+
