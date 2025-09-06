@@ -35,19 +35,19 @@
   </div>
 
   <script>
-    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; 
+    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
     const chat = document.getElementById("chat");
     const textInput = document.getElementById("textInput");
     const synth = window.speechSynthesis;
     let currentLesson = null;
 
-    // 🎓 Welcome message
+    // 🎓 Welcome
     window.onload = () => {
       addMessage("👋 Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review (e.g., 'Lesson 1').", "bot");
       speak("Welcome to St. Mary’s College! I am your English instructor. Please tell me which lesson you want to review, for example Lesson 1.", "en-US");
     };
 
-    // ✅ Add message to chat
+    // Add message to chat
     function addMessage(text, sender) {
       const div = document.createElement("div");
       div.className = `bubble ${sender}`;
@@ -56,13 +56,13 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // ✅ Main message handler
+    // 🚀 Main message handler
     async function sendMessage(text) {
       if (!text) return;
       addMessage(text, "user");
       textInput.value = "";
 
-      // Lesson detection
+      // ✅ If asking for a lesson
       if (/lesson\s*\d+/i.test(text)) {
         const lessonNumber = parseInt(text.match(/\d+/)[0]);
         currentLesson = lessonNumber;
@@ -78,54 +78,56 @@
         return;
       }
 
-      // Lesson areas
+      // ✅ If asking for lesson areas
       if (currentLesson && /(vocabulary|grammar|exercises|pronunciation)/i.test(text)) {
         const area = text.toLowerCase();
         await loadLesson(currentLesson, area);
         return;
       }
 
-      // Free questions: only if related
+      // ✅ If already in a lesson
       if (currentLesson) {
         const related = /(vocabulary|grammar|exercise|pronunciation|rule|example|sentence)/i;
         if (related.test(text)) {
-          // Related → Groq explanation
-          try {
-            const res = await fetch(WORKER_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text })
-            });
-            const data = await res.json();
-            let reply = data.reply || "❌ No response.";
-            reply = cleanResponse(reply);
-            addMessage(reply, "bot");
-            speak(reply, "en-US");
-          } catch {
-            addMessage("⚠️ Connection error.", "bot");
-          }
+          // Related → allow Groq explanation
+          await askGroq(text);
         } else {
-          // Not related → block politely
+          // Not related → polite block
           addMessage(`🙏 Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Vocabulary, Grammar, Exercises, or Pronunciation.`, "bot");
           speak(`Sorry, we are only focusing on Lesson ${currentLesson}. Please ask about Vocabulary, Grammar, Exercises, or Pronunciation.`, "en-US");
         }
         return;
       }
 
-      // If no lesson yet
+      // ✅ If no lesson chosen
       addMessage("Please choose a lesson first (e.g., Lesson 1).", "bot");
       speak("Please choose a lesson first, for example Lesson 1.", "en-US");
     }
 
-    // ✅ Clean Groq responses (remove emojis, symbols)
-    function cleanResponse(text) {
-      return text
-        .replace(/[\u{1F600}-\u{1F6FF}]/gu, "")  // emojis
-        .replace(/\*+/g, "")                     // asterisks
-        .trim();
+    // Ask Groq (only for lesson-related questions)
+    async function askGroq(text) {
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+        const data = await res.json();
+        let reply = data.reply || "❌ No response.";
+        reply = cleanResponse(reply);
+        addMessage(reply, "bot");
+        speak(reply, "en-US");
+      } catch {
+        addMessage("⚠️ Connection error.", "bot");
+      }
     }
 
-    // ✅ Speak function
+    // Clean Groq responses
+    function cleanResponse(text) {
+      return text.replace(/[\u{1F600}-\u{1F6FF}]/gu, "").replace(/\*+/g, "").trim();
+    }
+
+    // Speak
     function speak(text, lang) {
       synth.cancel();
       const utter = new SpeechSynthesisUtterance(text);
@@ -133,7 +135,7 @@
       synth.speak(utter);
     }
 
-    // ✅ Speech recognition
+    // Speech recognition
     function startListening() {
       const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-US";
@@ -145,7 +147,7 @@
       recognition.onerror = () => addMessage("⚠️ Speech not detected.", "bot");
     }
 
-    // ✅ Load lesson JSON by area
+    // Load lesson JSON
     async function loadLesson(lessonNumber, area) {
       try {
         const res = await fetch(`/lessons/lesson${lessonNumber}.json`);
@@ -159,9 +161,7 @@
           speak("Here is the grammar explanation.", "en-US");
         } else if (area.includes("exercises")) {
           addMessage("📝 Let's practice! Answer these exercises:", "bot");
-          lesson.areas.exercises.forEach(ex => {
-            addMessage(ex.q, "bot");
-          });
+          lesson.areas.exercises.forEach(ex => addMessage(ex.q, "bot"));
           speak("Let's practice some exercises.", "en-US");
         } else if (area.includes("pronunciation")) {
           addMessage(`🔊 Pronunciation tips:\n${lesson.areas.pronunciation}`, "bot");
@@ -172,7 +172,7 @@
       }
     }
 
-    // ✅ Evaluate previous lesson
+    // Evaluate previous lesson
     async function evaluateLesson(prevLesson) {
       if (prevLesson <= 0) {
         addMessage("This is the first lesson, no previous evaluation required.", "bot");
@@ -192,7 +192,7 @@
       }
     }
 
-    // ✅ Buttons
+    // Buttons
     document.getElementById("sendBtn").onclick = () => sendMessage(textInput.value);
     document.getElementById("talkBtn").onclick = () => startListening();
     document.getElementById("stopBtn").onclick = () => synth.cancel();
