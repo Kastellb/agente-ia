@@ -29,7 +29,8 @@
   </div>
 
   <script>
-    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; // tu Worker
+    // ⚡ URL de tu Worker REAL
+    const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
 
     const chat = document.getElementById("chat");
     const textInput = document.getElementById("textInput");
@@ -64,7 +65,7 @@
         const reply = data.reply || "❌ Error en la respuesta";
         addMessage(reply, "bot");
         speak(reply, reply.match(/[a-zA-Z]/) ? "en-US" : "es-ES");
-      } catch {
+      } catch (err) {
         addMessage("⚠️ Error de conexión con el servidor", "bot");
       }
     }
