@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>St. Mary’s College – English Leveling Bot (v2.0)</title>
+  <title>St. Mary’s College – English Leveling Bot (v2.1)</title>
   <style>
     :root{
       --bg:#f5f7fa; --ink:#0f172a; --bot:#0ea5e9; --user:#22c55e; --card:#ffffff; --muted:#64748b;
@@ -65,6 +65,11 @@
       .buttons{ display:flex; gap:10px; }
     }
 
+    /* Móvil: ocultar Stop del header */
+    @media (max-width: 719px){
+      #headerStopBtn{ display:none; }
+    }
+
     /* Overlay lecciones */
     #lessonsOverlay{ position:fixed; inset:0; background:var(--overlay); display:none; align-items:center; justify-content:center; z-index:50; }
     #lessonsCard{
@@ -90,7 +95,7 @@
 </head>
 <body>
   <header>
-    <div>St. Mary’s College – English Leveling Bot (v2.0)</div>
+    <div>St. Mary’s College – English Leveling Bot (v2.1)</div>
     <div class="right">
       <button class="btn btn-lessons" id="openLessonsBtn">📚 Lessons</button>
       <button class="btn btn-stop" id="headerStopBtn">⏹ Stop</button>
@@ -127,14 +132,19 @@
   </div>
 
   <script>
-    /* ================= EN-only guard ================= */
+    /* ================= EN-only guard (fuerte) ================= */
     const EN_ONLY = true;
-    const SPANISH_REGEX=/[áéíóúñü¿¡]|\b(el|la|los|las|de|del|al|y|o|pero|porque|con|sin|para|por|un|una|unos|unas|es|está|hola|gracias)\b/i;
-    function lessonHasSpanish(lesson){
-      const buf=[]; if(lesson.title) buf.push(lesson.title); if(lesson.theory) buf.push(lesson.theory);
-      (lesson.objectives||[]).forEach(x=>buf.push(x)); (lesson.topics||[]).forEach(x=>buf.push(x));
-      (lesson.content||[]).forEach(c=>{ if(c.question) buf.push(c.question); if(c.answer) buf.push(c.answer); });
-      return SPANISH_REGEX.test(buf.join(" "));
+    const SPANISH_RE = /[áéíóúñü¿¡]|(?:\b(?:el|la|los|las|de|del|al|y|o|pero|porque|con|sin|para|por|un|una|unos|unas|es|está|está|hola|gracias|buenos|buenas|tardes|noches|por favor|cómo|qué|dónde|cuándo|lección|leccion)\b)/i;
+    const SP_HINTS_RE = /\b(hola|buenos|buenas|noches|tardes|usted(?:es)?|gracias|por\s+favor|porque|cómo|qué|dónde|cuándo|lección|leccion)\b/i;
+    const SP_STOPWORDS = new Set(["de","la","que","el","en","y","a","los","del","se","las","por","un","para","con","no","una","su","al","lo","como","más","o","pero","sus","le","ya","o","este","sí","porque","esta","entre","cuando","muy","sin","sobre","también","me","hasta"]);
+
+    function looksSpanish(text){
+      const s = (text||"").toLowerCase();
+      if (SPANISH_RE.test(s) || SP_HINTS_RE.test(s)) return true;
+      const tokens = s.replace(/[^a-z\s]/g," ").split(/\s+/).filter(Boolean);
+      if (!tokens.length) return false;
+      let hits=0; for(const t of tokens){ if(SP_STOPWORDS.has(t)) hits++; }
+      return hits / tokens.length > 0.25;
     }
 
     /* ================= UI helpers ================= */
@@ -146,6 +156,13 @@
     const headerStopBtn=document.getElementById("headerStopBtn");
 
     function addMessage(html, role="bot"){
+      // Bloqueo preventivo si (por error) llega español en mensajes del bot
+      if(role==="bot"){
+        const plain = html.replace(/<[^>]*>/g," ");
+        if(looksSpanish(plain)){
+          html = "English-only mode is active. Content was blocked because it appears to be Spanish.";
+        }
+      }
       const el=document.createElement("div");
       el.className=`bubble ${role}`;
       el.innerHTML=html;
@@ -160,8 +177,33 @@
       chat.scrollTop=chat.scrollHeight;
     }
 
-    /* ================= Speech ================= */
-    function speak(text, lang="en-US"){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang=lang; speechSynthesis.speak(u);}catch{} }
+    /* ================= TTS limpio ================= */
+    function sanitizeForSpeech(text){
+      let t = String(text||"");
+      // quitar HTML
+      t = t.replace(/<[^>]*>/g,' ');
+      // quitar URLs
+      t = t.replace(/\bhttps?:\/\/\S+/gi,' ');
+      // quitar entidades html
+      t = t.replace(/&[a-z]+;/gi,' ');
+      // quitar emojis/símbolos (fallback + property escapes)
+      try{ t = t.replace(/\p{Extended_Pictographic}/gu,''); }catch{ t = t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,''); }
+      // quitar caracteres no alfanum/puntuación básica
+      try{ t = t.replace(/[^\p{L}\p{N}\.\,\:\;\?\!\s]/gu,' '); }catch{ t = t.replace(/[^A-Za-z0-9\.\,\:\;\?\!\s]/g,' '); }
+      // compactar espacios
+      t = t.replace(/\s{2,}/g,' ').trim();
+      return t;
+    }
+    function speakSafe(text, lang="en-US"){
+      try{
+        const plain = sanitizeForSpeech(text);
+        if(!plain) return;
+        if(looksSpanish(plain)) return; // nunca leer español
+        speechSynthesis.cancel();
+        const u=new SpeechSynthesisUtterance(plain);
+        u.lang=lang; speechSynthesis.speak(u);
+      }catch{}
+    }
 
     /* ================= Parse 'Lesson N' ================= */
     function wordsToNumber(phrase){
@@ -200,13 +242,15 @@
         availableLessons=list.map(n=>parseInt(n,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b); return availableLessons;
       }catch{ availableLessons=[]; return []; }
     }
-
     async function fetchLessonJSON(num){
       const url=`https://www.leccion.datafast.pw/lessons/lesson${num}.json`;
       const res=await fetch(url,{cache:"no-store"});
       if(!res.ok) return {ok:false, error:"not-found"};
       const data=await res.json();
-      if(EN_ONLY && lessonHasSpanish(data)) return {ok:false, error:"spanish"};
+      const buf=[]; if(data.title) buf.push(data.title); if(data.theory) buf.push(data.theory);
+      (data.objectives||[]).forEach(x=>buf.push(x)); (data.topics||[]).forEach(x=>buf.push(x));
+      (data.content||[]).forEach(c=>{ if(c.question) buf.push(c.question); if(c.answer) buf.push(c.answer); });
+      if(EN_ONLY && looksSpanish(buf.join(" "))) return {ok:false, error:"spanish"};
       return {ok:true, data};
     }
 
@@ -214,44 +258,33 @@
     const QUIZ_MIN=5, QUIZ_MAX=10, QUIZ_PASS=0.90;
     let quizActive=false, quizIndex=0, quizCorrect=0, quizQuestions=[];
     let sessionLocked=false;
-    let pendingLessonNum=null, pendingLessonData=null; // destino si pasa el quiz
+    let pendingLessonNum=null, pendingLessonData=null;
 
     function normalize(s){
       return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
     }
-    function splitVariants(ans){
-      // separa posibles variantes: "Hi / Hello", "X or Y"
-      return ans.split(/\/| or | \| /i).map(a=>normalize(a));
-    }
+    function splitVariants(ans){ return ans.split(/\/| or | \| /i).map(a=>normalize(a)); }
     function isAnswerCorrect(user, expected){
-      const U=normalize(user);
-      const variants=splitVariants(expected);
-      // aceptamos si el usuario contiene una variante completa o si todas las palabras clave (>=80%) aparecen
+      const U=normalize(user); const variants=splitVariants(expected);
       for(const v of variants){
         if(!v) continue;
         if(U.includes(v)) return true;
-        const vt=v.split(" ");
-        const uSet=new Set(U.split(" "));
+        const vt=v.split(" "); const uSet=new Set(U.split(" "));
         const hits=vt.filter(t=>uSet.has(t)).length;
         if(vt.length>=3 && hits/vt.length>=0.8) return true;
         if(vt.length<=2 && hits===vt.length) return true;
       }
       return false;
     }
-
     function askNextQuiz(){
       if(quizIndex>=quizQuestions.length){
-        const total=quizQuestions.length;
-        const score=Math.round((quizCorrect/total)*100);
+        const total=quizQuestions.length; const score=Math.round((quizCorrect/total)*100);
         const passed=score>=Math.ceil(QUIZ_PASS*100);
-        const report=`Quiz finished. Score: <b>${quizCorrect}/${total}</b> = <b>${score}%</b>.`;
-        addMessage(report,"bot");
+        addMessage(`Quiz finished. Score: <b>${quizCorrect}/${total}</b> = <b>${score}%</b>.`,"bot");
         if(passed){
           addMessage("✅ Passed. Access granted to the selected lesson. Opening now…","bot");
-          speak("You passed. Opening the lesson.","en-US");
-          // abrir lección pendiente
-          lessonData=pendingLessonData; currentLesson=pendingLessonNum;
-          localStorage.setItem("lastLesson", String(currentLesson));
+          speakSafe("You passed. Opening the lesson.","en-US");
+          lessonData=pendingLessonData; currentLesson=pendingLessonNum; localStorage.setItem("lastLesson", String(currentLesson));
           const intro=`
             <b>Welcome to Lesson ${currentLesson}: ${lessonData.title}</b><br><br>
             <b>Theory:</b> ${lessonData.theory || "This lesson will guide you through the basics."}<br><br>
@@ -263,22 +296,18 @@
           quizActive=false; quizQuestions=[]; quizIndex=0; quizCorrect=0;
         }else{
           addMessage("❌ You did not reach 90%. Please review the previous lesson carefully before advancing. Your session has ended. Thank you.","bot");
-          speak("You did not reach ninety percent. Please review the previous lesson. This session has ended.","en-US");
-          quizActive=false; sessionLocked=true;
-          input.disabled=true; sendBtn.disabled=true; speakBtn.disabled=true;
+          speakSafe("You did not reach ninety percent. Please review the previous lesson. This session has ended.","en-US");
+          quizActive=false; sessionLocked=true; input.disabled=true; sendBtn.disabled=true; speakBtn.disabled=true;
         }
         return;
       }
       const q=quizQuestions[quizIndex].q;
       addMessage(`(${quizIndex+1}/${quizQuestions.length}) <b>${q}</b>`,"bot");
-      speak(q,"en-US");
+      speakSafe(q,"en-US");
     }
-
     async function startQuizGate(targetNum, targetData){
       if(targetNum===1){
-        // Sin quiz para L1
-        lessonData=targetData; currentLesson=1;
-        localStorage.setItem("lastLesson","1");
+        lessonData=targetData; currentLesson=1; localStorage.setItem("lastLesson","1");
         const intro=`
           <b>Welcome to Lesson 1: ${lessonData.title}</b><br><br>
           <b>Theory:</b> ${lessonData.theory || "This lesson will guide you through the basics."}<br><br>
@@ -286,37 +315,29 @@
           <b>Topics:</b><br>- ${lessonData.topics.join("<br>- ")}<br><br>
           Ask me anything about this lesson and I will explain, correct, and reinforce.
         `;
-        addMessage(intro,"bot"); speak("Lesson one is open.","en-US"); return;
+        addMessage(intro,"bot"); speakSafe("Lesson one is open.","en-US"); return;
       }
-
-      // Inicio de quiz para L(N-1)
       const prevNum=targetNum-1;
       const prev=await fetchLessonJSON(prevNum);
       if(!prev.ok){
-        addMessage(`We cannot start the quiz because Lesson ${prevNum} is unavailable. Please upload/enable the previous lesson first.`, "bot");
-        return;
+        const msg = prev.error==="spanish"
+          ? `We cannot start the quiz because Lesson ${prevNum} appears to be Spanish. Please upload the English-only version.`
+          : `We cannot start the quiz because Lesson ${prevNum} is unavailable.`;
+        addMessage(msg,"bot"); return;
       }
-
       const items = Array.isArray(prev.data.content) ? prev.data.content.filter(c=>c && c.question && c.answer) : [];
       if(items.length<QUIZ_MIN){
-        addMessage(`The previous lesson (${prevNum}) does not have enough questions to build a quiz (found ${items.length}). Please complete that lesson's content first.`, "bot");
+        addMessage(`The previous lesson (${prevNum}) does not have enough questions to build a quiz (found ${items.length}). Please complete that lesson's content first.`,"bot");
         return;
       }
-
-      // construir quiz
       const shuffled=[...items].sort(()=>Math.random()-0.5);
       const count=Math.min(QUIZ_MAX, Math.max(QUIZ_MIN, shuffled.length));
       quizQuestions = shuffled.slice(0,count).map(c=>({ q:c.question, a:c.answer }));
-
-      quizActive=true; quizIndex=0; quizCorrect=0;
-      pendingLessonNum=targetNum; pendingLessonData=targetData;
-
+      quizActive=true; quizIndex=0; quizCorrect=0; pendingLessonNum=targetNum; pendingLessonData=targetData;
       addMessage(`To access <b>Lesson ${targetNum}: ${targetData.title}</b>, please answer these questions from <b>Lesson ${prevNum}</b>. You must score <b>≥ 90%</b>.`,"bot");
       askNextQuiz();
     }
-
     async function beginLessonSelection(n){
-      // Carga el JSON de la lección objetivo para mostrar título
       const target=await fetchLessonJSON(n);
       if(!target.ok){
         const msg = target.error==="spanish"
@@ -325,14 +346,18 @@
         addMessage(msg,"bot"); return;
       }
       addMessage(`Lesson ${n} selected: <b>${target.data.title}</b>.`,"bot");
-      if(n>1){
-        addMessage(`Before we begin, I will ask you some questions from <b>Lesson ${n-1}</b> to verify mastery.`, "bot");
-      }
+      if(n>1){ addMessage(`Before we begin, I will ask you some questions from <b>Lesson ${n-1}</b> to verify mastery.`, "bot"); }
       await startQuizGate(n, target.data);
     }
 
     /* ================= Teacher (JSON-first; Groq fallback EN-only) ================= */
     async function teacherResponse(userText){
+      // Si el usuario escribe en español, responder en inglés pidiendo cambio
+      if(looksSpanish(userText)){
+        const msg="Please write in English. English-only mode is active.";
+        addMessage(msg,"bot"); speakSafe(msg,"en-US"); return;
+      }
+
       const q=userText.toLowerCase(); let local="";
       if(lessonData){
         if(/objective|goal/.test(q)){ local="Objectives:\n- "+lessonData.objectives.join("\n- "); }
@@ -341,9 +366,10 @@
           const qs=lessonData.content.map(c=>"• "+c.question).join("\n"); local="Sample questions:\n"+qs;
         }
       }
-      if(local){ addMessage(local.replace(/\n/g,"<br>"),"bot"); speak("Here you are.","en-US"); return; }
+      if(local){ addMessage(local.replace(/\n/g,"<br>"),"bot"); speakSafe("Here you are.","en-US"); return; }
+
       const offTopic=["soccer","football","cooking","politics","history","chemistry","physics"];
-      if(offTopic.some(k=>q.includes(k))){ const msg="Let's stay focused. We are practicing the current lesson topic."; addMessage(msg,"bot"); speak(msg,"en-US"); return; }
+      if(offTopic.some(k=>q.includes(k))){ const msg="Let's stay focused. We are practicing the current lesson topic."; addMessage(msg,"bot"); speakSafe(msg,"en-US"); return; }
 
       let answer="";
       try{
@@ -369,24 +395,27 @@ Student says: "${userText}"`})
         ];
         answer=alternatives[Math.floor(Math.random()*alternatives.length)];
       }
-      addMessage(answer.replace(/\n/g,"<br>"),"bot"); speak(answer,"en-US");
+
+      if(looksSpanish(answer)){
+        answer="(Blocked non-English output). Please keep the conversation in English.";
+      }
+      addMessage(answer.replace(/\n/g,"<br>"),"bot"); speakSafe(answer,"en-US");
     }
 
     /* ================= Input handling (incluye Quiz) ================= */
+    let quizActive=false, quizIndex=0, quizCorrect=0, quizQuestions=[];
+    let sessionLocked=false;
+    let pendingLessonNum=null, pendingLessonData=null;
+
     async function handleUserMessage(text){
       if(!text) return;
       addMessage(text,"user");
-
       if(sessionLocked){ addMessage("This session has ended. Please review the previous lesson and start again.","bot"); return; }
 
-      // Si hay quiz activo, evaluar respuesta
       if(quizActive){
         const expected=quizQuestions[quizIndex].a;
-        if(isAnswerCorrect(text, expected)){
-          quizCorrect++; addMessage("✅ Correct.","bot");
-        }else{
-          addMessage(`❌ Incorrect. Expected: <b>${expected}</b>`, "bot");
-        }
+        if(isAnswerCorrect(text, expected)){ quizCorrect++; addMessage("✅ Correct.","bot"); }
+        else{ addMessage(`❌ Incorrect. Expected: <b>${expected}</b>`, "bot"); }
         quizIndex++; askNextQuiz(); return;
       }
 
@@ -410,8 +439,7 @@ Student says: "${userText}"`})
     }
     function stopAll(){ if(recognition) recognition.stop(); speechSynthesis.cancel(); }
     speakBtn.onclick=()=> recognition && recognition.start();
-    stopBtn.onclick=stopAll;
-    headerStopBtn.onclick=stopAll;
+    stopBtn.onclick=stopAll; headerStopBtn.onclick=stopAll;
 
     /* ================= Overlay Lecciones (paginado) ================= */
     const lessonsOverlay=document.getElementById("lessonsOverlay");
@@ -429,25 +457,16 @@ Student says: "${userText}"`})
     function renderPager(){
       pager.innerHTML=""; if(pages.length<=1) return;
       pages.forEach((_,i)=>{ const start=pages[i][0], end=pages[i][pages[i].length-1];
-        const b=document.createElement("button");
-        b.className="page-btn"+(i===currentPage?" active":"");
-        b.textContent=`${start}–${end}`;
-        b.onclick=()=>{ currentPage=i; renderGrid(); renderPager(); };
-        pager.appendChild(b);
+        const b=document.createElement("button"); b.className="page-btn"+(i===currentPage?" active":"");
+        b.textContent=`${start}–${end}`; b.onclick=()=>{ currentPage=i; renderGrid(); renderPager(); }; pager.appendChild(b);
       });
     }
     function renderGrid(){
-      grid.innerHTML="";
-      if(!pages.length){ grid.innerHTML="<div class='note'>No lessons found. Create /lessons/index.json</div>"; return; }
+      grid.innerHTML=""; if(!pages.length){ grid.innerHTML="<div class='note'>No lessons found. Create /lessons/index.json</div>"; return; }
       pages[currentPage].forEach(n=>{
-        const c=document.createElement("div");
-        c.className="chip";
-        c.textContent=`Lesson ${n}`;
-        c.onclick=()=> beginLessonSelection(n);
-        grid.appendChild(c);
+        const c=document.createElement("div"); c.className="chip"; c.textContent=`Lesson ${n}`; c.onclick=()=> beginLessonSelection(n); grid.appendChild(c);
       });
     }
-
     async function prepareLessonsOverlay(){
       await fetchAvailableLessons();
       const list=availableLessons.length?availableLessons:Array.from({length:270},(_,i)=>i+1);
