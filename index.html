@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>St. Mary’s College – English Leveling Bot (v1.9.6)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>St. Mary’s College – English Leveling Bot (v1.9.7)</title>
   <style>
     :root{
       --bg:#f5f7fa; --ink:#0f172a; --bot:#0ea5e9; --user:#22c55e; --card:#ffffff; --muted:#64748b;
@@ -24,8 +24,8 @@
     }
     header .right{ display:flex; gap:8px; }
     .btn{
-      border:0; padding:10px 12px; font-weight:600; cursor:pointer; border-radius:10px; color:#fff;
-      box-shadow:0 2px 6px rgba(2,8,23,.08);
+      border:0; padding:12px 14px; font-weight:700; cursor:pointer; border-radius:12px; color:#fff;
+      box-shadow:0 2px 6px rgba(2,8,23,.08); min-height:48px;
     }
     .btn-lessons{ background:#7c3aed; }
     .btn-stop{ background:#ef4444; }
@@ -42,26 +42,38 @@
 
     /* CONTRASTE: kbd dentro de burbuja del bot */
     .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#e2e8f0; padding:1px 6px; border-radius:6px;}
-    .bot .kbd{ background:#ffffff; color:#0f172a; } /* fix contraste */
+    .bot .kbd{ background:#ffffff; color:#0f172a; }
 
+    /* ===== Controls: versión móvil (stack) ===== */
     #controls{
-      display:flex; gap:8px; padding:12px; background:#fff; border-top:1px solid #e2e8f0;
-      position:sticky; bottom:0;
+      position:sticky; bottom:0; background:#fff; border-top:1px solid #e2e8f0;
+      padding:10px clamp(10px, 3vw, 16px) calc(10px + env(safe-area-inset-bottom)) clamp(10px, 3vw, 16px);
+      display:grid; grid-template-columns: 1fr; gap:10px;
+      /* evita que el teclado tape el contenido en iOS */
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
     }
-    #controls > *{ border-radius:10px; }
     #textInput{
-      flex:1; padding:12px 14px; font-size:16px; border:1px solid #cbd5e1; outline:0;
-      transition:border .15s, box-shadow .15s;
+      width:100%; padding:12px 14px; font-size:16px; border:1px solid #cbd5e1; border-radius:12px; outline:0;
+      transition:border .15s, box-shadow .15s; min-height:48px;
     }
-    #textInput:focus{
-      border-color:var(--focus);
-      box-shadow:0 0 0 3px rgba(37,99,235,.2);
+    #textInput:focus{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(37,99,235,.2); }
+    .buttons{
+      display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;
     }
     #sendBtn{ background:#22c55e; }
     #speakBtn{ background:#0ea5e9; }
     #stopBtn{ background:#ef4444; }
 
-    /* Overlay de lecciones (un botón lo abre) */
+    /* ===== Desktop: barra horizontal ===== */
+    @media (min-width: 720px){
+      #controls{
+        display:flex; align-items:center; gap:10px; padding-bottom:12px;
+      }
+      #textInput{ flex:1; }
+      .buttons{ display:flex; gap:10px; }
+    }
+
+    /* Overlay de lecciones */
     #lessonsOverlay{
       position:fixed; inset:0; background:var(--overlay); display:none; align-items:center; justify-content:center; z-index:50;
     }
@@ -100,7 +112,7 @@
 </head>
 <body>
   <header>
-    <div>St. Mary’s College – English Leveling Bot (v1.9.6)</div>
+    <div>St. Mary’s College – English Leveling Bot (v1.9.7)</div>
     <div class="right">
       <button class="btn btn-lessons" id="openLessonsBtn">📚 Lessons</button>
       <button class="btn btn-stop" id="headerStopBtn">⏹ Stop</button>
@@ -109,95 +121,66 @@
 
   <main id="chat"></main>
 
+  <!-- Controls: input arriba, botones debajo en móvil -->
   <div id="controls">
     <input id="textInput" type="text" placeholder="Type or say your message… e.g., “Lesson 1”" autocomplete="off"/>
-    <button id="sendBtn" class="btn">Send</button>
-    <button id="speakBtn" class="btn">🎤 Speak</button>
-    <button id="stopBtn"  class="btn">⏹ Stop</button>
+    <div class="buttons">
+      <button id="sendBtn"  class="btn">Send</button>
+      <button id="speakBtn" class="btn">🎤 Speak</button>
+      <button id="stopBtn"  class="btn">⏹ Stop</button>
+    </div>
   </div>
 
-  <!-- Overlay único para lecciones (botones paginados) -->
+  <!-- Overlay de Lecciones -->
   <div id="lessonsOverlay" role="dialog" aria-modal="true">
     <div id="lessonsCard">
       <h3>Select a lesson</h3>
       <div class="note" id="rangeNote">Loading available lessons…</div>
-
       <div class="row">
         <input id="numInput" type="number" min="1" max="270" placeholder="Go to lesson # (e.g., 12)"/>
         <input id="wordsInput" type="text" placeholder="Or type in words (e.g., twenty three)"/>
-        <button class="btn-go" id="goBtn">Go</button>
-        <button class="btn-close" id="closeLessonsBtn">Close</button>
+        <button class="btn btn-go" id="goBtn">Go</button>
+        <button class="btn btn-close" id="closeLessonsBtn">Close</button>
       </div>
-
       <div class="pager" id="pager"></div>
       <div class="grid"  id="grid"></div>
-
       <div class="note">Tip: you can also type <span class="kbd">Lesson 12</span> in the chat.</div>
     </div>
   </div>
 
   <script>
-    // ======== ENGLISH-ONLY GUARD (prevents Spanish leaks) ========
+    /* ===== English-only guard ===== */
     const EN_ONLY = true;
     const SPANISH_REGEX = /[áéíóúñü¿¡]|\b(el|la|los|las|de|del|al|y|o|pero|porque|con|sin|para|por|un|una|unos|unas|es|está|hola|gracias)\b/i;
     function lessonHasSpanish(lesson){
-      const buf = [];
-      if(lesson.title) buf.push(lesson.title);
-      if(lesson.theory) buf.push(lesson.theory);
-      (lesson.objectives||[]).forEach(x=>buf.push(x));
-      (lesson.topics||[]).forEach(x=>buf.push(x));
-      (lesson.content||[]).forEach(c=>{
-        if(c.question) buf.push(c.question);
-        if(c.answer) buf.push(c.answer);
-      });
+      const buf=[]; if(lesson.title) buf.push(lesson.title); if(lesson.theory) buf.push(lesson.theory);
+      (lesson.objectives||[]).forEach(x=>buf.push(x)); (lesson.topics||[]).forEach(x=>buf.push(x));
+      (lesson.content||[]).forEach(c=>{ if(c.question) buf.push(c.question); if(c.answer) buf.push(c.answer); });
       return SPANISH_REGEX.test(buf.join(" "));
     }
 
-    // ========= UI helpers =========
+    /* ===== UI helpers ===== */
     const chat = document.getElementById("chat");
     const input = document.getElementById("textInput");
     const sendBtn = document.getElementById("sendBtn");
     const speakBtn = document.getElementById("speakBtn");
     const stopBtn  = document.getElementById("stopBtn");
     const headerStopBtn = document.getElementById("headerStopBtn");
+    function addMessage(html, role="bot"){ const el=document.createElement("div"); el.className=`bubble ${role}`; el.innerHTML=html; chat.appendChild(el); chat.scrollTop=chat.scrollHeight; }
+    function addSystem(text){ const el=document.createElement("div"); el.className="bubble sys"; el.innerText=text; chat.appendChild(el); chat.scrollTop=chat.scrollHeight; }
 
-    function addMessage(html, role="bot"){
-      const el = document.createElement("div");
-      el.className = `bubble ${role}`;
-      el.innerHTML = html;
-      chat.appendChild(el);
-      chat.scrollTop = chat.scrollHeight;
-    }
-    function addSystem(text){
-      const el = document.createElement("div");
-      el.className = "bubble sys";
-      el.innerText = text;
-      chat.appendChild(el);
-      chat.scrollTop = chat.scrollHeight;
-    }
+    /* ===== TTS ===== */
+    function speak(text, lang="en-US"){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang=lang; speechSynthesis.speak(u);}catch{} }
 
-    // ========= Speech (TTS) =========
-    function speak(text, lang="en-US"){
-      try{
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang;
-        speechSynthesis.speak(u);
-      }catch{}
-    }
-
-    // ========= Parse lesson number (1..270) =========
-    function wordsToNumber(phrase) {
-      const ones = {zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9};
-      const teens = {ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19};
-      const tens = {twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90};
-      let s = phrase.toLowerCase().replace(/-/g,' ').replace(/[^a-z\s]/g,' ').replace(/\s+/g,' ').trim();
+    /* ===== Parse 'Lesson N' ===== */
+    function wordsToNumber(phrase){
+      const ones={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9};
+      const teens={ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19};
+      const tens={twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+      let s=phrase.toLowerCase().replace(/-/g,' ').replace(/[^a-z\s]/g,' ').replace(/\s+/g,' ').trim();
       if(!s) return null;
-      if(ones[s]!==undefined) return ones[s];
-      if(teens[s]!==undefined) return teens[s];
-      if(tens[s]!==undefined) return tens[s];
-      const tokens = s.split(' ');
-      let total=0, current=0;
+      if(ones[s]!==undefined) return ones[s]; if(teens[s]!==undefined) return teens[s]; if(tens[s]!==undefined) return tens[s];
+      const tokens=s.split(' '); let total=0,current=0;
       for(const w of tokens){
         if(ones[w]!==undefined){ current+=ones[w]; continue; }
         if(teens[w]!==undefined){ current+=teens[w]; continue; }
@@ -206,112 +189,60 @@
         if(w==="and"){ continue; }
         return null;
       }
-      total+=current;
-      return total||null;
+      total+=current; return total||null;
     }
     function parseLessonNumberFromText(text){
-      const s = text.toLowerCase();
-      const mDigits = s.match(/lesson\s+(\d{1,3})\b/);
-      if(mDigits){
-        const n = parseInt(mDigits[1],10);
-        if(n>=1 && n<=270) return n;
-      }
-      const mWords = s.match(/lesson\s+([a-z][a-z\s-]{1,60})$/i) || s.match(/lesson\s+([a-z][a-z\s-]{1,60})\b/i);
-      if(mWords){
-        const n = wordsToNumber(mWords[1]);
-        if(n && n>=1 && n<=270) return n;
-      }
+      const s=text.toLowerCase();
+      const mDigits=s.match(/lesson\s+(\d{1,3})\b/); if(mDigits){ const n=parseInt(mDigits[1],10); if(n>=1&&n<=270) return n; }
+      const mWords=s.match(/lesson\s+([a-z][a-z\s-]{1,60})$/i)||s.match(/lesson\s+([a-z][a-z\s-]{1,60})\b/i);
+      if(mWords){ const n=wordsToNumber(mWords[1]); if(n&&n>=1&&n<=270) return n; }
       return null;
     }
 
-    // ========= State =========
-    let currentLesson = null;
-    let lessonData = null;
-    let availableLessons = [];
-
-    // ========= Lessons index =========
+    /* ===== State & index.json ===== */
+    let currentLesson=null, lessonData=null, availableLessons=[];
     async function fetchAvailableLessons(){
       try{
-        const r = await fetch("https://www.leccion.datafast.pw/lessons/index.json",{cache:"no-store"});
+        const r=await fetch("https://www.leccion.datafast.pw/lessons/index.json",{cache:"no-store"});
         if(!r.ok) throw new Error("index not found");
-        const idx = await r.json();
-        const list = Array.isArray(idx.available) ? idx.available : [];
-        availableLessons = list.map(n => parseInt(n,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
-        return availableLessons;
-      }catch{
-        availableLessons = [];
-        return [];
-      }
+        const idx=await r.json(); const list=Array.isArray(idx.available)?idx.available:[];
+        availableLessons=list.map(n=>parseInt(n,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b); return availableLessons;
+      }catch{ availableLessons=[]; return []; }
     }
 
-    // ========= Load lesson (respeta index.json + EN-only guard) =========
+    /* ===== Load lesson (with EN-only) ===== */
     async function loadLesson(num){
-      if(availableLessons.length && !availableLessons.includes(num)){
-        addMessage(`Lesson ${num} is not available yet. Please choose one from the available range.`, "bot");
-        return;
-      }
+      if(availableLessons.length && !availableLessons.includes(num)){ addMessage(`Lesson ${num} is not available yet. Please choose one from the available range.`, "bot"); return; }
       try{
-        const url = `https://www.leccion.datafast.pw/lessons/lesson${num}.json`;
-        const res = await fetch(url, {cache:"no-store"});
-        if(!res.ok) throw new Error("Lesson not found");
-        const data = await res.json();
-
-        // Guard EN-only
-        if(EN_ONLY && lessonHasSpanish(data)){
-          addMessage(`Lesson ${num} contains Spanish text. Please upload the English-only version of this lesson. Loading has been stopped to preserve consistency.`, "bot");
-          speak(`Lesson ${num} contains Spanish text. Please upload the English-only version.`, "en-US");
-          return;
-        }
-
-        lessonData = data;
-        currentLesson = num;
-        localStorage.setItem("lastLesson", String(num));
-
-        const intro = `
-          <b>Welcome to Lesson ${num}: ${lessonData.title}</b><br><br>
-          <b>Theory:</b> ${lessonData.theory || "This lesson will guide you through the basics."}<br><br>
-          <b>Objectives:</b><br>- ${lessonData.objectives.join("<br>- ")}<br><br>
-          <b>Topics:</b><br>- ${lessonData.topics.join("<br>- ")}<br><br>
-          Ask me anything about this lesson and I will explain, correct, and reinforce.
-        `;
-        addMessage(intro, "bot");
-        speak(`Welcome to Lesson ${num}: ${lessonData.title}. You can now ask me questions about this lesson.`, "en-US");
-        closeLessonsOverlay();
-      }catch(e){
-        addMessage(`Could not load Lesson ${num}.`, "bot");
-      }
+        const url=`https://www.leccion.datafast.pw/lessons/lesson${num}.json`;
+        const res=await fetch(url,{cache:"no-store"}); if(!res.ok) throw new Error("Lesson not found");
+        const data=await res.json();
+        if(EN_ONLY && lessonHasSpanish(data)){ addMessage(`Lesson ${num} contains Spanish text. Please upload the English-only version.`, "bot"); speak(`Lesson ${num} contains Spanish text.`, "en-US"); return; }
+        lessonData=data; currentLesson=num; localStorage.setItem("lastLesson", String(num));
+        const intro=`<b>Welcome to Lesson ${num}: ${lessonData.title}</b><br><br><b>Theory:</b> ${lessonData.theory||"This lesson will guide you through the basics."}<br><br><b>Objectives:</b><br>- ${lessonData.objectives.join("<br>- ")}<br><br><b>Topics:</b><br>- ${lessonData.topics.join("<br>- ")}<br><br>Ask me anything about this lesson and I will explain, correct, and reinforce.`;
+        addMessage(intro,"bot"); speak(`Welcome to Lesson ${num}: ${lessonData.title}.`, "en-US"); closeLessonsOverlay();
+      }catch{ addMessage(`Could not load Lesson ${num}.`, "bot"); }
     }
 
-    // ========= Teacher (JSON-first; Groq fallback, EN-only) =========
+    /* ===== Teacher (JSON-first; Groq fallback) ===== */
     async function teacherResponse(userText){
-      const q = userText.toLowerCase();
-      let local = "";
+      const q=userText.toLowerCase(); let local="";
       if(lessonData){
-        if(/objective|goal/.test(q)){
-          local = "Objectives:\n- " + lessonData.objectives.join("\n- ");
-        }else if(/topic|point|content list/.test(q)){
-          local = "Topics:\n- " + lessonData.topics.join("\n- ");
-        }else if(/example|exercise|question/.test(q) && Array.isArray(lessonData.content) && lessonData.content.length){
-          const qs = lessonData.content.map(c => "• " + c.question).join("\n");
-          local = "Sample questions:\n" + qs;
+        if(/objective|goal/.test(q)){ local="Objectives:\n- "+lessonData.objectives.join("\n- "); }
+        else if(/topic|point|content list/.test(q)){ local="Topics:\n- "+lessonData.topics.join("\n- "); }
+        else if(/example|exercise|question/.test(q) && Array.isArray(lessonData.content) && lessonData.content.length){
+          const qs=lessonData.content.map(c=>"• "+c.question).join("\n"); local="Sample questions:\n"+qs;
         }
       }
-      if(local){
-        addMessage(local.replace(/\n/g,"<br>"), "bot"); speak("Here you are.","en-US"); return;
-      }
-      const offTopic = ["soccer","football","cooking","politics","history","chemistry","physics"];
-      if(offTopic.some(k => q.includes(k))){
-        const msg = "Let's stay focused. We are practicing the current lesson topic.";
-        addMessage(msg, "bot"); speak(msg,"en-US"); return;
-      }
-      let answer = "";
+      if(local){ addMessage(local.replace(/\n/g,"<br>"),"bot"); speak("Here you are.","en-US"); return; }
+      const offTopic=["soccer","football","cooking","politics","history","chemistry","physics"];
+      if(offTopic.some(k=>q.includes(k))){ const msg="Let's stay focused. We are practicing the current lesson topic."; addMessage(msg,"bot"); speak(msg,"en-US"); return; }
+      let answer="";
       try{
-        const response = await fetch("https://bot-maestro-proxy.kast-mercadeo.workers.dev/", {
-          method:"POST", headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({
-            text: `ROLE: You are an English teacher at St. Mary's College.
-HARD RULES: Always respond STRICTLY in English. Never use Spanish in your output. 
-If the student's input is in Spanish, reply in English and gently ask them to switch to English.
+        const response=await fetch("https://bot-maestro-proxy.kast-mercadeo.workers.dev/",{
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({ text:`ROLE: You are an English teacher at St. Mary's College.
+HARD RULES: Always respond STRICTLY in English. Never use Spanish. If the student writes in Spanish, reply in English and ask them to switch to English.
 CONTEXT: Current lesson = ${lessonData ? lessonData.title : "current lesson (JSON)"}.
 TASKS:
 1) If the student's sentence has grammar or pronunciation issues, first show a corrected version.
@@ -319,148 +250,94 @@ TASKS:
 3) Stay strictly on the current lesson theme.
 4) Encourage politely and, if relevant, suggest a short practice line to repeat.
 
-Student says: "${userText}"`
-          })
+Student says: "${userText}"`})
         });
-        const data = await response.json();
-        answer = data.reply || "(no reply)";
+        const data=await response.json(); answer=data.reply||"(no reply)";
       }catch{
-        const alternatives = [
+        const alternatives=[
           "We say 'Good morning' until noon. 'Good night' is a farewell, not a greeting.",
           "Formal greetings show respect, like 'Good morning'. Informal ones include 'Hi' or 'Hey'.",
           "Use 'There is' for singular and 'There are' for plural; questions: 'Is there…?' / 'Are there…?'."
         ];
-        answer = alternatives[Math.floor(Math.random()*alternatives.length)];
+        answer=alternatives[Math.floor(Math.random()*alternatives.length)];
       }
-      addMessage(answer.replace(/\n/g,"<br>"), "bot"); speak(answer,"en-US");
+      addMessage(answer.replace(/\n/g,"<br>"),"bot"); speak(answer,"en-US");
     }
 
-    // ========= Input handling =========
+    /* ===== Input handling ===== */
     async function handleUserMessage(text){
-      if(!text) return;
-      addMessage(text, "user");
-
-      const n = parseLessonNumberFromText(text);
-      if(n){ await loadLesson(n); return; }
-
-      if(lessonData){ await teacherResponse(text); }
-      else { addMessage(`Please choose a lesson first (e.g., “Lesson 1”).`, "bot"); }
+      if(!text) return; addMessage(text,"user");
+      const n=parseLessonNumberFromText(text); if(n){ await loadLesson(n); return; }
+      if(lessonData){ await teacherResponse(text); } else { addMessage(`Please choose a lesson first (e.g., “Lesson 1”).`, "bot"); }
     }
-    function sendMessage(){
-      const text = input.value.trim();
-      input.value = "";
-      handleUserMessage(text);
-    }
-    document.getElementById("sendBtn").onclick = sendMessage;
-    input.addEventListener("keydown", e => { if(e.key==="Enter") sendMessage(); });
+    function sendMessage(){ const text=input.value.trim(); input.value=""; handleUserMessage(text); }
+    sendBtn.onclick=sendMessage; input.addEventListener("keydown", e=>{ if(e.key==="Enter") sendMessage(); });
 
-    // ========= Speech Recognition =========
+    /* ===== Speech ===== */
     let recognition;
     if("webkitSpeechRecognition" in window){
-      recognition = new webkitSpeechRecognition();
-      recognition.lang = "en-US"; recognition.interimResults = false; recognition.maxAlternatives = 1;
-      recognition.onresult = e => { const t = e.results[0][0].transcript; handleUserMessage(t); };
+      recognition=new webkitSpeechRecognition(); recognition.lang="en-US"; recognition.interimResults=false; recognition.maxAlternatives=1;
+      recognition.onresult=e=>{ const t=e.results[0][0].transcript; handleUserMessage(t); };
     }
     function stopAll(){ if(recognition) recognition.stop(); speechSynthesis.cancel(); }
-    document.getElementById("speakBtn").onclick = () => recognition && recognition.start();
-    document.getElementById("stopBtn").onclick  = stopAll;
-    headerStopBtn.onclick = stopAll;
+    speakBtn.onclick=()=> recognition && recognition.start();
+    stopBtn.onclick=stopAll; headerStopBtn.onclick=stopAll;
 
-    // ========= Overlay de Lecciones =========
-    const lessonsOverlay = document.getElementById("lessonsOverlay");
-    const openLessonsBtn = document.getElementById("openLessonsBtn");
-    const closeLessonsBtn= document.getElementById("closeLessonsBtn");
-    const numInput = document.getElementById("numInput");
-    const wordsInput = document.getElementById("wordsInput");
-    const goBtn = document.getElementById("goBtn");
-    const rangeNote = document.getElementById("rangeNote");
-    const pager = document.getElementById("pager");
-    const grid  = document.getElementById("grid");
+    /* ===== Lessons overlay with pagination ===== */
+    const lessonsOverlay=document.getElementById("lessonsOverlay");
+    const openLessonsBtn=document.getElementById("openLessonsBtn");
+    const closeLessonsBtn=document.getElementById("closeLessonsBtn");
+    const numInput=document.getElementById("numInput");
+    const wordsInput=document.getElementById("wordsInput");
+    const goBtn=document.getElementById("goBtn");
+    const rangeNote=document.getElementById("rangeNote");
+    const pager=document.getElementById("pager");
+    const grid=document.getElementById("grid");
+    const PAGE_SIZE=30; let pages=[], currentPage=0;
 
-    const PAGE_SIZE = 30;
-    let pages = []; let currentPage = 0;
-
-    function makePages(list){
-      const out = [];
-      for(let i=0; i<list.length; i+=PAGE_SIZE) out.push(list.slice(i, i+PAGE_SIZE));
-      return out;
-    }
+    function makePages(list){ const out=[]; for(let i=0;i<list.length;i+=PAGE_SIZE) out.push(list.slice(i,i+PAGE_SIZE)); return out; }
     function renderPager(){
-      pager.innerHTML = "";
-      if(pages.length <= 1) return;
-      pages.forEach((_,i)=>{
-        const start = pages[i][0];
-        const end   = pages[i][pages[i].length-1];
-        const b = document.createElement("button");
-        b.className = "page-btn" + (i===currentPage ? " active" : "");
-        b.textContent = `${start}–${end}`;
-        b.onclick = ()=> { currentPage = i; renderGrid(); renderPager(); };
-        pager.appendChild(b);
-      });
+      pager.innerHTML=""; if(pages.length<=1) return;
+      pages.forEach((_,i)=>{ const start=pages[i][0], end=pages[i][pages[i].length-1]; const b=document.createElement("button");
+        b.className="page-btn"+(i===currentPage?" active":""); b.textContent=`${start}–${end}`; b.onclick=()=>{ currentPage=i; renderGrid(); renderPager(); }; pager.appendChild(b); });
     }
     function renderGrid(){
-      grid.innerHTML = "";
-      if(!pages.length){ grid.innerHTML = "<div class='note'>No lessons found. Create /lessons/index.json</div>"; return; }
-      pages[currentPage].forEach(n=>{
-        const c = document.createElement("div");
-        c.className = "chip";
-        c.textContent = `Lesson ${n}`;
-        c.onclick = ()=> loadLesson(n);
-        grid.appendChild(c);
-      });
+      grid.innerHTML=""; if(!pages.length){ grid.innerHTML="<div class='note'>No lessons found. Create /lessons/index.json</div>"; return; }
+      pages[currentPage].forEach(n=>{ const c=document.createElement("div"); c.className="chip"; c.textContent=`Lesson ${n}`; c.onclick=()=>loadLesson(n); grid.appendChild(c); });
     }
-    function openLessonsOverlay(){
-      lessonsOverlay.style.display = "flex";
-      numInput.focus();
-    }
-    function closeLessonsOverlay(){
-      lessonsOverlay.style.display = "none";
-      numInput.value = ""; wordsInput.value = "";
-    }
+    function openLessonsOverlay(){ lessonsOverlay.style.display="flex"; numInput.focus(); }
+    function closeLessonsOverlay(){ lessonsOverlay.style.display="none"; numInput.value=""; wordsInput.value=""; }
     async function prepareLessonsOverlay(){
       await fetchAvailableLessons();
-      const list = availableLessons.length ? availableLessons : Array.from({length:270},(_,i)=>i+1);
-      pages = makePages(list);
-      currentPage = 0;
-      renderPager();
-      renderGrid();
-
-      if(availableLessons.length){
-        const min = availableLessons[0], max = availableLessons[availableLessons.length-1];
-        rangeNote.textContent = `Available range: Lesson ${min} to Lesson ${max} (${availableLessons.length} lessons).`;
-      }else{
-        rangeNote.textContent = `No index found. Showing 1–270 (full range). Create /lessons/index.json to control availability.`;
-      }
+      const list=availableLessons.length?availableLessons:Array.from({length:270},(_,i)=>i+1);
+      pages=makePages(list); currentPage=0; renderPager(); renderGrid();
+      if(availableLessons.length){ const min=availableLessons[0], max=availableLessons[availableLessons.length-1];
+        rangeNote.textContent=`Available range: Lesson ${min} to Lesson ${max} (${availableLessons.length} lessons).`;
+      }else{ rangeNote.textContent=`No index found. Showing 1–270 (full range). Create /lessons/index.json to control availability.`; }
     }
     function goFromOverlay(){
-      let n = parseInt(numInput.value,10);
-      if(!n && wordsInput.value.trim()){
-        const w = wordsToNumber(wordsInput.value.trim());
-        if(w) n = w;
-      }
+      let n=parseInt(numInput.value,10);
+      if(!n && wordsInput.value.trim()){ const w=wordsToNumber(wordsInput.value.trim()); if(w) n=w; }
       if(!n || n<1 || n>270){ addSystem("Please type a valid lesson number (1–270)."); return; }
       loadLesson(n);
     }
+    openLessonsBtn.onclick=()=>{ prepareLessonsOverlay().then(openLessonsOverlay); };
+    closeLessonsBtn.onclick=closeLessonsOverlay; goBtn.onclick=goFromOverlay;
+    numInput.addEventListener("keydown", e=>{ if(e.key==="Enter") goFromOverlay(); });
+    wordsInput.addEventListener("keydown", e=>{ if(e.key==="Enter") goFromOverlay(); });
+    lessonsOverlay.addEventListener("click", e=>{ if(e.target===lessonsOverlay) closeLessonsOverlay(); });
 
-    openLessonsBtn.onclick = ()=> { prepareLessonsOverlay().then(openLessonsOverlay); };
-    closeLessonsBtn.onclick= closeLessonsOverlay;
-    goBtn.onclick = goFromOverlay;
-    numInput.addEventListener("keydown", e => { if(e.key==="Enter") goFromOverlay(); });
-    wordsInput.addEventListener("keydown", e => { if(e.key==="Enter") goFromOverlay(); });
-    lessonsOverlay.addEventListener("click", e => { if(e.target===lessonsOverlay) closeLessonsOverlay(); });
-
-    // ========= Boot =========
+    /* ===== Boot ===== */
     (async function init(){
       await fetchAvailableLessons();
-      const last = parseInt(localStorage.getItem("lastLesson")||"0",10);
-      if(availableLessons.length){
-        const min = availableLessons[0], max = availableLessons[availableLessons.length-1];
+      const last=parseInt(localStorage.getItem("lastLesson")||"0",10);
+      if(availableLessons.length){ const min=availableLessons[0], max=availableLessons[availableLessons.length-1];
         addMessage(`Welcome! Tell me which lesson you want to review (e.g., <span class="kbd">Lesson 1</span>). Available range now: Lesson ${min} to Lesson ${max}.`, "bot");
       }else{
         addMessage(`Welcome! Tell me which lesson you want to review (e.g., <span class="kbd">Lesson 1</span>). Tip: create <span class="kbd">/lessons/index.json</span> to control availability.`, "bot");
       }
       if(last && (!availableLessons.length || availableLessons.includes(last))){
-        addSystem(`Last time you studied Lesson ${last}. Type <Lesson ${last}> or click “📚 Lessons”.`);
+        addSystem(`Last time you studied Lesson ${last}. Type <Lesson ${last}> or tap “📚 Lessons”.`);
       }
     })();
   </script>
