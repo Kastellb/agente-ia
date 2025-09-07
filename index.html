@@ -75,7 +75,7 @@
   <div id="lessonsOverlay" role="dialog" aria-modal="true">
     <div id="lessonsCard">
       <h3>Select a lesson</h3>
-      <div class="note" id="rangeNote">Loading available lessons…</div>
+      <div class="note" id="rangeNote">Loading available range…</div>
       <div class="row">
         <input id="numInput" type="number" min="1" max="270" placeholder="Go to lesson # (e.g., 12)"/>
         <input id="wordsInput" type="text" placeholder="Or type in words (e.g., twenty three)"/>
@@ -89,32 +89,26 @@
   </div>
 
 <script>
-/* =================== Utilities =================== */
+/* =============== Basic UI helpers =============== */
 const chat = document.getElementById("chat");
-function addMessage(html, role="bot"){
-  const el=document.createElement("div");
-  el.className=`bubble ${role}`;
-  el.innerHTML=html;
-  chat.appendChild(el);
-  chat.scrollTop=chat.scrollHeight;
-}
-function addSystem(text){
-  const el=document.createElement("div");
-  el.className="bubble sys";
-  el.textContent=text;
-  chat.appendChild(el);
-  chat.scrollTop=chat.scrollHeight;
+function addMessage(html, role="bot"){ const el=document.createElement("div"); el.className=`bubble ${role}`; el.innerHTML=html; chat.appendChild(el); chat.scrollTop=chat.scrollHeight; }
+function addSystem(text){ const el=document.createElement("div"); el.className="bubble sys"; el.textContent=text; chat.appendChild(el); chat.scrollTop=chat.scrollHeight; }
+
+/* =============== English-only guard (blocks Spanish content) =============== */
+const SPANISH_RE = /[áéíóúñü¿¡]|(?:\b(?:el|la|los|las|de|del|al|y|o|pero|porque|con|sin|para|por|un|una|unos|unas|es|está|hola|gracias|buenos|buenas|tardes|noches|por favor|cómo|qué|dónde|cuándo|lección|leccion)\b)/i;
+const SP_STOP = new Set(["de","la","que","el","en","y","a","los","del","se","las","por","un","para","con","no","una","su","al","lo","como","más","o","pero","sus","le","ya","este","sí","porque","esta","entre","cuando","muy","sin","sobre","también","me","hasta"]);
+function looksSpanish(text){
+  const s=(text||"").toLowerCase();
+  if(SPANISH_RE.test(s)) return true;
+  const tokens=s.replace(/[^a-z\s]/g," ").split(/\s+/).filter(Boolean);
+  if(!tokens.length) return false;
+  let hits=0; for(const t of tokens){ if(SP_STOP.has(t)) hits++; }
+  return hits/tokens.length>0.25;
 }
 
-/* English-only quick guard (suave, no bloquea input) */
-const SPAN_RE=/[áéíóúñü¿¡]/i;
-function looksSpanish(s){ return SPAN_RE.test(s||""); }
-
-/* TTS limpio y seguro */
+/* =============== Speech (clean, English only) =============== */
 function sanitizeForSpeech(t){
-  t=String(t||"");
-  t=t.replace(/<[^>]*>/g," ");
-  t=t.replace(/\bhttps?:\/\/\S+/gi," ");
+  t=String(t||""); t=t.replace(/<[^>]*>/g," "); t=t.replace(/\bhttps?:\/\/\S+/gi," ");
   try{ t=t.replace(/\p{Extended_Pictographic}/gu,""); }catch{ t=t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,""); }
   t=t.replace(/&[a-z]+;/gi," ").replace(/\s{2,}/g," ").trim();
   return t;
@@ -122,15 +116,52 @@ function sanitizeForSpeech(t){
 function speakSafe(text){
   try{
     const msg=sanitizeForSpeech(text);
-    if(!msg || looksSpanish(msg)) return;
+    if(!msg || looksSpanish(msg)) return; // never speak Spanish
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(msg);
     u.lang="en-US";
     speechSynthesis.speak(u);
   }catch{}
 }
+function stopAll(){ try{ if(recognition) recognition.stop(); speechSynthesis.cancel(); }catch{} }
 
-/* =================== Lessons (overlay + fetch) =================== */
+/* =============== Parse "Lesson N" (digits or English words) =============== */
+function wordsToNumberEN(phrase){
+  const ones={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9};
+  const teens={ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19};
+  const tens={twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+  let s=(phrase||"").toLowerCase().replace(/-/g,' ').replace(/[^a-z\s]/g,' ').replace(/\s+/g,' ').trim();
+  if(ones[s]!=null) return ones[s]; if(teens[s]!=null) return teens[s]; if(tens[s]!=null) return tens[s];
+  const tokens=s.split(' '); let total=0,current=0;
+  for(const w of tokens){
+    if(ones[w]!=null){ current+=ones[w]; continue; }
+    if(teens[w]!=null){ current+=teens[w]; continue; }
+    if(tens[w]!=null){ current+=tens[w]; continue; }
+    if(w==="hundred"){ if(current===0) current=1; current*=100; total+=current; current=0; continue; }
+    if(w==="and"){ continue; }
+    return null;
+  }
+  total+=current; return total||null;
+}
+function parseLessonNumberFromText(text){
+  const s=(text||"").toLowerCase();
+  let m=s.match(/\blesson\s+(\d{1,3})\b/); if(m){ const n=parseInt(m[1],10); if(n>=1&&n<=270) return n; }
+  m=s.match(/\blesson\s+([a-z\s-]{1,60})$/i) || s.match(/\blesson\s+([a-z\s-]{1,60})\b/i);
+  if(m){ const n=wordsToNumberEN(m[1]); if(n&&n>=1&&n<=270) return n; }
+  return null;
+}
+
+/* =============== Global state =============== */
+let availableLessons=[];
+const PAGE_SIZE=30; let pages=[], currentPage=0;
+
+let currentLesson=null, lessonData=null;
+const QUIZ_MIN=5, QUIZ_PASS=0.90;
+let quizActive=false, quizIndex=0, quizCorrect=0, quizQuestions=[];
+let pendingLesson=null, pendingData=null;
+let sessionLocked=false;
+
+/* =============== Lessons overlay =============== */
 const lessonsOverlay = document.getElementById("lessonsOverlay");
 const openLessonsBtn = document.getElementById("openLessonsBtn");
 const closeLessonsBtn = document.getElementById("closeLessonsBtn");
@@ -141,97 +172,65 @@ const numInput = document.getElementById("numInput");
 const wordsInput = document.getElementById("wordsInput");
 const goBtn = document.getElementById("goBtn");
 
-let availableLessons = [];
-const PAGE_SIZE = 30; let pages=[]; let currentPage=0;
-
 async function fetchAvailableLessons(){
   try{
-    const r = await fetch("https://www.leccion.datafast.pw/lessons/index.json", {cache:"no-store"});
+    const r=await fetch("https://www.leccion.datafast.pw/lessons/index.json",{cache:"no-store"});
     if(!r.ok) throw 0;
-    const idx = await r.json();
-    const arr = Array.isArray(idx.available)? idx.available : [];
-    availableLessons = arr.map(n=>parseInt(n,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
-  }catch{
-    availableLessons = []; // sin índice -> mostramos todo 1–270
-  }
+    const idx=await r.json();
+    const arr=Array.isArray(idx.available)?idx.available:[];
+    availableLessons=arr.map(n=>parseInt(n,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+  }catch{ availableLessons=[]; }
 }
 function makePages(list){ const out=[]; for(let i=0;i<list.length;i+=PAGE_SIZE) out.push(list.slice(i,i+PAGE_SIZE)); return out; }
-function renderPager(){
-  pager.innerHTML=""; if(pages.length<=1) return;
-  pages.forEach((_,i)=>{
-    const start=pages[i][0], end=pages[i][pages[i].length-1];
-    const b=document.createElement("button");
-    b.className="page-btn"+(i===currentPage?" active":"");
-    b.textContent=`${start}–${end}`;
-    b.onclick=()=>{ currentPage=i; renderGrid(); renderPager(); };
-    pager.appendChild(b);
+function renderPager(){ pager.innerHTML=""; if(pages.length<=1) return;
+  pages.forEach((_,i)=>{ const s=pages[i][0], e=pages[i][pages[i].length-1];
+    const b=document.createElement("button"); b.className="page-btn"+(i===currentPage?" active":""); b.textContent=`${s}–${e}`;
+    b.onclick=()=>{ currentPage=i; renderGrid(); renderPager(); }; pager.appendChild(b);
   });
 }
-function renderGrid(){
-  grid.innerHTML="";
-  if(!pages.length){ grid.innerHTML="<div class='note'>No lessons found.</div>"; return; }
-  pages[currentPage].forEach(n=>{
-    const c=document.createElement("div");
-    c.className="chip"; c.textContent=`Lesson ${n}`;
-    c.onclick=()=> beginLessonSelection(n);
-    grid.appendChild(c);
-  });
+function renderGrid(){ grid.innerHTML=""; if(!pages.length){ grid.innerHTML="<div class='note'>No lessons found.</div>"; return; }
+  pages[currentPage].forEach(n=>{ const c=document.createElement("div"); c.className="chip"; c.textContent=`Lesson ${n}`; c.onclick=()=> beginLessonSelection(n); grid.appendChild(c); });
 }
 async function prepareLessonsOverlay(){
   await fetchAvailableLessons();
-  const list = availableLessons.length ? availableLessons : Array.from({length:270},(_,i)=>i+1);
+  const list=availableLessons.length?availableLessons:Array.from({length:270},(_,i)=>i+1);
   pages=makePages(list); currentPage=0; renderPager(); renderGrid();
-  if(availableLessons.length){
-    rangeNote.textContent=`Available range: Lesson ${availableLessons[0]} to Lesson ${availableLessons[availableLessons.length-1]}.`;
-  }else{
-    rangeNote.textContent=`No index found. Showing 1–270 (full range).`;
-  }
+  if(availableLessons.length){ rangeNote.textContent=`Available range: Lesson ${availableLessons[0]} to Lesson ${availableLessons[availableLessons.length-1]}.`; }
+  else{ rangeNote.textContent=`No index found; showing full range 1–270.`; }
 }
 function openLessons(){ lessonsOverlay.style.display="flex"; numInput.focus(); }
 function closeLessons(){ lessonsOverlay.style.display="none"; numInput.value=""; wordsInput.value=""; }
 openLessonsBtn.onclick=()=>{ prepareLessonsOverlay().then(openLessons); };
 closeLessonsBtn.onclick=closeLessons;
 lessonsOverlay.addEventListener("click", e=>{ if(e.target===lessonsOverlay) closeLessons(); });
-
-function wordsToNumber(phrase){
-  const ones={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9};
-  const teens={ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19};
-  const tens={twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
-  let s=(phrase||"").toLowerCase().replace(/-/g," ").replace(/[^a-z\s]/g," ").replace(/\s+/g," ").trim();
-  if(ones[s]!=null) return ones[s]; if(teens[s]!=null) return teens[s]; if(tens[s]!=null) return tens[s];
-  const t=s.split(" "); let total=0,cur=0;
-  for(const w of t){
-    if(ones[w]!=null){ cur+=ones[w]; continue; }
-    if(teens[w]!=null){ cur+=teens[w]; continue; }
-    if(tens[w]!=null){ cur+=tens[w]; continue; }
-    if(w==="hundred"){ if(cur===0) cur=1; cur*=100; total+=cur; cur=0; continue; }
-    if(w==="and"){ continue; }
-    return null;
-  }
-  total+=cur; return total||null;
+function goFromOverlay(){
+  let n=parseInt(numInput.value,10);
+  if(!n && wordsInput.value.trim()){ const w=wordsToNumberEN(wordsInput.value.trim()); if(w) n=w; }
+  if(!n || n<1 || n>270){ addSystem("Please type a valid lesson number (1–270)."); return; }
+  beginLessonSelection(n);
 }
-function parseLessonNumberFromText(text){
-  const s=(text||"").toLowerCase();
-  const m=s.match(/lesson\s+(\d{1,3})\b/); if(m){ const n=parseInt(m[1],10); if(n>=1 && n<=270) return n; }
-  const m2=s.match(/lesson\s+([a-z\s-]+)/); if(m2){ const n=wordsToNumber(m2[1]); if(n && n>=1 && n<=270) return n; }
-  return null;
-}
+goBtn.onclick=goFromOverlay;
+numInput.addEventListener("keydown", e=>{ if(e.key==="Enter") goFromOverlay(); });
+wordsInput.addEventListener("keydown", e=>{ if(e.key==="Enter") goFromOverlay(); });
 
-/* =================== Lesson + quiz (simple gate) =================== */
-let currentLesson=null, lessonData=null;
-const QUIZ_MIN=5, QUIZ_PASS=0.90;
-let quizActive=false, quizIndex=0, quizCorrect=0, quizQuestions=[];
-let pendingLesson=null, pendingData=null;
-let sessionLocked=false;
-
+/* =============== Lesson loading & Quiz gate =============== */
 async function fetchLessonJSON(num){
   try{
-    const res=await fetch(`https://www.leccion.datafast.pw/lessons/lesson${num}.json`, {cache:"no-store"});
-    if(!res.ok) return {ok:false};
+    const res=await fetch(`https://www.leccion.datafast.pw/lessons/lesson${num}.json`,{cache:"no-store"});
+    if(!res.ok) return {ok:false, error:"not-found"};
     const data=await res.json();
-    // suavizamos filtro: mostramos pero TTS no leerá español
+
+    // Block if the lesson appears to contain Spanish (absolutely no Spanish allowed)
+    const buf=[];
+    if(data.title) buf.push(data.title);
+    if(data.theory) buf.push(data.theory);
+    (data.objectives||[]).forEach(x=>buf.push(x));
+    (data.topics||[]).forEach(x=>buf.push(x));
+    (data.content||[]).forEach(c=>{ if(c.question) buf.push(c.question); if(c.answer) buf.push(c.answer); });
+    if(looksSpanish(buf.join(" "))) return {ok:false, error:"spanish"};
+
     return {ok:true, data};
-  }catch{ return {ok:false}; }
+  }catch{ return {ok:false, error:"fetch-failed"}; }
 }
 function normalize(s){ return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim(); }
 function isAnswerCorrect(user, expected){
@@ -251,7 +250,7 @@ function askNextQuiz(){
     if(pass){
       addMessage("✅ Passed. Access granted to the selected lesson. Opening now…","bot");
       lessonData=pendingData; currentLesson=pendingLesson;
-      const intro = `
+      const intro=`
         <b>Welcome to Lesson ${currentLesson}: ${lessonData.title||""}</b><br><br>
         <b>Theory:</b> ${lessonData.theory||"This lesson will guide you through the basics."}<br><br>
         <b>Objectives:</b><br>- ${(lessonData.objectives||[]).join("<br>- ")}<br><br>
@@ -260,11 +259,11 @@ function askNextQuiz(){
       `;
       addMessage(intro,"bot"); speakSafe("Lesson opened.");
       quizActive=false; quizQuestions=[]; quizIndex=0; quizCorrect=0;
+      sessionLocked=false; input.disabled=false; sendBtn.disabled=false; speakBtn.disabled=false;
     }else{
-      addMessage("❌ You did not reach 90%. Please review the previous lesson. Session ended.","bot");
+      addMessage("❌ You did not reach 90%. Please review the previous lesson carefully before advancing. Your session has ended. Thank you.","bot");
       speakSafe("You did not reach ninety percent. Please review the previous lesson. This session has ended.");
-      quizActive=false; sessionLocked=true;
-      input.disabled=true; sendBtn.disabled=true; speakBtn.disabled=true;
+      quizActive=false; sessionLocked=true; input.disabled=true; sendBtn.disabled=true; speakBtn.disabled=true;
     }
     return;
   }
@@ -286,57 +285,91 @@ async function startQuizGate(targetNum, targetData){
     addMessage(intro,"bot"); speakSafe("Lesson one is open."); return;
   }
   const prev=await fetchLessonJSON(targetNum-1);
-  if(!prev.ok){ addMessage(`Previous lesson (${targetNum-1}) is unavailable.`, "bot"); return; }
-  const items=(prev.data.content||[]).filter(c=>c&&c.question&&c.answer);
-  if(items.length<QUIZ_MIN){ addMessage(`Not enough questions in Lesson ${targetNum-1} to build a quiz.`, "bot"); return; }
-  const shuffled=[...items].sort(()=>Math.random()-0.5).slice(0,Math.max(QUIZ_MIN, Math.min(10, items.length)));
-  quizQuestions=shuffled.map(c=>({q:c.question,a:c.answer}));
+  if(!prev.ok){
+    const msg = prev.error==="spanish"
+      ? `Cannot start the quiz because Lesson ${targetNum-1} appears to contain Spanish. Please upload the English-only version.`
+      : `Cannot start the quiz because Lesson ${targetNum-1} is unavailable.`;
+    addMessage(msg,"bot"); return;
+  }
+  const items=(prev.data.content||[]).filter(c=>c && c.question && c.answer);
+  if(items.length<QUIZ_MIN){ addMessage(`The previous lesson (${targetNum-1}) does not have enough questions to build a quiz (found ${items.length}).`, "bot"); return; }
+  const shuffled=[...items].sort(()=>Math.random()-0.5);
+  const count=Math.min(10, Math.max(QUIZ_MIN, shuffled.length));
+  quizQuestions=shuffled.slice(0,count).map(c=>({q:c.question,a:c.answer}));
   quizActive=true; quizIndex=0; quizCorrect=0; pendingLesson=targetNum; pendingData=targetData;
   addMessage(`To access <b>Lesson ${targetNum}: ${targetData.title||""}</b>, please answer these questions from <b>Lesson ${targetNum-1}</b>. You must score <b>≥ 90%</b>.`,"bot");
+  speakSafe(`Starting the quiz for lesson ${targetNum-1}.`);
   askNextQuiz();
 }
 async function beginLessonSelection(n){
   const r=await fetchLessonJSON(n);
-  if(!r.ok){ addMessage(`Could not load Lesson ${n}.`, "bot"); return; }
+  if(!r.ok){
+    const msg = r.error==="spanish"
+      ? `Lesson ${n} appears to contain Spanish. Please upload the English-only version.`
+      : `Could not load Lesson ${n}.`;
+    addMessage(msg,"bot"); return;
+  }
   addMessage(`Lesson ${n} selected: <b>${r.data.title||""}</b>.`, "bot");
-  if(n>1) addMessage(`Before we begin, I will ask you some questions from Lesson ${n-1}.`, "bot");
+  if(n>1){ addMessage(`Before we begin, I will ask you some questions from <b>Lesson ${n-1}</b> to verify mastery.`, "bot"); }
   await startQuizGate(n, r.data);
 }
 
-/* =================== Teacher =================== */
+/* =============== Teacher (strict English-only; JSON-first, Groq fallback) =============== */
 async function teacherResponse(userText){
-  // Corrige y explica en inglés (si el proxy falla, da una respuesta local corta)
+  if(looksSpanish(userText)){
+    const msg="Please write in English. English-only mode is active.";
+    addMessage(msg,"bot"); speakSafe(msg); return;
+  }
+  // Quick local answers from JSON
+  const q=userText.toLowerCase(); let local="";
+  if(lessonData){
+    if(/objective|goal/.test(q)){ local="Objectives:\n- "+(lessonData.objectives||[]).join("\n- "); }
+    else if(/topic|point|content list/.test(q)){ local="Topics:\n- "+(lessonData.topics||[]).join("\n- "); }
+    else if(/example|exercise|question/.test(q) && Array.isArray(lessonData.content) && lessonData.content.length){
+      const qs=lessonData.content.map(c=>"• "+c.question).join("\n"); local="Sample questions:\n"+qs;
+    }
+  }
+  if(local){ addMessage(local.replace(/\n/g,"<br>"),"bot"); speakSafe("Here you are."); return; }
+
+  // Groq teacher (proxy)
   let answer="";
   try{
-    const resp=await fetch("https://bot-maestro-proxy.kast-mercadeo.workers.dev/",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text:`ROLE: English teacher (English only). Keep answers concise and on-topic to the current lesson.
-If the student writes in Spanish, reply in English and ask them to switch to English.
-If you detect a grammar issue, first provide a corrected version, then explain briefly (1–2 lines), and give 1–2 examples.
+    const response=await fetch("https://bot-maestro-proxy.kast-mercadeo.workers.dev/",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ text:`ROLE: You are an English teacher at St. Mary's College.
+HARD RULES: Respond STRICTLY in English. Never use Spanish. If the student writes in Spanish, reply in English and ask them to switch to English.
+CONTEXT: Current lesson = ${lessonData ? lessonData.title : "current lesson (JSON)"}.
+TASKS:
+1) If the student's sentence has grammar or pronunciation issues, first show a corrected version.
+2) Then explain briefly (1–2 lines) and give 2–3 short examples.
+3) Stay strictly on the current lesson theme.
+4) Encourage politely and, if relevant, suggest one short practice line to repeat.
+
 Student says: "${userText}"`})
     });
-    const data=await resp.json(); answer=data.reply||"";
+    const data=await response.json(); answer=data.reply||"(no reply)";
   }catch{
-    answer="Let's keep it short: could you rephrase your question about this lesson?";
+    const alternatives=[
+      "We say 'Good morning' until noon. 'Good night' is a farewell, not a greeting.",
+      "Formal greetings show respect, like 'Good morning'. Informal ones include 'Hi' or 'Hey'.",
+      "Use 'There is' for singular and 'There are' for plural; questions: 'Is there…?' / 'Are there…?'."
+    ];
+    answer=alternatives[Math.floor(Math.random()*alternatives.length)];
   }
-  if(looksSpanish(answer)) answer="(English only) Please keep the conversation in English.";
+  if(looksSpanish(answer)){ answer="(Blocked non-English output). Please keep the conversation in English."; }
   addMessage(answer.replace(/\n/g,"<br>"),"bot"); speakSafe(answer);
 }
 
-/* =================== Input & speech =================== */
+/* =============== Input & speech =============== */
 const input = document.getElementById("textInput");
 const sendBtn = document.getElementById("sendBtn");
 const speakBtn = document.getElementById("speakBtn");
 const stopBtn = document.getElementById("stopBtn");
 
-function parseLessonNumberFromUser(text){
-  const n = parseLessonNumberFromText(text);
-  return n;
-}
 async function handleUserMessage(text){
   if(!text) return;
   addMessage(text,"user");
-  if(sessionLocked){ addMessage("This session has ended. Please start again later.", "bot"); return; }
+  if(sessionLocked){ addMessage("This session has ended. Please review the previous lesson and start again.", "bot"); return; }
 
   if(quizActive){
     const expected=quizQuestions[quizIndex].a;
@@ -345,47 +378,35 @@ async function handleUserMessage(text){
     quizIndex++; askNextQuiz(); return;
   }
 
-  const n = parseLessonNumberFromUser(text);
+  const n=parseLessonNumberFromText(text);
   if(n){ await beginLessonSelection(n); return; }
 
   if(lessonData){ await teacherResponse(text); }
-  else{ addMessage(`Please choose a lesson first (e.g., <span class="kbd">Lesson 1</span>).`, "bot"); }
+  else{ addMessage(`Welcome! Tell me which lesson you want to review (e.g., <span class="kbd">Lesson 1</span>).`, "bot"); }
 }
 function sendMessage(){ const t=input.value.trim(); input.value=""; handleUserMessage(t); }
-sendBtn.onclick = sendMessage;
+sendBtn.onclick=sendMessage;
 input.addEventListener("keydown", e=>{ if(e.key==="Enter") sendMessage(); });
 
 let recognition=null;
 if("webkitSpeechRecognition" in window){
-  recognition = new webkitSpeechRecognition();
+  recognition=new webkitSpeechRecognition();
   recognition.lang="en-US"; recognition.interimResults=false; recognition.maxAlternatives=1;
-  recognition.onresult = e => { const t=e.results[0][0].transcript; handleUserMessage(t); };
+  recognition.onresult=e=>{ const t=e.results[0][0].transcript; handleUserMessage(t); };
 }
-speakBtn.onclick = ()=>{ if(recognition) recognition.start(); };
-stopBtn.onclick  = ()=>{ try{ if(recognition) recognition.stop(); speechSynthesis.cancel(); }catch{} };
+speakBtn.onclick=()=>{ if(recognition) recognition.start(); };
+stopBtn.onclick =()=>{ stopAll(); };
 
-/* =================== Overlay actions =================== */
-function goFromOverlay(){
-  let n = parseInt(numInput.value,10);
-  if(!n && wordsInput.value.trim()){ const w=wordsToNumber(wordsInput.value.trim()); if(w) n=w; }
-  if(!n || n<1 || n>270){ addSystem("Please type a valid lesson number (1–270)."); return; }
-  beginLessonSelection(n);
-}
-goBtn.onclick=goFromOverlay;
-numInput.addEventListener("keydown", e=>{ if(e.key==="Enter") goFromOverlay(); });
-wordsInput.addEventListener("keydown", e=>{ if(e.key==="Enter") goFromOverlay(); });
-
-/* =================== Boot =================== */
+/* =============== Boot (always greets) =============== */
 (async function init(){
-  // saludo SIEMPRE visible (sin depender de fetch)
-  addMessage(`Welcome! Tell me which lesson you want to review (e.g., <span class="kbd">Lesson 1</span>).`,"bot");
-  // luego intentamos el rango disponible (si falla, no afecta UI)
+  sessionLocked=false; input.disabled=false; sendBtn.disabled=false; speakBtn.disabled=false;
+  addMessage(`Welcome! Tell me which lesson you want to review (e.g., <span class="kbd">Lesson 1</span>).`, "bot");
   try{
     await fetchAvailableLessons();
     if(availableLessons.length){
       addSystem(`Available range: Lesson ${availableLessons[0]} to Lesson ${availableLessons[availableLessons.length-1]}. Tap “📚 Lessons”.`);
     }else{
-      addSystem(`Tip: create <index.json> to control available lessons. Showing full range 1–270.`);
+      addSystem(`Tip: create <index.json> to control availability. Showing full range 1–270.`);
     }
   }catch{}
 })();
