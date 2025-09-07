@@ -3,30 +3,33 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>St. Mary’s College – English Leveling Bot (v1.9.4)</title>
+  <title>St. Mary’s College – English Leveling Bot (v1.9.5)</title>
   <style>
     :root{
       --bg:#f5f7fa; --ink:#0f172a; --bot:#0ea5e9; --user:#22c55e; --card:#ffffff; --muted:#64748b;
-      --focus:#2563eb; --select:#fde047; --select-ink:#111827;
-      --overlay: rgba(15,23,42,.55);
+      --focus:#2563eb; --select:#fde047; --select-ink:#111827; --overlay: rgba(15,23,42,.55);
+      --chip:#ffffff; --chip-border:#cbd5e1; --chip-hover:#0ea5e9; --chip-ink:#0f172a;
     }
     *{box-sizing:border-box}
     ::selection{ background:var(--select); color:var(--select-ink); }
+    ::-moz-selection{ background:var(--select); color:var(--select-ink); }
+
     body{
       margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--ink);
       display:flex; flex-direction:column; min-height:100vh;
     }
     header{
       background:#0b3b71; color:#fff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between;
-      font-weight:700;
+      font-weight:700; gap:8px; flex-wrap:wrap;
     }
     header .right{ display:flex; gap:8px; }
     .btn{
       border:0; padding:10px 12px; font-weight:600; cursor:pointer; border-radius:10px; color:#fff;
       box-shadow:0 2px 6px rgba(2,8,23,.08);
     }
-    .btn-picker{ background:#7c3aed; } /* Lesson Picker */
+    .btn-lessons{ background:#7c3aed; } /* abre overlay de botones */
     .btn-stop{ background:#ef4444; }
+
     #chat{ flex:1; max-width:900px; width:100%; margin:16px auto; padding:0 12px; }
     .bubble{
       max-width:75%; padding:12px 14px; margin:8px 0; border-radius:14px; line-height:1.45;
@@ -36,6 +39,11 @@
     .user{ background:var(--user); color:#fff; margin-left:auto; border-bottom-right-radius:4px; }
     .sys{ background:#e2e8f0; color:#0f172a; margin:16px auto; border-radius:10px; }
     .muted{ color:var(--muted); font-size:14px; }
+
+    /* CONTRASTE: kbd dentro de burbuja del bot */
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#e2e8f0; padding:1px 6px; border-radius:6px;}
+    .bot .kbd{ background:#ffffff; color:#0f172a; } /* <- FIX de contraste en bot */
+
     #controls{
       display:flex; gap:8px; padding:12px; background:#fff; border-top:1px solid #e2e8f0;
       position:sticky; bottom:0;
@@ -52,32 +60,49 @@
     #sendBtn{ background:#22c55e; }
     #speakBtn{ background:#0ea5e9; }
     #stopBtn{ background:#ef4444; }
-    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#e2e8f0; padding:1px 6px; border-radius:6px;}
 
-    /* Picker (compacto, sin lista gigante) */
-    #pickerOverlay{
+    /* Overlay de lecciones (un solo botón lo abre) */
+    #lessonsOverlay{
       position:fixed; inset:0; background:var(--overlay); display:none; align-items:center; justify-content:center; z-index:50;
     }
-    #pickerCard{
-      width:min(560px, 92vw); background:#fff; border-radius:16px; padding:16px; box-shadow:0 16px 40px rgba(2,8,23,.35);
+    #lessonsCard{
+      width:min(820px, 94vw); background:#fff; border-radius:16px; padding:16px; box-shadow:0 16px 40px rgba(2,8,23,.35);
+      display:flex; flex-direction:column; gap:12px;
     }
-    #pickerCard h3{ margin:0 0 10px 0; }
-    .row{ display:flex; gap:10px; margin:10px 0; }
+    #lessonsCard h3{ margin:0; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
     .row input[type="number"], .row input[type="text"]{
-      flex:1; padding:12px 14px; border:1px solid #cbd5e1; border-radius:10px; outline:0;
+      flex:1; min-width:220px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:10px; outline:0;
     }
     .row input:focus{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(37,99,235,.2); }
-    .btn-go{ background:#0ea5e9; }
-    .btn-close{ background:#334155; }
+    .btn-go{ background:#0ea5e9; color:#fff; }
+    .btn-close{ background:#334155; color:#fff; }
+
+    .pager{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .page-btn{
+      background:#fff; color:#0f172a; border:1px solid #cbd5e1; padding:6px 10px; border-radius:999px; cursor:pointer;
+    }
+    .page-btn.active{ background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+
+    .grid{
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(90px,1fr)); gap:8px; max-height:340px; overflow:auto; padding:4px;
+    }
+    .chip{
+      background:var(--chip); border:1px solid var(--chip-border); color:var(--chip-ink); padding:8px 10px; border-radius:999px;
+      box-shadow:0 2px 4px rgba(2,8,23,.06); cursor:pointer; font-weight:700; text-align:center; user-select:none;
+      outline:none;
+    }
+    .chip:hover, .chip:focus-visible{ border-color:var(--chip-hover); box-shadow:0 0 0 3px rgba(14,165,233,.2); }
+    .chip:active{ transform:translateY(1px); }
 
     .note{ font-size:14px; color:var(--muted); }
   </style>
 </head>
 <body>
   <header>
-    <div>St. Mary’s College – English Leveling Bot (v1.9.4)</div>
+    <div>St. Mary’s College – English Leveling Bot (v1.9.5)</div>
     <div class="right">
-      <button class="btn btn-picker" id="openPickerBtn">🎯 Pick lesson</button>
+      <button class="btn btn-lessons" id="openLessonsBtn">📚 Lessons</button>
       <button class="btn btn-stop" id="headerStopBtn">⏹ Stop</button>
     </div>
   </header>
@@ -91,20 +116,23 @@
     <button id="stopBtn"  class="btn">⏹ Stop</button>
   </div>
 
-  <!-- Picker overlay -->
-  <div id="pickerOverlay" role="dialog" aria-modal="true">
-    <div id="pickerCard">
-      <h3>Pick a lesson</h3>
-      <div class="note" id="pickerRangeNote">Loading available lessons…</div>
+  <!-- Overlay único para lecciones (botones paginados) -->
+  <div id="lessonsOverlay" role="dialog" aria-modal="true">
+    <div id="lessonsCard">
+      <h3>Select a lesson</h3>
+      <div class="note" id="rangeNote">Loading available lessons…</div>
+
       <div class="row">
-        <input id="pickerInput" type="number" min="1" max="270" placeholder="Type a lesson number (e.g., 12)"/>
-        <button class="btn btn-go" id="pickerGoBtn">Go</button>
-        <button class="btn btn-close" id="pickerCloseBtn">Close</button>
+        <input id="numInput" type="number" min="1" max="270" placeholder="Go to lesson # (e.g., 12)"/>
+        <input id="wordsInput" type="text" placeholder="Or type in words (e.g., twenty three)"/>
+        <button class="btn-go" id="goBtn">Go</button>
+        <button class="btn-close" id="closeLessonsBtn">Close</button>
       </div>
-      <div class="row">
-        <input id="pickerWords" type="text" placeholder="Or type in words (e.g., twenty three)"/>
-      </div>
-      <div class="note">Tip: you can also type <span class="kbd">Lesson 12</span> directly in the chat.</div>
+
+      <div class="pager" id="pager"></div>
+      <div class="grid"  id="grid"></div>
+
+      <div class="note">Tip: you can also type <span class="kbd">Lesson 12</span> in the chat.</div>
     </div>
   </div>
 
@@ -183,7 +211,7 @@
     // ========= State =========
     let currentLesson = null;
     let lessonData = null;
-    let availableLessons = []; // control estricto por index.json
+    let availableLessons = []; // lecciones permitidas por index.json
 
     // ========= Lessons index =========
     async function fetchAvailableLessons(){
@@ -195,7 +223,7 @@
         availableLessons = list.map(n => parseInt(n,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
         return availableLessons;
       }catch{
-        availableLessons = []; // sin índice → no restringimos (pero avisamos)
+        availableLessons = []; // sin índice → no restringimos (pero lo avisamos)
         return [];
       }
     }
@@ -203,7 +231,7 @@
     // ========= Load lesson (respeta index.json) =========
     async function loadLesson(num){
       if(availableLessons.length && !availableLessons.includes(num)){
-        addMessage(`Lesson ${num} is not available yet. Type a lesson from the available range.`, "bot");
+        addMessage(`Lesson ${num} is not available yet. Please choose one from the available range.`, "bot");
         return;
       }
       try{
@@ -222,6 +250,7 @@
         `;
         addMessage(intro, "bot");
         speak(`Welcome to Lesson ${num}: ${lessonData.title}. You can now ask me questions about this lesson.`, "en-US");
+        closeLessonsOverlay(); // cerrar overlay al elegir
       }catch(e){
         addMessage(`Could not load Lesson ${num}.`, "bot");
       }
@@ -279,7 +308,6 @@ The student asked: "${userText}".
       if(!text) return;
       addMessage(text, "user");
 
-      // Parse lesson from text
       const n = parseLessonNumberFromText(text);
       if(n){ await loadLesson(n); return; }
 
@@ -301,71 +329,111 @@ The student asked: "${userText}".
       recognition.lang = "en-US"; recognition.interimResults = false; recognition.maxAlternatives = 1;
       recognition.onresult = e => { const t = e.results[0][0].transcript; handleUserMessage(t); };
     }
-    speakBtn.onclick = () => recognition && recognition.start();
     function stopAll(){ if(recognition) recognition.stop(); speechSynthesis.cancel(); }
+    speakBtn.onclick = () => recognition && recognition.start();
     stopBtn.onclick  = stopAll;
     headerStopBtn.onclick = stopAll;
 
-    // ========= Picker (compacto) =========
-    const pickerOverlay = document.getElementById("pickerOverlay");
-    const openPickerBtn = document.getElementById("openPickerBtn");
-    const pickerCloseBtn= document.getElementById("pickerCloseBtn");
-    const pickerGoBtn   = document.getElementById("pickerGoBtn");
-    const pickerInput   = document.getElementById("pickerInput");
-    const pickerWords   = document.getElementById("pickerWords");
-    const pickerRangeNote = document.getElementById("pickerRangeNote");
+    // ========= Overlay de Lecciones (un botón lo abre) =========
+    const lessonsOverlay = document.getElementById("lessonsOverlay");
+    const openLessonsBtn = document.getElementById("openLessonsBtn");
+    const closeLessonsBtn= document.getElementById("closeLessonsBtn");
+    const numInput = document.getElementById("numInput");
+    const wordsInput = document.getElementById("wordsInput");
+    const goBtn = document.getElementById("goBtn");
+    const rangeNote = document.getElementById("rangeNote");
+    const pager = document.getElementById("pager");
+    const grid  = document.getElementById("grid");
 
-    function openPicker(){
-      pickerOverlay.style.display = "flex";
-      pickerInput.focus();
+    const PAGE_SIZE = 30;
+    let pages = []; // arrays de números
+    let currentPage = 0;
+
+    function makePages(list){
+      const arr = [...list];
+      const out = [];
+      for(let i=0; i<arr.length; i+=PAGE_SIZE) out.push(arr.slice(i, i+PAGE_SIZE));
+      return out;
     }
-    function closePicker(){
-      pickerOverlay.style.display = "none";
-      pickerInput.value = "";
-      pickerWords.value = "";
+    function renderPager(){
+      pager.innerHTML = "";
+      if(pages.length <= 1) return;
+      pages.forEach((_,i)=>{
+        const start = pages[i][0];
+        const end   = pages[i][pages[i].length-1];
+        const b = document.createElement("button");
+        b.className = "page-btn" + (i===currentPage ? " active" : "");
+        b.textContent = `${start}–${end}`;
+        b.onclick = ()=> { currentPage = i; renderGrid(); renderPager(); };
+        pager.appendChild(b);
+      });
     }
-    async function goFromPicker(){
-      let n = parseInt(pickerInput.value,10);
-      if(!n && pickerWords.value.trim()){
-        const w = wordsToNumber(pickerWords.value.trim());
+    function renderGrid(){
+      grid.innerHTML = "";
+      if(!pages.length){ grid.innerHTML = "<div class='note'>No lessons found. Create /lessons/index.json</div>"; return; }
+      pages[currentPage].forEach(n=>{
+        const c = document.createElement("div");
+        c.className = "chip";
+        c.textContent = `Lesson ${n}`;
+        c.onclick = ()=> loadLesson(n);
+        grid.appendChild(c);
+      });
+    }
+    function openLessonsOverlay(){
+      lessonsOverlay.style.display = "flex";
+      numInput.focus();
+    }
+    function closeLessonsOverlay(){
+      lessonsOverlay.style.display = "none";
+      numInput.value = ""; wordsInput.value = "";
+    }
+    async function prepareLessonsOverlay(){
+      await fetchAvailableLessons();
+      // Si no hay índice, por UX mostramos 1..270, pero avisamos que ideal es usar index.json
+      const list = availableLessons.length ? availableLessons : Array.from({length:270},(_,i)=>i+1);
+      pages = makePages(list);
+      currentPage = 0;
+      renderPager();
+      renderGrid();
+
+      if(availableLessons.length){
+        const min = availableLessons[0], max = availableLessons[availableLessons.length-1];
+        rangeNote.textContent = `Available range: Lesson ${min} to Lesson ${max} (${availableLessons.length} lessons).`;
+      }else{
+        rangeNote.textContent = `No index found. Showing 1–270 (full range). Create /lessons/index.json to control availability.`;
+      }
+    }
+    function goFromOverlay(){
+      let n = parseInt(numInput.value,10);
+      if(!n && wordsInput.value.trim()){
+        const w = wordsToNumber(wordsInput.value.trim());
         if(w) n = w;
       }
-      if(!n){ addSystem("Please type a valid lesson number."); return; }
-      if(availableLessons.length && !availableLessons.includes(n)){
-        addSystem(`Lesson ${n} is not available. Choose a number within the available range.`);
-        return;
-      }
-      closePicker();
-      await loadLesson(n);
+      if(!n || n<1 || n>270){ addSystem("Please type a valid lesson number (1–270)."); return; }
+      loadLesson(n);
     }
 
-    openPickerBtn.onclick = openPicker;
-    pickerCloseBtn.onclick= closePicker;
-    pickerGoBtn.onclick   = goFromPicker;
-    pickerInput.addEventListener("keydown", e => { if(e.key==="Enter") goFromPicker(); });
-    pickerWords.addEventListener("keydown", e => { if(e.key==="Enter") goFromPicker(); });
-    pickerOverlay.addEventListener("click", e => { if(e.target===pickerOverlay) closePicker(); });
+    openLessonsBtn.onclick = ()=> { prepareLessonsOverlay().then(openLessonsOverlay); };
+    closeLessonsBtn.onclick= closeLessonsOverlay;
+    goBtn.onclick = goFromOverlay;
+    numInput.addEventListener("keydown", e => { if(e.key==="Enter") goFromOverlay(); });
+    wordsInput.addEventListener("keydown", e => { if(e.key==="Enter") goFromOverlay(); });
+    lessonsOverlay.addEventListener("click", e => { if(e.target===lessonsOverlay) closeLessonsOverlay(); });
 
     // ========= Boot =========
     (async function init(){
       await fetchAvailableLessons();
-      // Nota de rango disponible
+      const last = parseInt(localStorage.getItem("lastLesson")||"0",10);
       if(availableLessons.length){
         const min = availableLessons[0], max = availableLessons[availableLessons.length-1];
-        pickerRangeNote.textContent = `Available range: Lesson ${min} to Lesson ${max} (${availableLessons.length} lessons).`;
         addMessage(`Welcome! Tell me which lesson you want to review (e.g., <span class="kbd">Lesson 1</span>). Available range now: Lesson ${min} to Lesson ${max}.`, "bot");
       }else{
-        pickerRangeNote.textContent = `No index found. Create /lessons/index.json like {"available":[1,2,3]}.`;
         addMessage(`Welcome! Tell me which lesson you want to review (e.g., <span class="kbd">Lesson 1</span>). Tip: create <span class="kbd">/lessons/index.json</span> to control availability.`, "bot");
       }
-
-      const last = parseInt(localStorage.getItem("lastLesson")||"0",10);
       if(last && (!availableLessons.length || availableLessons.includes(last))){
-        addSystem(`Last time you studied Lesson ${last}. Type <Lesson ${last}> or press “🎯 Pick lesson”.`);
+        addSystem(`Last time you studied Lesson ${last}. Type <Lesson ${last}> or click “📚 Lessons”.`);
       }
     })();
   </script>
 </body>
 </html>
-
-
