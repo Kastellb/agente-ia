@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>St. Mary’s College – English Leveling Bot (v2.1)</title>
+  <title>St. Mary’s College – English Leveling Bot (v2.2)</title>
   <style>
     :root{
-      --bg:#f5f7fa; --ink:#0f172a; --bot:#0ea5e9; --user:#22c55e; --card:#ffffff; --muted:#64748b;
+      --bg:#f5f7fa; --ink:#0f172a; --bot:#0ea5e9; --user:#22c55e; --muted:#64748b;
       --focus:#2563eb; --select:#fde047; --select-ink:#111827; --overlay: rgba(15,23,42,.55);
-      --chip:#ffffff; --chip-border:#cbd5e1; --chip-hover:#0ea5e9; --chip-ink:#0f172a;
+      --chip:#ffffff; --chip-border:#cbd5e1; --chip-ink:#0f172a;
     }
     *{box-sizing:border-box}
     ::selection{ background:var(--select); color:var(--select-ink); }
@@ -23,12 +23,9 @@
       font-weight:700; gap:8px; flex-wrap:wrap;
     }
     header .right{ display:flex; gap:8px; }
-    .btn{
-      border:0; padding:12px 14px; font-weight:700; cursor:pointer; border-radius:12px; color:#fff;
-      box-shadow:0 2px 6px rgba(2,8,23,.08); min-height:48px;
-    }
+    .btn{ border:0; padding:12px 14px; font-weight:700; cursor:pointer; border-radius:12px; color:#fff;
+          box-shadow:0 2px 6px rgba(2,8,23,.08); min-height:48px; }
     .btn-lessons{ background:#7c3aed; }
-    .btn-stop{ background:#ef4444; }
 
     #chat{ flex:1; max-width:900px; width:100%; margin:16px auto; padding:0 12px; }
     .bubble{
@@ -42,7 +39,7 @@
     .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:#e2e8f0; padding:1px 6px; border-radius:6px;}
     .bot .kbd{ background:#ffffff; color:#0f172a; }
 
-    /* Controls móvil: input arriba + 3 botones abajo */
+    /* Controls (móvil/desktop) */
     #controls{
       position:sticky; bottom:0; background:#fff; border-top:1px solid #e2e8f0;
       padding:10px clamp(10px,3vw,16px) calc(10px + env(safe-area-inset-bottom)) clamp(10px,3vw,16px);
@@ -50,7 +47,7 @@
     }
     #textInput{
       width:100%; padding:12px 14px; font-size:16px; border:1px solid #cbd5e1; border-radius:12px; outline:0;
-      transition:border .15s, box-shadow .15s; min-height:48px;
+      transition:border .15s, box-shadow .15s; min-height:48px; background:#fff; color:#0f172a;
     }
     #textInput:focus{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(37,99,235,.2); }
     .buttons{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
@@ -58,16 +55,10 @@
     #speakBtn{ background:#0ea5e9; }
     #stopBtn{ background:#ef4444; }
 
-    /* Desktop: barra horizontal */
     @media (min-width: 720px){
       #controls{ display:flex; align-items:center; gap:10px; padding-bottom:12px; }
       #textInput{ flex:1; }
       .buttons{ display:flex; gap:10px; }
-    }
-
-    /* Móvil: ocultar Stop del header */
-    @media (max-width: 719px){
-      #headerStopBtn{ display:none; }
     }
 
     /* Overlay lecciones */
@@ -80,25 +71,24 @@
     .row{ display:flex; gap:10px; flex-wrap:wrap; }
     .row input[type="number"], .row input[type="text"]{ flex:1; min-width:220px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:10px; outline:0; }
     .row input:focus{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(37,99,235,.2); }
-    .btn-go{ background:#0ea5e9; color:#fff; }
-    .btn-close{ background:#334155; color:#fff; }
+    .btn-go{ background:#0ea5e9; color:#fff; border:0; padding:10px 12px; border-radius:10px; }
+    .btn-close{ background:#334155; color:#fff; border:0; padding:10px 12px; border-radius:10px; }
     .pager{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .page-btn{ background:#fff; color:#0f172a; border:1px solid #cbd5e1; padding:6px 10px; border-radius:999px; cursor:pointer; }
     .page-btn.active{ background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
     .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:8px; max-height:340px; overflow:auto; padding:4px; }
     .chip{ background:var(--chip); border:1px solid var(--chip-border); color:var(--chip-ink); padding:8px 10px; border-radius:999px;
            box-shadow:0 2px 4px rgba(2,8,23,.06); cursor:pointer; font-weight:700; text-align:center; user-select:none; outline:none; }
-    .chip:hover, .chip:focus-visible{ border-color:var(--chip-hover); box-shadow:0 0 0 3px rgba(14,165,233,.2); }
-    .chip:active{ transform:translateY(1px); }
+    .chip:hover, .chip:focus-visible{ border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.2); }
     .note{ font-size:14px; color:var(--muted); }
   </style>
 </head>
 <body>
   <header>
-    <div>St. Mary’s College – English Leveling Bot (v2.1)</div>
+    <div>St. Mary’s College – English Leveling Bot (v2.2)</div>
     <div class="right">
       <button class="btn btn-lessons" id="openLessonsBtn">📚 Lessons</button>
-      <button class="btn btn-stop" id="headerStopBtn">⏹ Stop</button>
+      <!-- (Stop arriba eliminado) -->
     </div>
   </header>
 
@@ -122,8 +112,8 @@
       <div class="row">
         <input id="numInput" type="number" min="1" max="270" placeholder="Go to lesson # (e.g., 12)"/>
         <input id="wordsInput" type="text" placeholder="Or type in words (e.g., twenty three)"/>
-        <button class="btn btn-go" id="goBtn">Go</button>
-        <button class="btn btn-close" id="closeLessonsBtn">Close</button>
+        <button class="btn-go" id="goBtn">Go</button>
+        <button class="btn-close" id="closeLessonsBtn">Close</button>
       </div>
       <div class="pager" id="pager"></div>
       <div class="grid"  id="grid"></div>
@@ -134,16 +124,16 @@
   <script>
     /* ================= EN-only guard (fuerte) ================= */
     const EN_ONLY = true;
-    const SPANISH_RE = /[áéíóúñü¿¡]|(?:\b(?:el|la|los|las|de|del|al|y|o|pero|porque|con|sin|para|por|un|una|unos|unas|es|está|está|hola|gracias|buenos|buenas|tardes|noches|por favor|cómo|qué|dónde|cuándo|lección|leccion)\b)/i;
+    const SPANISH_RE = /[áéíóúñü¿¡]|(?:\b(?:el|la|los|las|de|del|al|y|o|pero|porque|con|sin|para|por|un|una|unos|unas|es|está|hola|gracias|buenos|buenas|tardes|noches|por favor|cómo|qué|dónde|cuándo|lección|leccion)\b)/i;
     const SP_HINTS_RE = /\b(hola|buenos|buenas|noches|tardes|usted(?:es)?|gracias|por\s+favor|porque|cómo|qué|dónde|cuándo|lección|leccion)\b/i;
-    const SP_STOPWORDS = new Set(["de","la","que","el","en","y","a","los","del","se","las","por","un","para","con","no","una","su","al","lo","como","más","o","pero","sus","le","ya","o","este","sí","porque","esta","entre","cuando","muy","sin","sobre","también","me","hasta"]);
+    const SP_STOP = new Set(["de","la","que","el","en","y","a","los","del","se","las","por","un","para","con","no","una","su","al","lo","como","más","o","pero","sus","le","ya","este","sí","porque","esta","entre","cuando","muy","sin","sobre","también","me","hasta"]);
 
     function looksSpanish(text){
       const s = (text||"").toLowerCase();
       if (SPANISH_RE.test(s) || SP_HINTS_RE.test(s)) return true;
       const tokens = s.replace(/[^a-z\s]/g," ").split(/\s+/).filter(Boolean);
       if (!tokens.length) return false;
-      let hits=0; for(const t of tokens){ if(SP_STOPWORDS.has(t)) hits++; }
+      let hits=0; for(const t of tokens){ if(SP_STOP.has(t)) hits++; }
       return hits / tokens.length > 0.25;
     }
 
@@ -153,10 +143,8 @@
     const sendBtn=document.getElementById("sendBtn");
     const speakBtn=document.getElementById("speakBtn");
     const stopBtn=document.getElementById("stopBtn");
-    const headerStopBtn=document.getElementById("headerStopBtn");
 
     function addMessage(html, role="bot"){
-      // Bloqueo preventivo si (por error) llega español en mensajes del bot
       if(role==="bot"){
         const plain = html.replace(/<[^>]*>/g," ");
         if(looksSpanish(plain)){
@@ -180,17 +168,11 @@
     /* ================= TTS limpio ================= */
     function sanitizeForSpeech(text){
       let t = String(text||"");
-      // quitar HTML
       t = t.replace(/<[^>]*>/g,' ');
-      // quitar URLs
       t = t.replace(/\bhttps?:\/\/\S+/gi,' ');
-      // quitar entidades html
       t = t.replace(/&[a-z]+;/gi,' ');
-      // quitar emojis/símbolos (fallback + property escapes)
       try{ t = t.replace(/\p{Extended_Pictographic}/gu,''); }catch{ t = t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,''); }
-      // quitar caracteres no alfanum/puntuación básica
       try{ t = t.replace(/[^\p{L}\p{N}\.\,\:\;\?\!\s]/gu,' '); }catch{ t = t.replace(/[^A-Za-z0-9\.\,\:\;\?\!\s]/g,' '); }
-      // compactar espacios
       t = t.replace(/\s{2,}/g,' ').trim();
       return t;
     }
@@ -198,12 +180,13 @@
       try{
         const plain = sanitizeForSpeech(text);
         if(!plain) return;
-        if(looksSpanish(plain)) return; // nunca leer español
+        if(looksSpanish(plain)) return;
         speechSynthesis.cancel();
         const u=new SpeechSynthesisUtterance(plain);
         u.lang=lang; speechSynthesis.speak(u);
       }catch{}
     }
+    function stopAll(){ try{ if(recognition) recognition.stop(); speechSynthesis.cancel(); }catch{} }
 
     /* ================= Parse 'Lesson N' ================= */
     function wordsToNumber(phrase){
@@ -234,11 +217,16 @@
 
     /* ================= State & index ================= */
     let currentLesson=null, lessonData=null, availableLessons=[];
+    let quizActive=false, quizIndex=0, quizCorrect=0, quizQuestions=[];
+    let sessionLocked=false;
+    let pendingLessonNum=null, pendingLessonData=null;
+
     async function fetchAvailableLessons(){
       try{
         const r=await fetch("https://www.leccion.datafast.pw/lessons/index.json",{cache:"no-store"});
         if(!r.ok) throw new Error("index not found");
-        const idx=await r.json(); const list=Array.isArray(idx.available)?idx.available:[];
+        const idx=await r.json();
+        const list=Array.isArray(idx.available)?idx.available:[];
         availableLessons=list.map(n=>parseInt(n,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b); return availableLessons;
       }catch{ availableLessons=[]; return []; }
     }
@@ -256,9 +244,6 @@
 
     /* ================= Quiz Gate ================= */
     const QUIZ_MIN=5, QUIZ_MAX=10, QUIZ_PASS=0.90;
-    let quizActive=false, quizIndex=0, quizCorrect=0, quizQuestions=[];
-    let sessionLocked=false;
-    let pendingLessonNum=null, pendingLessonData=null;
 
     function normalize(s){
       return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
@@ -294,6 +279,7 @@
           `;
           addMessage(intro,"bot");
           quizActive=false; quizQuestions=[]; quizIndex=0; quizCorrect=0;
+          input.disabled=false; sendBtn.disabled=false; speakBtn.disabled=false;
         }else{
           addMessage("❌ You did not reach 90%. Please review the previous lesson carefully before advancing. Your session has ended. Thank you.","bot");
           speakSafe("You did not reach ninety percent. Please review the previous lesson. This session has ended.","en-US");
@@ -307,6 +293,8 @@
     }
     async function startQuizGate(targetNum, targetData){
       if(targetNum===1){
+        // Sin quiz para L1
+        sessionLocked=false; input.disabled=false; sendBtn.disabled=false; speakBtn.disabled=false;
         lessonData=targetData; currentLesson=1; localStorage.setItem("lastLesson","1");
         const intro=`
           <b>Welcome to Lesson 1: ${lessonData.title}</b><br><br>
@@ -334,6 +322,7 @@
       const count=Math.min(QUIZ_MAX, Math.max(QUIZ_MIN, shuffled.length));
       quizQuestions = shuffled.slice(0,count).map(c=>({ q:c.question, a:c.answer }));
       quizActive=true; quizIndex=0; quizCorrect=0; pendingLessonNum=targetNum; pendingLessonData=targetData;
+      sessionLocked=false; input.disabled=false; sendBtn.disabled=false; speakBtn.disabled=false;
       addMessage(`To access <b>Lesson ${targetNum}: ${targetData.title}</b>, please answer these questions from <b>Lesson ${prevNum}</b>. You must score <b>≥ 90%</b>.`,"bot");
       askNextQuiz();
     }
@@ -352,12 +341,10 @@
 
     /* ================= Teacher (JSON-first; Groq fallback EN-only) ================= */
     async function teacherResponse(userText){
-      // Si el usuario escribe en español, responder en inglés pidiendo cambio
       if(looksSpanish(userText)){
         const msg="Please write in English. English-only mode is active.";
         addMessage(msg,"bot"); speakSafe(msg,"en-US"); return;
       }
-
       const q=userText.toLowerCase(); let local="";
       if(lessonData){
         if(/objective|goal/.test(q)){ local="Objectives:\n- "+lessonData.objectives.join("\n- "); }
@@ -395,18 +382,11 @@ Student says: "${userText}"`})
         ];
         answer=alternatives[Math.floor(Math.random()*alternatives.length)];
       }
-
-      if(looksSpanish(answer)){
-        answer="(Blocked non-English output). Please keep the conversation in English.";
-      }
+      if(looksSpanish(answer)){ answer="(Blocked non-English output). Please keep the conversation in English."; }
       addMessage(answer.replace(/\n/g,"<br>"),"bot"); speakSafe(answer,"en-US");
     }
 
     /* ================= Input handling (incluye Quiz) ================= */
-    let quizActive=false, quizIndex=0, quizCorrect=0, quizQuestions=[];
-    let sessionLocked=false;
-    let pendingLessonNum=null, pendingLessonData=null;
-
     async function handleUserMessage(text){
       if(!text) return;
       addMessage(text,"user");
@@ -423,7 +403,7 @@ Student says: "${userText}"`})
       if(n){ await beginLessonSelection(n); return; }
 
       if(lessonData){ await teacherResponse(text); }
-      else { addMessage(`Please choose a lesson first (e.g., <span class="kbd">Lesson 1</span>).`, "bot"); }
+      else { addMessage(`Welcome! Please choose a lesson first (e.g., <span class="kbd">Lesson 1</span>).`, "bot"); }
     }
 
     function sendMessage(){ const text=input.value.trim(); input.value=""; handleUserMessage(text); }
@@ -437,9 +417,8 @@ Student says: "${userText}"`})
       recognition.lang="en-US"; recognition.interimResults=false; recognition.maxAlternatives=1;
       recognition.onresult=e=>{ const t=e.results[0][0].transcript; handleUserMessage(t); };
     }
-    function stopAll(){ if(recognition) recognition.stop(); speechSynthesis.cancel(); }
     speakBtn.onclick=()=> recognition && recognition.start();
-    stopBtn.onclick=stopAll; headerStopBtn.onclick=stopAll;
+    stopBtn.onclick=stopAll;
 
     /* ================= Overlay Lecciones (paginado) ================= */
     const lessonsOverlay=document.getElementById("lessonsOverlay");
@@ -493,8 +472,11 @@ Student says: "${userText}"`})
     wordsInput.addEventListener("keydown", e=>{ if(e.key==="Enter") goFromOverlay(); });
     lessonsOverlay.addEventListener("click", e=>{ if(e.target===lessonsOverlay) closeLessonsOverlay(); });
 
-    /* ================= Boot ================= */
+    /* ================= Boot (saludo) ================= */
     (async function init(){
+      // asegurar entrada activa
+      sessionLocked=false; input.disabled=false; sendBtn.disabled=false; speakBtn.disabled=false;
+
       await fetchAvailableLessons();
       const last=parseInt(localStorage.getItem("lastLesson")||"0",10);
       if(availableLessons.length){
