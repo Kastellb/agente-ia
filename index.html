@@ -1,43 +1,142 @@
-// ===== Bot Maestro v2.1 (estable) – Cloudflare Worker =====
-export default {
-  async fetch(request) {
-    const cors = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    };
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bot Maestro — Prueba simple</title>
+<style>
+  :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
+  *{box-sizing:border-box}
+  body{ margin:0; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#0f172a; display:flex; min-height:100dvh }
+  .wrap{ margin:auto; width:min(900px,100%); padding:16px; }
+  header{ background:var(--brand); color:#fff; padding:12px 16px; border-radius:12px 12px 0 0 }
+  h1{ margin:0; font-size:16px; font-weight:800 }
+  #chat{ background:#fff; border-radius:0 0 12px 12px; padding:12px 12px 4px; min-height:60vh; max-height:70vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12) }
+  .msg{ max-width:min(700px,92%); padding:10px 12px; border-radius:12px; margin:10px 0; line-height:1.45; white-space:pre-wrap }
+  .msg.bot{ background:var(--bot); color:#fff; border-bottom-left-radius:4px }
+  .msg.user{ background:var(--user); color:#fff; border-bottom-right-radius:4px; margin-left:auto }
+  .row{ display:flex; gap:10px; align-items:center; margin-top:12px }
+  #text{ flex:1; border:0; outline:0; font-size:16px; padding:12px; border-radius:10px; background:#f7f9fc }
+  .btn{ border:0; border-radius:10px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer }
+  #send{ background:#22c55e } #mic{ background:#0ea5e9 } #stop{ background:#ef4444 }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header><h1>Bot Maestro — Prueba</h1></header>
+    <div id="chat" aria-live="polite"></div>
 
-    // Tu Apps Script /exec:
-    const APPS_URL = 'https://script.google.com/macros/s/AKfycbx8iBAt27M4jO4vyxWFew6v5ili7sFBDUOWDV13bImOjW48I7g-uETeKIDWn3hPHaV0/exec';
+    <div class="row">
+      <input id="text" placeholder="Escribe tu mensaje… y Enter" autocomplete="off">
+      <button id="send" class="btn">Send</button>
+      <button id="mic"  class="btn">Speak</button>
+      <button id="stop" class="btn">Stop</button>
+    </div>
+  </div>
 
-    // Preflight CORS
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: cors });
-    }
+<script>
+/* ===== Configura tu Worker aquí ===== */
+const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
 
-    try {
-      // Lee el JSON del cliente (texto y lang)
-      const body = await request.json().catch(() => ({}));
+/* ===== UI y lógica simple ===== */
+const chat = document.getElementById('chat');
+const input= document.getElementById('text');
+const send = document.getElementById('send');
+const mic  = document.getElementById('mic');
+const stopBtn = document.getElementById('stop');
 
-      // Reenvía tal cual al Apps Script
-      const res = await fetch(APPS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+function addMsg(text, who="bot"){
+  const d=document.createElement('div');
+  d.className = `msg ${who}`;
+  d.textContent = String(text||'');
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
 
-      const text = await res.text(); // Apps Script devuelve JSON en texto
-      return new Response(text, {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...cors }
-      });
+// Limpia símbolos para que TTS no lea raro
+function sanitizeSpeak(s){
+  return (s||"")
+    .replace(/https?:\/\/\S+/g,'')
+    .replace(/[`*_~#>\[\]\(\){}|\\]/g,' ')
+    .replace(/[\u2190-\u21FF]/g,' ')
+    .replace(/[\u2460-\u24FF]/g,' ')
+    .replace(/[\u2500-\u25FF]/g,' ')
+    .replace(/[\u2600-\u27BF]/g,' ')
+    .replace(/[\u{1F000}-\u{1FAFF}]/gu,' ')
+    .replace(/\s{2,}/g,' ').trim();
+}
 
-    } catch (err) {
-      const msg = (err && err.message) ? err.message : String(err);
-      return new Response(JSON.stringify({ reply: '❌ Error en Worker: ' + msg }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...cors }
-      });
-    }
+// Text-to-Speech
+function speak(text){
+  try{
+    const t = sanitizeSpeak(String(text||''));
+    if(!t) return;
+    const u = new SpeechSynthesisUtterance(t);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+// Speech-to-Text
+let rec=null,isRec=false;
+function sttStart(){
+  if(isRec) return;
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ addMsg("⚠️ Tu navegador no soporta voz. Escribe y pulsa Send.","bot"); return; }
+  rec = new SR();
+  rec.lang = 'es-ES'; // cambia a 'en-US' si prefieres
+  rec.continuous=false; rec.interimResults=false;
+  rec.onresult = (e)=>{
+    const t=e.results?.[0]?.[0]?.transcript||"";
+    if(t){ input.value=t; sendMsg(); }
+  };
+  rec.onstart = ()=>{ isRec=true; speak("Escuchando"); };
+  rec.onerror= ()=>{ isRec=false; };
+  rec.onend  = ()=>{ isRec=false; };
+  rec.start();
+}
+function stopAll(){
+  try{ window.speechSynthesis.cancel(); }catch(e){}
+  try{ rec && rec.abort && rec.abort(); }catch(e){}
+}
+
+// Llamada al Worker (proxy)
+async function ask(text){
+  const r = await fetch(WORKER_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ text, lang:"es-ES" })
+  });
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const data = await r.json().catch(()=>({reply:"❌ Respuesta inválida"}));
+  return String(data.reply||"");
+}
+
+// Enviar mensaje
+async function sendMsg(){
+  const t=(input.value||"").trim();
+  if(!t) return;
+  input.value="";
+  addMsg(t,"user");
+  try{
+    const reply = await ask(t);
+    addMsg(reply,"bot");
+    speak(reply);
+  }catch(e){
+    addMsg("❌ Error de conexión con el servidor.","bot");
   }
-};
+}
+
+// Eventos
+send.addEventListener('click', sendMsg);
+input.addEventListener('keydown', e=>{
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+});
+mic.addEventListener('click', sttStart);
+stopBtn.addEventListener('click', stopAll);
+
+// Saludo inicial
+addMsg("Hola, soy tu Bot Maestro. Escríbeme o pulsa Speak.","bot");
+</script>
+</body>
+</html>
