@@ -1,363 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Lesson 01 — Welcoming Process</title>
-
-  <!-- Font and global styles -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    :root {
-      --bg: #f0f4f8;
-      --text: #1a202c;
-      --muted: #4a5568;
-      --card: #ffffff;
-      --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      --radius: 16px;
-      --blue: #3182ce;
-      --light-blue: #90cdf4;
-      --accent-grad: linear-gradient(135deg, #3182ce, #63b3ed);
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    html, body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Poppins', system-ui, Segoe UI, Roboto, Arial, sans-serif;
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    /* Header ribbon */
-    .ribbon {
-      background: white;
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      padding: 30px;
-      text-align: center;
-      margin-bottom: 30px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .ribbon::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 5px;
-      background: var(--accent-grad);
-    }
-
-    header.ribbon h1 {
-      margin: 0;
-      font-size: clamp(24px, 4vw, 36px);
-      letter-spacing: 0.2px;
-      color: #2d3748;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .sub {
-      color: var(--muted);
-      font-size: 16px;
-      margin-top: 6px;
-      font-weight: 400;
-    }
-
-    main {
-      display: grid;
-      gap: 25px;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s ease;
-      cursor: pointer;
-    }
-    
-    .card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-    
-    .card:active {
-      transform: translateY(0);
-    }
-    
-    .card.reading {
-      animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(49, 130, 206, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(49, 130, 206, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(49, 130, 206, 0); }
-    }
-    
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 6px;
-      height: 100%;
-      background: var(--accent-grad);
-    }
-    
-    .title-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    h2 {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: #2d3748;
-    }
-    
-    h2 i {
-      background: var(--accent-grad);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-size: 24px;
-    }
-
-    .content {
-      color: var(--text);
-      font-size: 17px;
-      line-height: 1.7;
-      padding-left: 10px;
-      margin-left: 5px;
-    }
-    
-    .topics {
-      background: #f8fafc;
-      padding: 20px;
-      border-radius: 12px;
-      margin-top: 20px;
-      border-left: 4px solid var(--blue);
-    }
-    
-    .topics p {
-      color: var(--muted);
-      font-weight: 500;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .topics p i {
-      color: var(--blue);
-    }
-    
-    .topic-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      color: var(--blue);
-      font-weight: 500;
-    }
-    
-    .topic-item {
-      background: rgba(49, 130, 206, 0.1);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 15px;
-    }
-
-    .language-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 25px;
-      padding-top: 15px;
-      border-top: 1px solid #e2e8f0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    
-    .language-info span {
-      background: rgba(49, 130, 206, 0.1);
-      color: var(--blue);
-      padding: 4px 12px;
-      border-radius: 16px;
-      font-weight: 500;
-    }
-    
-    .instruction {
-      text-align: center;
-      margin-top: 15px;
-      color: var(--muted);
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    @media (max-width: 768px) {
-      .ribbon {
-        padding: 20px;
-        border-radius: 14px;
-      }
-      
-      .card {
-        padding: 20px;
-      }
-      
-      .topic-list {
-        gap: 8px;
-      }
-      
-      .topic-item {
-        padding: 6px 12px;
-        font-size: 14px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .topic-list {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-      
-      .topic-item {
-        width: 100%;
-        text-align: center;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- GLOBAL HEADER -->
-    <header class="ribbon">
-      <h1>Lesson 01 — Welcoming Process</h1>
-      <div class="sub">Formal and informal greetings. Introducing yourself.</div>
-    </header>
-
-    <main>
-      <!-- SECTION 1: WHAT YOU WILL LEARN -->
-      <section class="card" id="learn">
-        <div class="title-row">
-          <h2><i class="fas fa-graduation-cap"></i> What you will learn</h2>
-        </div>
-        
-        <div class="content">
-          <p>Understand and answer basic questions about personal information, and ask others about:</p>
-        </div>
-        
-        <div class="topics">
-          <p><i class="fas fa-check-circle"></i> Topics covered in this lesson:</p>
-          <div class="topic-list">
-            <span class="topic-item">name</span>
-            <span class="topic-item">age</span>
-            <span class="topic-item">place of origin</span>
-            <span class="topic-item">residence</span>
-            <span class="topic-item">birthday</span>
-            <span class="topic-item">children</span>
-            <span class="topic-item">profession</span>
-            <span class="topic-item">marital status</span>
-            <span class="topic-item">plans</span>
-            <span class="topic-item">interests</span>
-          </div>
-        </div>
-        
-        <div class="language-info">
-          <i class="fas fa-language"></i> Language: <span>English (GB)</span>
-        </div>
-        
-        <div class="instruction">
-          <i class="fas fa-volume-up"></i> Click anywhere on this card to listen
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- Text-to-speech functionality -->
-  <script>
-    let cachedVoices = [];
-    
-    function getBritishVoice() {
-      cachedVoices = window.speechSynthesis.getVoices();
-      const enGB = cachedVoices.find(v => /en-GB/i.test(v.lang));
-      return enGB || cachedVoices.find(v => /^en[-_]/i.test(v.lang)) || null;
-    }
-    
-    window.speechSynthesis.onvoiceschanged = () => { 
-      cachedVoices = window.speechSynthesis.getVoices(); 
+// ===== Bot Maestro v2.1 (estable) – Cloudflare Worker =====
+export default {
+  async fetch(request) {
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
     };
 
-    const translations_enGB = {
-      learn:
-        "What you will learn. Understand and respond to basic questions about personal information, and ask others: name, age, place of origin, residence, birthday, children, profession, marital status, plans, and interests."
-    };
+    // Tu Apps Script /exec:
+    const APPS_URL = 'https://script.google.com/macros/s/AKfycbx8iBAt27M4jO4vyxWFew6v5ili7sFBDUOWDV13bImOjW48I7g-uETeKIDWn3hPHaV0/exec';
 
-    function speakText(text, opts = { lang: 'en-GB' }) {
-      if (!('speechSynthesis' in window)) {
-        alert('Your browser does not support speech synthesis.');
-        return;
-      }
-      
-      // Stop any ongoing speech
-      window.speechSynthesis.cancel();
-      
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = opts.lang || 'en-GB';
-      utter.rate = 0.9;
-      utter.pitch = 1;
-      utter.volume = 1;
-      
-      const voice = getBritishVoice();
-      if (voice) utter.voice = voice;
-      
-      // Remove reading class when speech ends
-      utter.onend = function() {
-        document.getElementById('learn').classList.remove('reading');
-      };
-      
-      window.speechSynthesis.speak(utter);
+    // Preflight CORS
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: cors });
     }
 
-    // Add click event to the card
-    document.getElementById('learn').addEventListener('click', function() {
-      this.classList.add('reading');
-      const toSpeak = translations_enGB['learn'];
-      speakText(toSpeak, { lang: 'en-GB' });
-    });
-  </script>
-</body>
-</html>
+    try {
+      // Lee el JSON del cliente (texto y lang)
+      const body = await request.json().catch(() => ({}));
+
+      // Reenvía tal cual al Apps Script
+      const res = await fetch(APPS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const text = await res.text(); // Apps Script devuelve JSON en texto
+      return new Response(text, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...cors }
+      });
+
+    } catch (err) {
+      const msg = (err && err.message) ? err.message : String(err);
+      return new Response(JSON.stringify({ reply: '❌ Error en Worker: ' + msg }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...cors }
+      });
+    }
+  }
+};
