@@ -1,106 +1,190 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bot Maestro — St. Mary’s College</title>
+<title>St. Mary’s College — English Leveler v2.1</title>
 <style>
-:root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
+:root{
+  --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886;
+}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{ margin:0; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#0f172a; display:flex; flex-direction:column }
-header{ background:var(--brand); color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap }
-h1{ margin:0; font-size:16px; font-weight:800 }
-main{ flex:1; display:flex; justify-content:center }
-.wrap{ width:min(980px,100%); padding:16px; display:flex; flex-direction:column; gap:12px }
-#chat{ background:#fff; border-radius:16px; padding:12px 12px 4px; min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12) }
-.msg{ max-width:min(700px,92%); padding:10px 12px; border-radius:12px; margin:10px 0; line-height:1.45; white-space:pre-wrap }
-.msg.bot{ background:var(--bot); color:#fff; border-bottom-left-radius:4px }
-.msg.user{ background:var(--user); color:#fff; border-bottom-right-radius:4px; margin-left:auto }
-.row{ display:flex; gap:10px; align-items:center; background:#fff; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(2,6,23,.08) }
-#text{ flex:1; border:0; outline:0; font-size:16px; padding:12px; border-radius:10px; background:#f7f9fc }
-.btn{ border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer }
-#send{ background:#22c55e } #mic{ background:#0ea5e9 } #stop{ background:#ef4444 }
-.hint{ display:flex; gap:8px; flex-wrap:wrap }
-.hint .chip{ background:#083361; color:#fff; border:1px solid #ffffff30; border-radius:10px; padding:6px 10px; font-size:12px; font-weight:800 }
-@media (max-width:640px){ h1{font-size:14px} .msg{max-width:96%} }
+body{
+  margin:0; background:var(--bg);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:#0f172a; display:flex; flex-direction:column;
+}
+header{
+  background:var(--brand); color:#fff; padding:12px 16px;
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+}
+h1{margin:0;font-size:16px;font-weight:800}
+.badge{font-size:12px;opacity:.9}
+main{flex:1;display:flex;justify-content:center}
+.wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
+
+.toolbar{
+  background:#fff; border-radius:14px; padding:10px;
+  display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+  box-shadow:0 12px 28px rgba(2,6,23,.08)
+}
+.label{font-weight:800}
+select,button{font:600 14px/1 system-ui}
+#lesson{
+  padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1;
+  background:#f8fafc;
+}
+
+#chat{
+  background:#fff; border-radius:16px; padding:12px 12px 4px;
+  min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12)
+}
+.msg{
+  max-width:min(720px,92%); padding:10px 12px; border-radius:12px;
+  margin:10px 0; line-height:1.45; white-space:pre-wrap
+}
+.msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
+.msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+
+.row{
+  display:flex; gap:10px; align-items:center; background:#fff;
+  border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(2,6,23,.08)
+}
+#text{
+  flex:1; border:0; outline:0; font-size:16px; padding:12px;
+  border-radius:10px; background:#f7f9fc
+}
+.btn{border:0;border-radius:12px;padding:10px 14px;font-weight:800;color:#fff;cursor:pointer}
+#send{background:#22c55e} #mic{background:#0ea5e9} #stop{background:#ef4444}
+
+.status{
+  font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130;
+  padding:6px 10px; border-radius:10px;
+}
+@media (max-width:640px){
+  h1{font-size:14px}
+  .msg{max-width:96%}
+}
 </style>
 </head>
 <body>
 <header>
-  <h1>Bot Maestro — St. Mary’s College</h1>
-  <div class="hint">
-    <span class="chip">Escribe y pulsa Enter</span>
-    <span class="chip">O pulsa 🎙️ para hablar</span>
-  </div>
+  <h1>St. Mary’s College — English Leveler v2.1</h1>
+  <span class="badge">Voice + Text • English only</span>
 </header>
 
 <main>
   <div class="wrap">
+
+    <div class="toolbar">
+      <span class="label">Select lesson:</span>
+      <select id="lesson" aria-label="Select lesson"></select>
+      <span id="status" class="status">Lesson 1 selected. Lessons 2+ require a quick review of the previous lesson (90% to unlock).</span>
+    </div>
+
     <div id="chat" aria-live="polite"></div>
+
     <div class="row">
-      <input id="text" placeholder="Escribe tu mensaje aquí…" autocomplete="off">
+      <input id="text" placeholder="Type your message and press Enter…" autocomplete="off">
       <button id="send" class="btn">Send</button>
-      <button id="mic"  class="btn">🎙️ Speak</button>
-      <button id="stop" class="btn">⏹ Stop</button>
+      <button id="mic"  class="btn">Speak</button>
+      <button id="stop" class="btn">Stop</button>
     </div>
   </div>
 </main>
 
 <script>
-/* === CONFIG: tu Worker de Cloudflare === */
+/* ===== CONFIG: your Cloudflare Worker ===== */
 const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
 
-/* === UI refs === */
-const chat = document.getElementById('chat');
-const input= document.getElementById('text');
-const send = document.getElementById('send');
-const mic  = document.getElementById('mic');
-const stopBtn = document.getElementById('stop');
+/* ===== UI refs ===== */
+const chat   = document.getElementById('chat');
+const input  = document.getElementById('text');
+const send   = document.getElementById('send');
+const mic    = document.getElementById('mic');
+const stopBtn= document.getElementById('stop');
+const lessonSel = document.getElementById('lesson');
+const statusEl  = document.getElementById('status');
 
-/* === helpers === */
+/* ===== Build lesson options (1–270) ===== */
+(function buildLessons(){
+  const saved = +localStorage.getItem('smc.lesson') || 1;
+  for(let i=1;i<=270;i++){
+    const o=document.createElement('option');
+    o.value=String(i);
+    o.textContent=`Lesson ${i}`;
+    lessonSel.appendChild(o);
+  }
+  lessonSel.value = String(saved);
+  updateLessonStatus();
+})();
+
+/* ===== Helpers ===== */
 function addMsg(text, who="bot"){
+  const clean = cleanDisplay(String(text||''));
   const d=document.createElement('div');
   d.className = `msg ${who}`;
-  d.textContent = String(text||'');
+  d.textContent = clean;
   chat.appendChild(d);
   chat.scrollTop = chat.scrollHeight;
 }
+
+/* Remove symbols/markdown so TTS doesn’t read weird characters */
 function sanitizeSpeak(s){
   return (s||"")
     .replace(/https?:\/\/\S+/g,'')
     .replace(/[`*_~#>\[\]\(\){}|\\]/g,' ')
-    .replace(/[\u2190-\u21FF]/g,' ')
-    .replace(/[\u2460-\u24FF]/g,' ')
-    .replace(/[\u2500-\u25FF]/g,' ')
-    .replace(/[\u2600-\u27BF]/g,' ')
-    .replace(/[\u{1F000}-\u{1FAFF}]/gu,' ')
+    .replace(/[•▪︎●◦ \-]\s+/g,' ')         // bullets/dashes to space
+    .replace(/[\u2190-\u21FF]/g,' ')       // arrows
+    .replace(/[\u2460-\u24FF]/g,' ')       // circled numbers
+    .replace(/[\u2500-\u25FF]/g,' ')       // box drawing/shapes
+    .replace(/[\u2600-\u27BF]/g,' ')       // misc symbols
+    .replace(/[\u{1F000}-\u{1FAFF}]/gu,' ')// emoji
     .replace(/\s{2,}/g,' ').trim();
+}
+
+/* Also clean what is displayed (no markdown or asterisks) */
+function cleanDisplay(s){
+  return (s||"")
+    .replace(/[*_~`#>|]/g,'')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
+
+/* TTS: pick an English voice if available */
+function pickEnglishVoice(){
+  const voices = window.speechSynthesis.getVoices() || [];
+  const en = voices.find(v=>/^en(-|_)/i.test(v.lang)) || voices[0];
+  return en || null;
 }
 function speak(text){
   try{
     const t = sanitizeSpeak(String(text||''));
     if(!t) return;
     const u = new SpeechSynthesisUtterance(t);
+    const v = pickEnglishVoice();
+    if(v) u.voice = v;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
   }catch(e){}
 }
+window.speechSynthesis?.addEventListener('voiceschanged', ()=>{ /* warm voices */ });
 
-/* === Voz a texto (opcional) === */
+/* STT in English */
 let rec=null,isRec=false;
 function sttStart(){
   if(isRec) return;
   const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ addMsg("⚠️ Tu navegador no soporta voz. Escribe y pulsa Send.","bot"); return; }
+  if(!SR){ addMsg("Voice recognition is not supported in this browser. Please type your message.","bot"); return; }
   rec = new SR();
-  rec.lang = 'es-ES'; // cambia a 'en-US' si prefieres
+  rec.lang = 'en-US';
   rec.continuous=false; rec.interimResults=false;
   rec.onresult = (e)=>{
     const t = e.results?.[0]?.[0]?.transcript||"";
     if(t){ input.value=t; sendMsg(); }
   };
-  rec.onstart = ()=>{ isRec=true; speak("Escuchando"); };
+  rec.onstart = ()=>{ isRec=true; speak("Listening"); };
   rec.onerror= ()=>{ isRec=false; };
   rec.onend  = ()=>{ isRec=false; };
   rec.start();
@@ -110,43 +194,70 @@ function stopAll(){
   try{ rec && rec.abort && rec.abort(); }catch(e){}
 }
 
-/* === Llamada al Worker === */
-async function ask(text){
+/* Lesson status line */
+function updateLessonStatus(){
+  const L = +lessonSel.value;
+  localStorage.setItem('smc.lesson', String(L));
+  if(L<=1){
+    statusEl.textContent = `Lesson ${L} selected. You can start now. Ask about any concept you want to reinforce.`;
+  }else{
+    statusEl.textContent = `Lesson ${L} selected. We will first run a quick review of Lesson ${L-1}. Score 90% or higher to unlock Lesson ${L}.`;
+  }
+  addMsg(`Lesson ${L} selected. Stay strictly on this topic. Ask me what you’d like to reinforce.`, "bot");
+}
+
+/* Build prompt with rules for the model */
+function buildPrompt(userText){
+  const L = +lessonSel.value;
+  const rules =
+`ROLE: You are the English leveling instructor for St. Mary’s College.
+LANGUAGE: Reply in ENGLISH ONLY.
+FORMAT: Plain text. No markdown, no asterisks, no emojis, no decorative symbols.
+TONE: Clear, concise, encouraging. Use natural phrasing. If giving pronunciation, prefer simple syllable hints or brief IPA; keep it minimal.
+SCOPE: Only content related to Lesson ${L}. If the user asks off-topic, give a very short helpful note then kindly redirect back to Lesson ${L}.
+TEACHING: Before answering, briefly explain the what/why/how to help understanding. Correct grammar and suggest better phrasing when needed.
+PRONUNCIATION: Avoid characters that TTS reads awkwardly. No bullets or decorative marks.
+QUIZ-GATE: If Lesson ${L} > 1, begin with a short 4-question diagnostic about Lesson ${L-1}. Require >= 90% to continue. If below, ask the student to review Lesson ${L-1} and politely end the session.`;
+  return `LESSON=${L}\n${rules}\nUSER: ${userText}`;
+}
+
+/* Network */
+async function askInstructor(text){
   const r = await fetch(WORKER_URL, {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ text, lang:"es-ES" })
+    body: JSON.stringify({ text: buildPrompt(text), lang:"en-US" })
   });
   if(!r.ok) throw new Error("HTTP "+r.status);
-  const data = await r.json().catch(()=>({reply:"❌ Respuesta inválida"}));
+  const data = await r.json().catch(()=>({ reply:"Connection error." }));
   return String(data.reply||"");
 }
 
-/* === Enviar mensaje === */
+/* Send */
 async function sendMsg(){
   const t=(input.value||"").trim();
   if(!t) return;
   input.value="";
   addMsg(t,"user");
   try{
-    const reply = await ask(t);
+    const reply = await askInstructor(t);
     addMsg(reply,"bot"); speak(reply);
   }catch(e){
-    addMsg("❌ Error de conexión con el servidor.","bot");
+    addMsg("Connection error with the server.", "bot");
   }
 }
 
-/* === Eventos === */
+/* Wire-up */
 send.addEventListener('click', sendMsg);
 input.addEventListener('keydown', e=>{
   if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); }
 });
 mic.addEventListener('click', sttStart);
 stopBtn.addEventListener('click', stopAll);
+lessonSel.addEventListener('change', updateLessonStatus);
 
-/* === Bienvenida === */
-addMsg("Hola, soy tu Bot Maestro. Escríbeme o pulsa 🎙️ para hablar.","bot");
+/* Welcome message */
+addMsg("Welcome! Please select your lesson from the menu above. This assistant teaches ONLY the selected lesson. Ask me what you need to reinforce, and I’ll explain clearly and correct your English as we go.", "bot");
 </script>
 </body>
 </html>
-
