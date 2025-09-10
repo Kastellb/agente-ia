@@ -3,185 +3,527 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v2.7</title>
+<title>St. Mary’s College — English Leveler v2.5</title>
 <style>
-:root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0; background:var(--bg);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  color:#0f172a; display:flex; flex-direction:column;
-}
-header{
-  background:var(--brand); color:#fff; padding:12px 16px;
-  display:flex; flex-wrap:wrap; gap:12px; align-items:center;
-}
-h1{margin:0;font-size:16px;font-weight:800}
-.badge{font-size:12px;opacity:.9}
-main{flex:1;display:flex;justify-content:center}
-.wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
-
-/* Top toolbar */
-.toolbar{
-  background:#fff; border-radius:14px; padding:10px;
-  display:flex; gap:12px; align-items:center; flex-wrap:wrap;
-  box-shadow:0 12px 28px rgba(2,6,23,.08)
-}
-.label{font-weight:800}
-select,button{font:600 14px/1 system-ui}
-#lesson{
-  padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1;
-  background:#f8fafc; min-width:280px;
-}
-.status{
-  font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130;
-  padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center;
+:root {
+  --brand: #0b3b71;
+  --brand-light: #1e4e8d;
+  --bg: #eef2f7;
+  --bot: #0b88e6;
+  --user: #12b886;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --gray-100: #f7f9fc;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --shadow-sm: 0 4px 12px rgba(2,6,23,.06);
+  --shadow-md: 0 12px 28px rgba(2,6,23,.08);
+  --shadow-lg: 0 12px 28px rgba(2,6,23,.12);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
 }
 
-/* Voice settings panel */
-.voice-settings {
-  background:#f1f5f9; border-radius:10px; padding:12px;
-  margin-top:8px; display:none; flex-wrap:wrap; gap:12px;
-}
-.voice-settings.visible { display:flex; }
-.voice-control {
-  display:flex; flex-direction:column; gap:6px; min-width:180px;
-}
-.voice-control label {
-  font-size:12px; font-weight:600; color:#334155;
-}
-.voice-control select, .voice-control input {
-  padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* Chat area */
-#chat{
-  background:#fff; border-radius:16px; padding:12px 12px 4px;
-  min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12)
+html, body {
+  height: 100%;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--gray-800);
+  background: var(--bg);
 }
-.msg{
-  max-width:min(720px,92%); padding:10px 12px; border-radius:12px;
-  margin:10px 0; line-height:1.45; white-space:pre-wrap;
-  transition: background-color 0.2s ease;
-}
-.msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
-.msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
-.msg.playing { box-shadow: 0 0 0 2px #f59e0b; }
 
-/* Message controls */
+body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+/* Header Styles */
+header {
+  background: var(--brand);
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 10;
+}
+
+h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.badge {
+  font-size: 13px;
+  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* Main Content */
+main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.wrap {
+  width: min(1000px, 100%);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Toolbar */
+.toolbar {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+}
+
+.label {
+  font-weight: 700;
+  color: var(--gray-700);
+  font-size: 14px;
+}
+
+select, button, input {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#lessonInput {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  background: var(--gray-100);
+  min-width: 280px;
+  transition: all 0.2s ease;
+}
+
+#lessonInput:focus {
+  outline: none;
+  border-color: var(--bot);
+  box-shadow: 0 0 0 3px rgba(11, 136, 230, 0.15);
+}
+
+.status {
+  font-size: 13px;
+  color: var(--gray-700);
+  background: rgba(11, 59, 113, 0.06);
+  border: 1px dashed rgba(11, 59, 113, 0.2);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+.status.loading {
+  color: var(--brand);
+  background: rgba(11, 59, 113, 0.1);
+}
+
+.status.error {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.status.success {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Chat Area */
+#chat {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  min-height: 60vh;
+  max-height: 60vh;
+  overflow: auto;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.msg {
+  max-width: min(720px, 92%);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin: 4px 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease;
+}
+
+.msg.bot {
+  background: var(--bot);
+  color: white;
+  border-bottom-left-radius: 4px;
+}
+
+.msg.user {
+  background: var(--user);
+  color: white;
+  border-bottom-right-radius: 4px;
+  margin-left: auto;
+}
+
+.msg.system {
+  background: var(--gray-200);
+  color: var(--gray-700);
+  font-style: italic;
+  font-size: 14px;
+  text-align: center;
+  margin: 8px auto;
+  max-width: 80%;
+}
+
+.msg-content {
+  margin-bottom: 8px;
+}
+
 .msg-controls {
-  display:flex; gap:6px; margin-top:6px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
 }
-.msg-control {
-  background:rgba(255,255,255,0.2); border:none; border-radius:6px;
-  padding:4px 8px; font-size:12px; color:#fff; cursor:pointer;
-}
-.msg-control:hover { background:rgba(255,255,255,0.3); }
 
-/* Inline buttons inside chat */
-.inline-btns{ display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 2px }
-.inline-btn{
-  border:0; border-radius:10px; padding:8px 12px; font-weight:800; color:#fff; cursor:pointer; background:#0b88e6;
+.msg-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.2s;
 }
-.inline-btn.secondary{ background:#6b7280 }
 
-/* Composer: input arriba, botones debajo */
-.composer{
-  background:#fff; border-radius:14px; padding:10px;
-  box-shadow:0 12px 28px rgba(2,6,23,.08);
-  display:flex; flex-direction:column; gap:10px;
+.msg-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
-#text{
-  width:100%; border:0; outline:0; font-size:16px; padding:12px;
-  border-radius:10px; background:#f7f9fc
-}
-.btnrow{
-  display:flex; gap:10px; flex-wrap:wrap;
-}
-.btn{
-  border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer;
-  display:flex; align-items:center; gap:6px;
-}
-#send{background:#22c55e} 
-#mic{background:#0ea5e9} 
-#stop{background:#ef4444}
-#voiceSettings{background:#8b5cf6}
 
-/* Voice status indicator */
-.voice-status {
-  display:flex; align-items:center; gap:6px; font-size:13px; color:#64748b;
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray-600);
+  font-size: 14px;
+  padding: 8px 0;
 }
-.voice-status .indicator {
-  width:12px; height:12px; border-radius:50%; background:#ddd;
+
+.thinking .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--gray-300);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite ease-in-out;
 }
-.voice-status .speaking .indicator {
-  background:#22c55e; animation: pulse 1.5s infinite;
+
+.thinking .dot:nth-child(2) {
+  animation-delay: 0.3s;
 }
+
+.thinking .dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+/* Composer */
+.composer {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#text {
+  width: 100%;
+  border: 1px solid var(--gray-300);
+  outline: none;
+  font-size: 16px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--gray-100);
+  transition: all 0.2s ease;
+  resize: vertical;
+  min-height: 50px;
+  max-height: 150px;
+}
+
+#text:focus {
+  border-color: var(--bot);
+  box-shadow: 0 0 0 3px rgba(11, 136, 230, 0.15);
+}
+
+.btnrow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#send {
+  background: var(--success);
+}
+
+#mic {
+  background: var(--bot);
+}
+
+#stop {
+  background: var(--error);
+}
+
+#loadLesson {
+  background: var(--warning);
+}
+
+/* Recording indicator */
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--error);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: var(--radius-sm);
+  margin-top: 8px;
+  animation: pulse 2s infinite;
+}
+
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--error);
+  border-radius: 50%;
+}
+
+/* Mobile tweaks */
+@media (max-width: 768px) {
+  header {
+    padding: 12px 16px;
+  }
+  
+  h1 {
+    font-size: 16px;
+  }
+  
+  .badge {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+  
+  .wrap {
+    padding: 12px;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  #lessonInput {
+    min-width: 100%;
+  }
+  
+  .status {
+    min-height: unset;
+    width: 100%;
+  }
+  
+  .msg {
+    max-width: 96%;
+    padding: 10px 14px;
+  }
+  
+  .btn {
+    padding: 10px 14px;
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .btnrow {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 15px;
+  }
+  
+  .badge {
+    font-size: 11px;
+  }
+  
+  #chat {
+    min-height: 55vh;
+    max-height: 55vh;
+    padding: 12px;
+  }
+  
+  .composer {
+    padding: 12px;
+  }
+  
+  #text {
+    padding: 12px;
+    font-size: 15px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes pulse {
   0% { opacity: 1; }
   50% { opacity: 0.5; }
   100% { opacity: 1; }
 }
 
-/* Mobile tweaks */
-@media (max-width:640px){
-  h1{font-size:14px}
-  .msg{max-width:96%}
-  #lesson{min-width:unset}
-  .voice-settings { flex-direction: column; }
-  .voice-control { width: 100%; }
+/* Scrollbar styling */
+#chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+#chat::-webkit-scrollbar-track {
+  background: var(--gray-200);
+  border-radius: 4px;
+}
+
+#chat::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 4px;
+}
+
+#chat::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
 }
 </style>
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v2.7</h1>
-  <span class="badge">Enhanced Voice + Text • EN only • JSON-driven (1–13)</span>
+  <h1>St. Mary’s College — English Leveler v2.5</h1>
+  <span class="badge">Voice + Text • EN only • JSON-driven (1–13)</span>
 </header>
 
 <main>
   <div class="wrap">
 
     <div class="toolbar">
-      <span class="label">Select lesson:</span>
-      <select id="lesson" aria-label="Select lesson"></select>
-      <div class="voice-status">
-        <span class="indicator"></span>
-        <span id="voiceStatusText">Voice: Ready</span>
-      </div>
-      <span id="status" class="status">Please select a lesson to begin.</span>
-    </div>
-
-    <div class="voice-settings" id="voiceSettingsPanel">
-      <div class="voice-control">
-        <label for="voiceSelect">Voice:</label>
-        <select id="voiceSelect"></select>
-      </div>
-      <div class="voice-control">
-        <label for="rateSelect">Speed:</label>
-        <input type="range" id="rateSelect" min="0.5" max="2" step="0.1" value="1">
-        <span id="rateValue">1.0</span>
-      </div>
-      <div class="voice-control">
-        <label for="pitchSelect">Pitch:</label>
-        <input type="range" id="pitchSelect" min="0.5" max="2" step="0.1" value="1">
-        <span id="pitchValue">1.0</span>
-      </div>
-      <div class="voice-control">
-        <button id="testVoice" class="btn" style="background:#6366f1; margin-top:18px">Test Voice</button>
-      </div>
+      <span class="label">Enter lesson:</span>
+      <input type="text" id="lessonInput" placeholder="e.g. 'lesson 1' or 'one'" aria-label="Enter lesson number or name">
+      <button id="loadLesson" class="btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2V6M12 18V22M4 12H2M6.31412 6.31412L4.8999 4.8999M17.6858 6.31412L19.1 4.8999M6.31412 17.69L4.8999 19.1042M17.6858 17.69L19.1 19.1042M22 12H20M17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Load Lesson
+      </button>
+      <span id="status" class="status">Welcome! Please enter a lesson number or name (e.g. 'lesson 1' or 'one')</span>
     </div>
 
     <div id="chat" aria-live="polite"></div>
 
     <div class="composer">
-      <input id="text" placeholder="Type your message and press Enter…" autocomplete="off">
+      <textarea id="text" placeholder="Type your message and press Enter…" autocomplete="off" rows="1" disabled></textarea>
       <div class="btnrow">
-        <button id="send" class="btn">Send</button>
-        <button id="mic" class="btn">Speak</button>
-        <button id="stop" class="btn">Stop</button>
-        <button id="voiceSettings" class="btn">Voice Settings</button>
+        <button id="send" class="btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 2L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Send
+        </button>
+        <button id="mic" class="btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1C10.9391 1 9.92172 1.42143 9.17157 2.17157C8.42143 2.92172 8 3.93913 8 5V11C8 12.0609 8.42143 13.0783 9.17157 13.8284C9.92172 14.5786 10.9391 15 12 15C13.0609 15 14.0783 14.5786 14.8284 13.8284C15.5786 13.0783 16 12.0609 16 11V5C16 3.93913 15.5786 2.92172 14.8284 2.17157C14.0783 1.42143 13.0609 1 12 1Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19 10V11C19 13.9174 17.5362 16.5223 15.2426 18.2426C12.949 19.963 9.94904 20.4467 7.17158 19.5711C4.39412 18.6955 2.1532 16.5675 1.22183 13.8338C0.290455 11.1002 0.774135 8.00893 2.51472 5.60571C4.2553 3.20249 7.03848 1.75 10 1.75" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 19V23" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 23H16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Speak
+        </button>
+        <button id="stop" class="btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="6" width="12" height="12" rx="1" stroke="white" stroke-width="2"/>
+            <path d="M10 10H14V14H10V10Z" fill="white"/>
+          </svg>
+          Stop
+        </button>
       </div>
     </div>
 
@@ -193,8 +535,6 @@ select,button{font:600 14px/1 system-ui}
 const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; // tu Worker
 const JSON_BASE  = "https://www.leccion.datafast.pw/lessons/";             // carpeta de JSON
 const JSON_COUNT = 13;                                                      // tenemos 13 JSON
-const PASS_MARK  = 90;                                                      // mínimo 90%
-const MAX_QUEST  = 10;                                                      // hasta 10 preguntas
 
 /* ===== Estado ===== */
 const chat   = document.getElementById('chat');
@@ -202,71 +542,118 @@ const input  = document.getElementById('text');
 const send   = document.getElementById('send');
 const mic    = document.getElementById('mic');
 const stopBtn= document.getElementById('stop');
-const voiceSettingsBtn = document.getElementById('voiceSettings');
-const voiceSettingsPanel = document.getElementById('voiceSettingsPanel');
-const lessonSel = document.getElementById('lesson');
+const lessonInput = document.getElementById('lessonInput');
+const loadLessonBtn = document.getElementById('loadLesson');
 const statusEl  = document.getElementById('status');
-const voiceSelect = document.getElementById('voiceSelect');
-const rateSelect = document.getElementById('rateSelect');
-const pitchSelect = document.getElementById('pitchSelect');
-const rateValue = document.getElementById('rateValue');
-const pitchValue = document.getElementById('pitchValue');
-const testVoiceBtn = document.getElementById('testVoice');
-const voiceStatusText = document.getElementById('voiceStatusText');
-const voiceStatusIndicator = document.querySelector('.voice-status .indicator');
 
-let currentLesson = null;
-let lessonData = null;       // JSON lección actual
-let prevLessonData = null;   // JSON lección anterior
-let quizState = null;        // {active, items, i, correct, total, forLesson}
-let lockedUntilPass = null;  // número de lección bloqueada hasta pasar quiz
+let currentLesson = 1;
+let lessonData = null;       // JSON de la lección actual
+let prevLessonData = null;   // JSON de la lección anterior (para quiz)
+let isThinking = false;      // Para mostrar indicador de pensamiento
+let isRecording = false;     // Para controlar estado de grabación
+let lessonLoaded = false;    // Para controlar si se ha cargado una lección
 
-// Estado de voz
-let currentUtterance = null;
-let isSpeaking = false;
-let voices = [];
-let voiceSettings = {
-  voice: null,
-  rate: 1,
-  pitch: 1
+// Mapa de números en texto a números
+const numberWords = {
+  'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+  'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+  'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15,
+  'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19, 'twenty': 20
 };
 
 /* ===== Utilidades visuales y TTS ===== */
-function addMsg(text, who="bot"){
+function addMsg(text, who="bot", isSystem=false){
   const clean = cleanDisplay(String(text||''));
-  const d=document.createElement('div');
-  d.className = `msg ${who}`;
-  d.textContent = clean;
+  const d = document.createElement('div');
+  d.className = `msg ${isSystem ? 'system' : who}`;
   
-  // Añadir controles de voz para mensajes del bot
-  if (who === "bot") {
-    const controls = document.createElement('div');
-    controls.className = 'msg-controls';
-    controls.innerHTML = `
-      <button class="msg-control" onclick="speakMessage(this.parentNode.parentNode)">Speak</button>
-      <button class="msg-control" onclick="stopSpeech()">Stop</button>
-    `;
-    d.appendChild(controls);
-  }
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'msg-content';
+  contentDiv.textContent = clean;
+  d.appendChild(contentDiv);
+  
+  // Añadir controles de voz
+  const controlsDiv = document.createElement('div');
+  controlsDiv.className = 'msg-controls';
+  
+  const speakBtn = document.createElement('button');
+  speakBtn.className = 'msg-btn';
+  speakBtn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 4L12 12M12 12L9.5 9.5M12 12L14.5 9.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3.5 11.5C3.5 9.51088 4.29018 7.60322 5.6967 6.1967C7.10322 4.79018 9.01088 4 11 4C12.9891 4 14.8968 4.79018 16.3033 6.1967C17.7098 7.60322 18.5 9.51088 18.5 11.5C18.5 13.4891 17.7098 15.3968 16.3033 16.8033C14.8968 18.2098 12.9891 19 11 19C9.01088 19 7.10322 18.2098 5.6967 16.8033C4.29018 15.3968 3.5 13.4891 3.5 11.5Z" stroke="white" stroke-width="2"/>
+      <path d="M19.5 7.5C20.4192 8.85817 20.9297 10.4585 20.9297 12.125C20.9297 13.7915 20.4192 15.3918 19.5 16.75" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <path d="M21.5 5C22.886 6.81329 23.6596 9.03089 23.6596 11.375C23.6596 13.7191 22.886 15.9367 21.5 17.75" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    Speak
+  `;
+  speakBtn.addEventListener('click', () => speak(clean));
+  
+  const stopBtn = document.createElement('button');
+  stopBtn.className = 'msg-btn';
+  stopBtn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="6" width="12" height="12" rx="1" stroke="white" stroke-width="2"/>
+      <path d="M10 10H14V14H10V10Z" fill="white"/>
+    </svg>
+    Stop
+  `;
+  stopBtn.addEventListener('click', () => stopSpeech());
+  
+  controlsDiv.appendChild(speakBtn);
+  controlsDiv.appendChild(stopBtn);
+  d.appendChild(controlsDiv);
   
   chat.appendChild(d);
   chat.scrollTop = chat.scrollHeight;
-  return d;
 }
 
-function addInlineButtons(buttons){
-  const wrap = document.createElement('div');
-  wrap.className = 'inline-btns';
-  buttons.forEach(b=>{
-    const btn = document.createElement('button');
-    btn.className = 'inline-btn' + (b.secondary?' secondary':'');
-    btn.textContent = b.text;
-    btn.addEventListener('click', b.onClick);
-    wrap.appendChild(btn);
-  });
-  chat.appendChild(wrap);
+function showThinking() {
+  if (isThinking) return;
+  isThinking = true;
+  
+  const thinkingEl = document.createElement('div');
+  thinkingEl.className = 'thinking';
+  thinkingEl.id = 'thinking-indicator';
+  thinkingEl.innerHTML = `
+    Thinking 
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  `;
+  
+  chat.appendChild(thinkingEl);
   chat.scrollTop = chat.scrollHeight;
-  return wrap;
+}
+
+function hideThinking() {
+  isThinking = false;
+  const thinkingEl = document.getElementById('thinking-indicator');
+  if (thinkingEl) {
+    thinkingEl.remove();
+  }
+}
+
+function showRecordingIndicator() {
+  if (document.getElementById('recording-indicator')) return;
+  
+  const indicator = document.createElement('div');
+  indicator.className = 'recording-indicator';
+  indicator.id = 'recording-indicator';
+  indicator.innerHTML = `
+    <span class="recording-dot"></span>
+    Recording in progress... Click Stop when finished
+  `;
+  
+  const composer = document.querySelector('.composer');
+  composer.appendChild(indicator);
+}
+
+function hideRecordingIndicator() {
+  const indicator = document.getElementById('recording-indicator');
+  if (indicator) {
+    indicator.remove();
+  }
 }
 
 function sanitizeSpeak(s){
@@ -289,320 +676,244 @@ function cleanDisplay(s){
     .trim();
 }
 
-// Sistema de voz mejorado
-function initVoices() {
-  // Cargar configuraciones guardadas
-  const savedSettings = localStorage.getItem('smc.voiceSettings');
-  if (savedSettings) {
-    voiceSettings = {...voiceSettings, ...JSON.parse(savedSettings)};
-  }
-  
-  // Actualizar controles con valores guardados
-  rateSelect.value = voiceSettings.rate;
-  pitchSelect.value = voiceSettings.pitch;
-  rateValue.textContent = voiceSettings.rate.toFixed(1);
-  pitchValue.textContent = voiceSettings.pitch.toFixed(1);
-  
-  // Cargar voces disponibles
-  voices = window.speechSynthesis.getVoices();
-  
-  // Limpiar y poblar selector de voces
-  voiceSelect.innerHTML = '';
-  voices.forEach((voice, index) => {
-    const option = document.createElement('option');
-    option.value = index;
-    option.textContent = `${voice.name} (${voice.lang})`;
-    voiceSelect.appendChild(option);
-    
-    // Seleccionar voz guardada o primera voz en inglés por defecto
-    if (voiceSettings.voice === voice.name || 
-        (!voiceSettings.voice && /^en(-|_)/i.test(voice.lang) && voiceSelect.selectedIndex === -1)) {
-      voiceSelect.value = index;
-      voiceSettings.voice = voice.name;
-    }
-  });
-  
-  // Si no hay voces, intentar cargarlas de nuevo cuando estén disponibles
-  if (voices.length === 0) {
-    window.speechSynthesis.onvoiceschanged = initVoices;
-  }
+function pickEnglishVoice(){
+  const voices = window.speechSynthesis.getVoices() || [];
+  const en = voices.find(v => /^en(-|_)/i.test(v.lang)) || voices[0];
+  return en || null;
 }
 
-function speak(text, elementToHighlight = null) {
-  try {
-    stopSpeech();
-    
+function speak(text){
+  try{
     const t = sanitizeSpeak(String(text||''));
     if(!t) return;
-    
-    currentUtterance = new SpeechSynthesisUtterance(t);
-    
-    // Aplicar configuraciones de voz
-    if (voiceSelect.value) {
-      currentUtterance.voice = voices[voiceSelect.value];
-    }
-    currentUtterance.rate = parseFloat(rateSelect.value);
-    currentUtterance.pitch = parseFloat(pitchSelect.value);
-    
-    // Resaltar elemento mientras se habla
-    if (elementToHighlight) {
-      elementToHighlight.classList.add('playing');
-    }
-    
-    // Eventos para gestionar el estado
-    currentUtterance.onstart = () => {
-      isSpeaking = true;
-      updateVoiceStatus('Speaking...', true);
-      if (elementToHighlight) {
-        elementToHighlight.classList.add('playing');
-      }
-    };
-    
-    currentUtterance.onend = () => {
-      isSpeaking = false;
-      updateVoiceStatus('Voice: Ready', false);
-      if (elementToHighlight) {
-        elementToHighlight.classList.remove('playing');
-      }
-      currentUtterance = null;
-    };
-    
-    currentUtterance.onerror = (event) => {
-      isSpeaking = false;
-      updateVoiceStatus('Voice Error: ' + event.error, false);
-      if (elementToHighlight) {
-        elementToHighlight.classList.remove('playing');
-      }
-      console.error('SpeechSynthesis error:', event.error);
-      currentUtterance = null;
-    };
-    
-    window.speechSynthesis.speak(currentUtterance);
-  } catch(e) {
-    console.error('Speech error:', e);
-    updateVoiceStatus('Voice Error', false);
+    const u = new SpeechSynthesisUtterance(t);
+    const v = pickEnglishVoice();
+    if(v) u.voice = v;
+    u.rate = 0.9; // Velocidad ligeramente reducida para mejor comprensión
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){
+    console.error("Error with speech synthesis:", e);
   }
-}
-
-function speakMessage(element) {
-  const text = element.textContent || element.innerText;
-  speak(text, element);
 }
 
 function stopSpeech() {
-  if (window.speechSynthesis.speaking) {
+  try {
     window.speechSynthesis.cancel();
-    isSpeaking = false;
-    updateVoiceStatus('Voice: Stopped', false);
-    
-    // Quitar resaltado de todos los mensajes
-    document.querySelectorAll('.msg.playing').forEach(msg => {
-      msg.classList.remove('playing');
-    });
+  } catch(e) {
+    console.error("Error stopping speech synthesis:", e);
   }
 }
 
-function updateVoiceStatus(text, speaking) {
-  voiceStatusText.textContent = text;
-  if (speaking) {
-    voiceStatusIndicator.classList.add('speaking');
-  } else {
-    voiceStatusIndicator.classList.remove('speaking');
-  }
-}
-
-function toggleVoiceSettings() {
-  voiceSettingsPanel.classList.toggle('visible');
-}
-
-function saveVoiceSettings() {
-  voiceSettings.voice = voices[voiceSelect.value]?.name || null;
-  voiceSettings.rate = parseFloat(rateSelect.value);
-  voiceSettings.pitch = parseFloat(pitchSelect.value);
-  localStorage.setItem('smc.voiceSettings', JSON.stringify(voiceSettings));
-}
-
-function testVoiceSettings() {
-  speak("This is a test of the current voice settings. You can adjust the speed and pitch to your preference.");
-}
-
-// Inicializar sistema de voz cuando las voces estén disponibles
+// Inicializar voces
 if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = initVoices;
+  window.speechSynthesis.addEventListener('voiceschanged', () => {});
 }
 
 /* ===== STT (inglés) ===== */
-let rec=null,isRec=false;
+let rec = null;
+
 function sttStart(){
-  if(isRec) return;
-  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ addMsg("Voice recognition is not supported. Please type your message.","bot"); return; }
-  rec = new SR();
-  rec.lang = 'en-US'; rec.continuous=false; rec.interimResults=false;
-  rec.onresult = (e)=>{
-    const t = e.results?.[0]?.[0]?.transcript||"";
-    if(t){ input.value=t; sendMsg(); }
-  };
-  rec.onstart = ()=>{ isRec=true; speak("Listening"); };
-  rec.onerror= ()=>{ isRec=false; };
-  rec.onend  = ()=>{ isRec=false; };
-  rec.start();
+  if(isRecording) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ 
+    addMsg("Voice recognition is not supported in your browser. Please type your message.", "bot"); 
+    return; 
+  }
+  
+  try {
+    rec = new SR();
+    rec.lang = 'en-US'; 
+    rec.continuous = false; 
+    rec.interimResults = false;
+    
+    rec.onresult = (e) => {
+      const t = e.results?.[0]?.[0]?.transcript || "";
+      if(t){ 
+        input.value = t; 
+        sendMsg(); 
+      }
+    };
+    
+    rec.onstart = () => { 
+      isRecording = true;
+      mic.disabled = true;
+      showRecordingIndicator();
+      speak("Listening"); 
+    };
+    
+    rec.onerror = (e) => { 
+      console.error("Speech recognition error:", e.error);
+      isRecording = false;
+      mic.disabled = false;
+      hideRecordingIndicator();
+      addMsg("Speech recognition error. Please try again or type your message.", "bot");
+    };
+    
+    rec.onend = () => {
+      isRecording = false;
+      mic.disabled = false;
+      hideRecordingIndicator();
+    };
+    
+    rec.start();
+  } catch (e) {
+    console.error("Error initializing speech recognition:", e);
+    addMsg("Error initializing voice recognition. Please check your microphone permissions.", "bot");
+  }
 }
+
 function stopAll(){ 
-  stopSpeech();
-  try{rec&&rec.abort()}catch(e){}
-  isRec = false;
+  try {
+    window.speechSynthesis.cancel();
+  } catch(e) {
+    console.error("Error stopping speech synthesis:", e);
+  }
+  
+  try {
+    if (rec && isRecording) {
+      rec.stop();
+    }
+  } catch(e) {
+    console.error("Error stopping recognition:", e);
+  }
+  
+  isRecording = false;
+  mic.disabled = false;
+  hideRecordingIndicator();
+}
+
+/* ===== Procesamiento de entrada de lección ===== */
+function parseLessonInput(input) {
+  // Limpiar y normalizar la entrada
+  const cleanInput = input.toLowerCase().trim();
+  
+  // Si está vacío
+  if (!cleanInput) return null;
+  
+  // Verificar si es un número directo
+  if (/^\d+$/.test(cleanInput)) {
+    const num = parseInt(cleanInput, 10);
+    return num >= 1 && num <= 270 ? num : null;
+  }
+  
+  // Verificar si es "lesson X" o "lección X"
+  const lessonMatch = cleanInput.match(/^(lesson|lección)\s+(\d+|[a-z]+)$/);
+  if (lessonMatch) {
+    const lessonValue = lessonMatch[2];
+    // Si es un número
+    if (/^\d+$/.test(lessonValue)) {
+      const num = parseInt(lessonValue, 10);
+      return num >= 1 && num <= 270 ? num : null;
+    }
+    // Si es un número en palabras
+    if (numberWords[lessonValue]) {
+      return numberWords[lessonValue];
+    }
+  }
+  
+  // Verificar si es solo un número en palabras
+  if (numberWords[cleanInput]) {
+    return numberWords[cleanInput];
+  }
+  
+  // Si no coincide con ningún formato reconocido
+  return null;
 }
 
 /* ===== Carga de JSON ===== */
 async function fetchJSON(url){
-  const r = await fetch(url, { cache:'no-store' });
-  if(!r.ok) throw new Error(r.status+" "+r.statusText);
-  return await r.json();
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if(!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    return await r.json();
+  } catch (e) {
+    console.error(`Error fetching ${url}:`, e);
+    throw e;
+  }
 }
+
 async function loadLesson(n){
+  // Validar número de lección
+  if (n < 1 || n > 270) {
+    addMsg("Please enter a lesson between 1 and 270.", "bot");
+    statusEl.textContent = "Error: Please enter a lesson between 1 and 270.";
+    statusEl.className = 'status error';
+    return;
+  }
+  
   currentLesson = n;
-  lessonData = null; prevLessonData = null; quizState=null;
-
-  // Limpia mensajes previos de selección anterior (para evitar confusiones)
-  addMsg(`Lesson ${n} selected. Preparing materials…`, "bot");
-
-  // Carga JSON de la lección actual (solo para mostrar si se desbloquea)
-  try{
+  localStorage.setItem('smc.lesson', String(n));
+  lessonData = null; 
+  prevLessonData = null;
+  
+  // Actualizar UI
+  statusEl.textContent = `Loading Lesson ${n}…`;
+  statusEl.className = 'status loading';
+  lessonInput.disabled = true;
+  loadLessonBtn.disabled = true;
+  
+  try {
+    // Cargar lección actual
     if(n <= JSON_COUNT){
       lessonData = await fetchJSON(`${JSON_BASE}lesson${n}.json`);
     }
-  }catch(e){ /* si falla, se continúa con contexto mínimo */ }
-
-  // Carga JSON de la lección anterior para el quiz
-  try{
+    
+    // Cargar lección previa si es necesario
     if(n > 1 && (n-1) <= JSON_COUNT){
-      prevLessonData = await fetchJSON(`${JSON_BASE}lesson${n-1}.json`);
+      try {
+        prevLessonData = await fetchJSON(`${JSON_BASE}lesson${n-1}.json`);
+      } catch(e) { 
+        // No crítico si falla
+        console.warn(`Could not load previous lesson ${n-1}:`, e);
+      }
     }
-  }catch(e){ /* opcional */ }
-
-  // Status visible
-  const titleTxt = lessonData?.title ? `Lesson ${n} — ${lessonData.title}` : `Lesson ${n}`;
-
-  if(n === 1){
-    statusEl.textContent = `${titleTxt}. You can start now.`;
+    
+    // Línea de estado
+    const titleTxt = lessonData?.title ? `Lesson ${n} — ${lessonData.title}` : `Lesson ${n}`;
+    statusEl.textContent = (n <= 1)
+      ? `${titleTxt}. You can start now. Ask about any concept you want to reinforce.`
+      : `${titleTxt}. First, a short review of Lesson ${n-1} (need ≥ 90% to unlock).`;
+    
+    statusEl.className = 'status success';
+    
+    // Presentación pedagógica desde el JSON (teoría + objetivos + temas)
+    addMsg(`--- Lesson ${n} Loaded ---`, "bot", true);
+    
     if(lessonData){
-      const theoryMsg = addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot");
-      speak(`Theory: ${lessonData.title}. ${lessonData.theory||""}`, theoryMsg);
+      const t = lessonData.theory ? `Theory — ${lessonData.title}\n${lessonData.theory}` : `Lesson ${n}`;
+      addMsg(t, "bot");
       
-      if(Array.isArray(lessonData.objectives)&&lessonData.objectives.length){
-        const objectivesMsg = addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
-        speak("Objectives: " + lessonData.objectives.join('. '), objectivesMsg);
+      if(Array.isArray(lessonData.objectives) && lessonData.objectives.length){
+        addMsg("Objectives:\n" + lessonData.objectives.map((x,i) => `${i+1}. ${x}`).join('\n'), "bot");
       }
-      if(Array.isArray(lessonData.topics)&&lessonData.topics.length){
-        const topicsMsg = addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
-        speak("Topics: " + lessonData.topics.join('. '), topicsMsg);
+      
+      if(Array.isArray(lessonData.topics) && lessonData.topics.length){
+        addMsg("Topics:\n" + lessonData.topics.map((x,i) => `${i+1}. ${x}`).join('\n'), "bot");
       }
-    }else{
-      addMsg("Lesson 1 ready. Ask what you would like to reinforce.", "bot");
+    } else {
+      addMsg(`Lesson ${n} selected. Ask what you would like to reinforce.`, "bot");
     }
-    lockedUntilPass=null;
-  } else {
-    statusEl.textContent = `${titleTxt}. First, a review of Lesson ${n-1} (need ≥ ${PASS_MARK}% to unlock).`;
-    addMsg(`Before we begin Lesson ${n}, you must pass a short diagnostic from Lesson ${n-1}. You need at least ${PASS_MARK}%.`, "bot");
-    const quizItems = Array.isArray(prevLessonData?.quizPrevious) ? prevLessonData.quizPrevious.slice(0, MAX_QUEST) : [];
-    if(!quizItems.length){
-      addMsg("This review has no configured questions yet. Please ask your instructor to add 'quizPrevious' to the previous lesson.", "bot");
-      lockedUntilPass = n; // bloqueo hasta que exista quiz
-      return;
-    }
-    addMsg("Are you ready to start the review now?", "bot");
-    addInlineButtons([
-      { text:"Ready", onClick: ()=> startQuiz(n, quizItems) },
-      { text:"Not now", onClick: ()=> {
-          addMsg(`No problem. Please review Lesson ${n-1} first. When you're ready, select Lesson ${n} again to start the review.`, "bot");
-          lockedUntilPass = n;
-        }, secondary:true
-      }
-    ]);
+    
+    // Habilitar la interfaz de chat
+    input.disabled = false;
+    send.disabled = false;
+    mic.disabled = false;
+    stopBtn.disabled = false;
+    lessonLoaded = true;
+    
+  } catch(e) {
+    console.error("Error loading lesson:", e);
+    statusEl.textContent = `Error loading lesson ${n}. Using minimal context.`;
+    statusEl.className = 'status error';
+    addMsg(`Lesson ${n} data could not be loaded. Proceeding with minimal context.`, "bot");
+  } finally {
+    lessonInput.disabled = false;
+    loadLessonBtn.disabled = false;
   }
 }
 
-/* ===== Quiz local (estricto) ===== */
-function normalize(s){
-  return String(s||'')
-    .toLowerCase()
-    .replace(/[\u2018\u2019']/g,"'")
-    .replace(/[^a-z0-9' ]+/g,' ')
-    .replace(/\s{2,}/g,' ')
-    .trim();
-}
-function checkAnswer(user, expected){
-  const u = normalize(user);
-  const e = normalize(expected).replace(/\.\.\./g,''); // quitar '...'
-  if(!u || !e) return false;
-  return u===e || u.includes(e); // permite respuesta más larga que contenga la clave
-}
-function startQuiz(forLesson, items){
-  quizState = {
-    active:true,
-    items:[...items],
-    i:0,
-    correct:0,
-    total: Math.min(items.length, MAX_QUEST),
-    forLesson
-  };
-  lockedUntilPass = forLesson;
-  addMsg(`Review started (${quizState.total} questions) — from Lesson ${forLesson-1}. Answer in English.`, "bot");
-  askNextQuestion();
-}
-function askNextQuestion(){
-  const q = quizState.items[quizState.i];
-  const questionMsg = addMsg(`Q${quizState.i+1}/${quizState.total}: ${q.question}`, "bot");
-  speak(`Question ${quizState.i+1}. ${q.question}`, questionMsg);
-}
-function handleQuizAnswer(userText){
-  const q = quizState.items[quizState.i];
-  const ok = checkAnswer(userText, q.answer);
-  if(ok){
-    quizState.correct++;
-    addMsg("Correct.", "bot");
-  }else{
-    addMsg(`Not quite. Expected: ${q.answer}`, "bot");
-  }
-  quizState.i++;
-  if(quizState.i>=quizState.total){
-    finishQuiz();
-  }else{
-    askNextQuestion();
-  }
-}
-function finishQuiz(){
-  const pct = Math.round((quizState.correct/quizState.total)*100);
-  addMsg(`Review finished. Score: ${quizState.correct}/${quizState.total} — ${pct}%`, "bot");
-  if(pct>=PASS_MARK){
-    addMsg(`Great! You unlocked Lesson ${quizState.forLesson}.`, "bot");
-    localStorage.setItem(`smc.unlock.${quizState.forLesson}`,'1');
-    lockedUntilPass=null;
-    // Mostrar Lesson actual (AHORA sí)
-    if(lessonData){
-      const theoryMsg = addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot");
-      speak(`Theory: ${lessonData.title}. ${lessonData.theory||""}`, theoryMsg);
-      
-      if(Array.isArray(lessonData.objectives)&&lessonData.objectives.length){
-        const objectivesMsg = addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
-        speak("Objectives: " + lessonData.objectives.join('. '), objectivesMsg);
-      }
-      if(Array.isArray(lessonData.topics)&&lessonData.topics.length){
-        const topicsMsg = addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
-        speak("Topics: " + lessonData.topics.join('. '), topicsMsg);
-      }
-    }else{
-      addMsg(`Lesson ${quizState.forLesson} unlocked. Ask what you want to reinforce.`, "bot");
-    }
-  }else{
-    addMsg(`You need at least ${PASS_MARK}% to proceed. Please review Lesson ${quizState.forLesson-1} and try again.`, "bot");
-    lockedUntilPass = quizState.forLesson;
-  }
-  quizState=null;
-}
-
-/* ===== Prompt estricto basado en JSON (para el modelo) ===== */
+/* ===== Prompt estricto basado en JSON ===== */
 function buildPrompt(userText){
   const n = currentLesson;
   const title = lessonData?.title || `Lesson ${n}`;
@@ -610,138 +921,145 @@ function buildPrompt(userText){
   const objectives = Array.isArray(lessonData?.objectives) ? lessonData.objectives : [];
   const topics = Array.isArray(lessonData?.topics) ? lessonData.topics : [];
 
+  const prevQuiz = Array.isArray(lessonData?.quizPrevious) && lessonData.quizPrevious.length
+    ? lessonData.quizPrevious
+    : (Array.isArray(prevLessonData?.quizPrevious) ? prevLessonData.quizPrevious : []);
+
   const rules =
-`ROLE: You are the English leveling instructor for St. Mary’s College.
+`ROLE: You are the English leveling instructor for St. Mary's College.
 LANGUAGE: Reply in ENGLISH ONLY.
 FORMAT: Plain text. No markdown, no asterisks, no emojis, no decorative symbols.
 TONE: Clear, concise, encouraging. Natural phrasing. Use minimal IPA or simple syllable hints only when essential.
 SCOPE: Strictly about Lesson ${n} — ${title}. If the user asks off-topic, provide a SHORT helpful note and redirect to Lesson ${n}.
 TEACHING: First, briefly explain the what/why/how based on the lesson JSON; then answer. Correct grammar and suggest natural phrasing.
-PRONUNCIATION: Avoid characters that TTS reads awkwardly. No bullets or decorative marks.`;
+PRONUNCIATION: Avoid characters that TTS reads awkwardly. No bullets or decorative marks.
+QUIZ-GATE: If Lesson ${n} > 1, start with a short 4-question diagnostic of Lesson ${n-1}. Use the provided 'quizPrevious' items if present; otherwise, derive from the previous lesson's theory/topics. Require ≥ 90% to continue. If below, ask the student to review Lesson ${n-1} and politely end the session.`;
 
   const jsonContext =
 `JSON_TITLE: ${title}
 JSON_THEORY: ${theory}
 JSON_OBJECTIVES:
-${objectives.map((x,i)=>`${i+1}. ${x}`).join('\n')}
+${objectives.map((x,i) => `${i+1}. ${x}`).join('\n')}
 JSON_TOPICS:
-${topics.map((x,i)=>`${i+1}. ${x}`).join('\n')}`;
+${topics.map((x,i) => `${i+1}. ${x}`).join('\n')}
+JSON_QUIZ_PREVIOUS:
+${prevQuiz.map((q,i) => `${i+1}. Q: ${q.question} | A: ${q.answer}`).join('\n')}`;
 
   return `LESSON=${n}\n${rules}\n${jsonContext}\nUSER: ${userText}`;
 }
 
 /* ===== Backend ===== */
 async function askInstructor(text){
-  const r = await fetch(WORKER_URL, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ text: buildPrompt(text), lang:"en-US" })
-  });
-  if(!r.ok) throw new Error("HTTP "+r.status);
-  const data = await r.json().catch(()=>({ reply:"Connection error." }));
-  return String(data.reply||"");
+  showThinking();
+  send.disabled = true;
+  
+  try {
+    const r = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: buildPrompt(text), lang: "en-US" })
+    });
+    
+    if(!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    
+    const data = await r.json().catch(() => ({ reply: "Connection error." }));
+    return String(data.reply || "Sorry, I couldn't process that request.");
+    
+  } catch(e) {
+    console.error("Error asking instructor:", e);
+    throw e;
+  } finally {
+    hideThinking();
+    send.disabled = false;
+  }
 }
 
 /* ===== Envío ===== */
 async function sendMsg(){
-  const t=(input.value||"").trim();
+  const t = (input.value || "").trim();
   if(!t) return;
-  input.value="";
-  addMsg(t,"user");
-
-  // Si hay quiz en curso, no llamamos al modelo
-  if(quizState?.active){
-    handleQuizAnswer(t);
-    return;
-  }
-  // Si la lección está bloqueada por no pasar el quiz
-  if(lockedUntilPass && currentLesson===lockedUntilPass){
-    addMsg(`Lesson ${currentLesson} is locked. Please review Lesson ${currentLesson-1} and start the review again.`, "bot");
-    return;
-  }
-  // Si aún no se seleccionó lección
-  if(!currentLesson){
-    addMsg("Please select a lesson first.", "bot");
-    return;
-  }
-
-  try{
+  
+  input.value = "";
+  addMsg(t, "user");
+  
+  try {
     const reply = await askInstructor(t);
-    const replyMsg = addMsg(reply,"bot"); 
-    speak(reply, replyMsg);
-  }catch(e){
-    addMsg("Connection error with the server.", "bot");
+    addMsg(reply, "bot"); 
+    speak(reply);
+  } catch(e) {
+    addMsg("Sorry, there was an error connecting to the server. Please try again.", "bot");
+    console.error("Send message error:", e);
   }
 }
 
 /* ===== Eventos UI ===== */
 send.addEventListener('click', sendMsg);
-input.addEventListener('keydown', e=>{
-  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+
+input.addEventListener('keydown', e => {
+  if(e.key === "Enter" && !e.shiftKey){ 
+    e.preventDefault(); 
+    sendMsg(); 
+  }
 });
+
+// Auto-resize textarea
+input.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = (this.scrollHeight) + 'px';
+});
+
 mic.addEventListener('click', sttStart);
 stopBtn.addEventListener('click', stopAll);
-voiceSettingsBtn.addEventListener('click', toggleVoiceSettings);
-lessonSel.addEventListener('change', ()=>{
-  const v = lessonSel.value;
-  if(!v){ statusEl.textContent="Please select a lesson to begin."; return; }
-  loadLesson(+v);
-});
 
-// Eventos para controles de voz
-voiceSelect.addEventListener('change', saveVoiceSettings);
-rateSelect.addEventListener('input', function() {
-  rateValue.textContent = this.value;
-  saveVoiceSettings();
-});
-pitchSelect.addEventListener('input', function() {
-  pitchValue.textContent = this.value;
-  saveVoiceSettings();
-});
-testVoiceBtn.addEventListener('click', testVoiceSettings);
-
-// Pausar voz cuando la página no es visible
-document.addEventListener('visibilitychange', function() {
-  if (document.hidden && isSpeaking) {
-    window.speechSynthesis.pause();
-  } else if (!document.hidden && window.speechSynthesis.paused) {
-    window.speechSynthesis.resume();
-  }
-});
-
-/* ===== Construir combo (placeholder + 1–270; títulos de JSON 1–13) ===== */
-(async function buildLessons(){
-  // Opción placeholder
-  const ph = document.createElement('option');
-  ph.value=""; ph.textContent="— Select a lesson —";
-  lessonSel.appendChild(ph);
-
-  // Prellenar 1–270
-  for(let i=1;i<=270;i++){
-    const o=document.createElement('option');
-    o.value=String(i); o.textContent = `Lesson ${i}`;
-    lessonSel.appendChild(o);
-  }
-
-  // Enriquecer títulos 1–13 leyendo JSON
-  for(let i=1;i<=JSON_COUNT;i++){
-    try{
-      const j = await fetchJSON(`${JSON_BASE}lesson${i}.json`);
-      if(j?.title){
-        const opt = lessonSel.options[i]; // +1 por el placeholder
-        if(opt) opt.textContent = `Lesson ${i} — ${j.title}`;
-      }
-    }catch(e){ /* si falla, queda "Lesson i" */}
-  }
-
-  // Estado inicial
-  lessonSel.value = "";
-  statusEl.textContent = "Please select a lesson to begin.";
-  addMsg("Welcome! Select your lesson above. If you choose Lesson 2 or higher, you must pass a short review from the previous lesson (≥ 90%) to unlock it.", "bot");
+loadLessonBtn.addEventListener('click', () => {
+  const inputValue = lessonInput.value;
+  const lessonNumber = parseLessonInput(inputValue);
   
-  // Inicializar sistema de voz
-  initVoices();
+  if (lessonNumber) {
+    // Limpiar chat al cambiar de lección
+    chat.innerHTML = '';
+    loadLesson(lessonNumber);
+  } else {
+    statusEl.textContent = "Invalid lesson. Please enter a number (1-270) or name (e.g. 'lesson 1' or 'one')";
+    statusEl.className = 'status error';
+    addMsg("Please enter a valid lesson number (1-270) or name (e.g. 'lesson 1' or 'one').", "bot");
+  }
+});
+
+lessonInput.addEventListener('keydown', e => {
+  if(e.key === "Enter"){ 
+    e.preventDefault(); 
+    loadLessonBtn.click(); 
+  }
+});
+
+/* ===== Inicialización ===== */
+(async function initApp(){
+  // Solo mostrar saludo inicial
+  addMsg("Welcome to St. Mary's College English Leveler! 👋", "bot");
+  addMsg("Please enter a lesson number (1-270) or name to begin. For example, type 'lesson 1' or 'one' and click 'Load Lesson' or press Enter.", "bot");
+  addMsg("I will teach ONLY the selected lesson, using its official content. Ask what you need to reinforce.", "bot");
+
+  // Deshabilitar la interfaz de chat hasta que se cargue una lección
+  input.disabled = true;
+  send.disabled = true;
+  mic.disabled = true;
+  stopBtn.disabled = true;
 })();
+
+// Mejorar accesibilidad
+document.addEventListener('keydown', (e) => {
+  // Atajo Ctrl+Enter para enviar
+  if (e.ctrlKey && e.key === 'Enter' && lessonLoaded) {
+    sendMsg();
+  }
+  
+  // Atajo Ctrl+Space para grabar
+  if (e.ctrlKey && e.key === ' ' && lessonLoaded) {
+    e.preventDefault();
+    sttStart();
+  }
+});
 </script>
 </body>
 </html>
