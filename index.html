@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>St. Mary’s College — English Leveler</title>
+    <title>English Leveler</title>
     <style>
         :root {
-            --brand: #0b3b71;
-            --bg: #eef2f7;
-            --bot: #0b88e6;
-            --user: #12b886;
-            --light: #f8f9fa;
-            --dark: #343a40;
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
         }
 
         * {
@@ -21,312 +20,382 @@
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg);
-            color: #0f172a;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--background);
+            color: var(--text);
             line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
 
         header {
-            background: var(--brand);
-            color: #fff;
-            padding: 16px;
+            background: var(--primary);
+            color: white;
+            padding: 20px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
-            margin: 0;
-            font-size: 20px;
+            font-size: 24px;
+            margin-bottom: 8px;
         }
 
-        main {
-            flex: 1;
+        .search-section {
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        .welcome {
-            text-align: center;
-            margin-bottom: 20px;
-            max-width: 500px;
-        }
-
-        .lesson-selector {
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px;
-            margin-bottom: 20px;
-        }
-
-        .lesson-selector input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-
-        .lesson-list {
-            list-style: none;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .lesson-item {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .lesson-item:hover {
-            background: #f0f7ff;
-        }
-
-        .chat-container {
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #chat {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 15px;
-            padding: 10px;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            min-height: 300px;
-        }
-
-        .msg {
-            max-width: 80%;
-            padding: 10px 14px;
-            border-radius: 14px;
-            line-height: 1.4;
-        }
-
-        .msg.bot {
-            background: var(--bot);
-            color: #fff;
-            align-self: flex-start;
-        }
-
-        .msg.user {
-            background: var(--user);
-            color: #fff;
-            align-self: flex-end;
-        }
-
-        .composer {
+        .search-box {
             display: flex;
             gap: 10px;
         }
 
-        #text {
+        #lessonInput {
             flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
             font-size: 16px;
         }
 
-        #send {
-            background: var(--bot);
+        #searchBtn {
+            background: var(--primary);
             color: white;
             border: none;
             border-radius: 8px;
             padding: 0 20px;
-            cursor: pointer;
             font-weight: 600;
+            cursor: pointer;
+        }
+
+        .lesson-content {
+            padding: 0 20px 20px;
+            display: none;
+        }
+
+        .lesson-header {
+            margin: 20px 0 15px;
+            color: var(--primary);
+        }
+
+        .theory-content {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .practice-section {
+            margin-top: 25px;
+        }
+
+        .practice-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: block;
+            width: 100%;
         }
 
         footer {
             text-align: center;
-            padding: 15px;
-            color: #64748b;
+            padding: 20px;
+            color: var(--secondary);
             font-size: 14px;
-            background: #fff;
             border-top: 1px solid #e2e8f0;
         }
 
-        @media (max-width: 768px) {
-            main {
-                padding: 15px;
+        @media (max-width: 600px) {
+            .search-box {
+                flex-direction: column;
             }
             
-            .lesson-selector, .chat-container {
-                padding: 15px;
-            }
-            
-            .msg {
-                max-width: 90%;
+            #searchBtn {
+                padding: 12px;
             }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>St. Mary’s College — English Leveler</h1>
-    </header>
+    <div class="container">
+        <header>
+            <h1>English Leveler</h1>
+            <p>Learn and practice English</p>
+        </header>
 
-    <main>
-        <div class="welcome">
-            <h2>Welcome to English Leveler!</h2>
-            <p>Please select a lesson to begin your English practice.</p>
-        </div>
-
-        <div class="lesson-selector">
-            <input type="text" id="lessonSearch" placeholder="Type lesson number or name...">
-            <ul class="lesson-list">
-                <li class="lesson-item" data-lesson="1">Lesson 1: Greetings and Introductions</li>
-                <li class="lesson-item" data-lesson="2">Lesson 2: Everyday Conversations</li>
-                <li class="lesson-item" data-lesson="3">Lesson 3: Present Simple Tense</li>
-                <li class="lesson-item" data-lesson="4">Lesson 4: Past Simple Tense</li>
-                <li class="lesson-item" data-lesson="5">Lesson 5: Future Tenses</li>
-                <li class="lesson-item" data-lesson="6">Lesson 6: Adjectives and Adverbs</li>
-                <li class="lesson-item" data-lesson="7">Lesson 7: Prepositions of Place</li>
-                <li class="lesson-item" data-lesson="8">Lesson 8: Prepositions of Time</li>
-                <li class="lesson-item" data-lesson="9">Lesson 9: Modal Verbs</li>
-                <li class="lesson-item" data-lesson="10">Lesson 10: Conditionals</li>
-            </ul>
-        </div>
-
-        <div class="chat-container hidden">
-            <div id="chat"></div>
-            <div class="composer">
-                <input id="text" placeholder="Type your message...">
-                <button id="send">Send</button>
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" id="lessonInput" placeholder="Enter lesson number or name (e.g. 1 or Greetings)">
+                <button id="searchBtn">Load Lesson</button>
             </div>
         </div>
-    </main>
 
-    <footer>
-        <p>St. Mary's College English Leveler • © 2023</p>
-    </footer>
+        <div class="lesson-content" id="lessonContent">
+            <h2 class="lesson-header" id="lessonTitle"></h2>
+            <div class="theory-content" id="theoryContent"></div>
+            
+            <div class="practice-section">
+                <button class="practice-btn" id="practiceBtn">Start Practice</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>St. Mary's College English Leveler • © 2023</p>
+        </footer>
+    </div>
 
     <script>
-        // Elementos DOM
-        const chatContainer = document.querySelector('.chat-container');
-        const chat = document.getElementById('chat');
-        const input = document.getElementById('text');
-        const sendBtn = document.getElementById('send');
-        const lessonSearch = document.getElementById('lessonSearch');
-        const lessonItems = document.querySelectorAll('.lesson-item');
-        
         // Datos de lecciones
         const lessons = {
-            1: "Greetings and Introductions: Learn how to greet people and introduce yourself.",
-            2: "Everyday Conversations: Practice common daily conversations.",
-            3: "Present Simple Tense: Understand and use the present simple tense.",
-            4: "Past Simple Tense: Learn to talk about past events.",
-            5: "Future Tenses: Practice different ways to talk about the future.",
-            6: "Adjectives and Adverbs: Describe things and actions more effectively.",
-            7: "Prepositions of Place: Use prepositions to describe locations.",
-            8: "Prepositions of Time: Talk about time correctly.",
-            9: "Modal Verbs: Express ability, possibility, permission, and obligation.",
-            10: "Conditionals: Practice if-clauses and conditional sentences."
+            1: {
+                title: "Lesson 1: Greetings and Introductions",
+                theory: `In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English.
+
+IMPORTANT PHRASES:
+- Hello / Hi / Hey (informal)
+- Good morning / Good afternoon / Good evening
+- How are you? / How's it going? (informal)
+- I'm fine, thank you. And you?
+- Nice to meet you.
+- What's your name?
+- My name is...
+
+FORMAL VS INFORMAL:
+Formal greetings are used in professional settings or with people you don't know well. Informal greetings are for friends, family, and casual situations.
+
+EXAMPLE DIALOGUE:
+A: Hello, my name is Maria. What's your name?
+B: Hi Maria, I'm John. Nice to meet you.
+A: Nice to meet you too, John. How are you?
+B: I'm good, thanks. How about you?
+A: I'm doing well, thank you.
+
+CULTURAL NOTES:
+In English-speaking countries, it's common to greet people with a smile and direct eye contact. Handshakes are common in formal settings, while hugs might be appropriate among friends.`
+            },
+            2: {
+                title: "Lesson 2: Everyday Conversations",
+                theory: `This lesson focuses on common everyday conversations you might encounter in English-speaking environments.
+
+ESSENTIAL PHRASES:
+- Could you please help me?
+- Where is the...?
+- How much does this cost?
+- I would like to order...
+- What time is it?
+- Excuse me / Pardon me
+
+SHOPPING:
+When shopping, you might need to ask about prices, sizes, or locations of items. Remember to be polite by using "please" and "thank you."
+
+EXAMPLE DIALOGUE (IN A STORE):
+A: Excuse me, how much is this shirt?
+B: It's $25.
+A: Do you have it in a larger size?
+B: Yes, let me check for you.
+
+ORDERING FOOD:
+When ordering food, you can use "I'd like..." or "I'll have..." followed by what you want to order.
+
+EXAMPLE DIALOGUE (IN A CAFE):
+A: What can I get for you today?
+B: I'll have a coffee and a sandwich, please.
+A: Anything else?
+B: No, that's all. Thank you.`
+            },
+            3: {
+                title: "Lesson 3: Present Simple Tense",
+                theory: `The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements.
+
+FORM:
+- Affirmative: Subject + verb (add -s/-es for he/she/it)
+- Negative: Subject + do/does + not + verb
+- Questions: Do/Does + subject + verb
+
+USAGE:
+1. Habits and routines: I drink coffee every morning.
+2. Permanent situations: He works in a bank.
+3. General truths: Water boils at 100 degrees Celsius.
+4. Fixed arrangements: The train leaves at 8 PM.
+
+TIME EXPRESSIONS:
+- always, usually, often, sometimes, rarely, never
+- every day/week/month/year
+- on Mondays, at weekends
+
+EXAMPLES:
+- She doesn't eat meat. (Negative)
+- Do you like music? (Question)
+- The sun rises in the east. (General truth)
+- They play tennis every Sunday. (Habit)`
+            },
+            greetings: {
+                title: "Lesson 1: Greetings and Introductions",
+                theory: `In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English.
+
+IMPORTANT PHRASES:
+- Hello / Hi / Hey (informal)
+- Good morning / Good afternoon / Good evening
+- How are you? / How's it going? (informal)
+- I'm fine, thank you. And you?
+- Nice to meet you.
+- What's your name?
+- My name is...
+
+FORMAL VS INFORMAL:
+Formal greetings are used in professional settings or with people you don't know well. Informal greetings are for friends, family, and casual situations.
+
+EXAMPLE DIALOGUE:
+A: Hello, my name is Maria. What's your name?
+B: Hi Maria, I'm John. Nice to meet you.
+A: Nice to meet you too, John. How are you?
+B: I'm good, thanks. How about you?
+A: I'm doing well, thank you.
+
+CULTURAL NOTES:
+In English-speaking countries, it's common to greet people with a smile and direct eye contact. Handshakes are common in formal settings, while hugs might be appropriate among friends.`
+            },
+            conversations: {
+                title: "Lesson 2: Everyday Conversations",
+                theory: `This lesson focuses on common everyday conversations you might encounter in English-speaking environments.
+
+ESSENTIAL PHRASES:
+- Could you please help me?
+- Where is the...?
+- How much does this cost?
+- I would like to order...
+- What time is it?
+- Excuse me / Pardon me
+
+SHOPPING:
+When shopping, you might need to ask about prices, sizes, or locations of items. Remember to be polite by using "please" and "thank you."
+
+EXAMPLE DIALOGUE (IN A STORE):
+A: Excuse me, how much is this shirt?
+B: It's $25.
+A: Do you have it in a larger size?
+B: Yes, let me check for you.
+
+ORDERING FOOD:
+When ordering food, you can use "I'd like..." or "I'll have..." followed by what you want to order.
+
+EXAMPLE DIALOGUE (IN A CAFE):
+A: What can I get for you today?
+B: I'll have a coffee and a sandwich, please.
+A: Anything else?
+B: No, that's all. Thank you.`
+            },
+            present: {
+                title: "Lesson 3: Present Simple Tense",
+                theory: `The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements.
+
+FORM:
+- Affirmative: Subject + verb (add -s/-es for he/she/it)
+- Negative: Subject + do/does + not + verb
+- Questions: Do/Does + subject + verb
+
+USAGE:
+1. Habits and routines: I drink coffee every morning.
+2. Permanent situations: He works in a bank.
+3. General truths: Water boils at 100 degrees Celsius.
+4. Fixed arrangements: The train leaves at 8 PM.
+
+TIME EXPRESSIONS:
+- always, usually, often, sometimes, rarely, never
+- every day/week/month/year
+- on Mondays, at weekends
+
+EXAMPLES:
+- She doesn't eat meat. (Negative)
+- Do you like music? (Question)
+- The sun rises in the east. (General truth)
+- They play tennis every Sunday. (Habit)`
+            }
         };
-        
-        // Filtrar lecciones
-        lessonSearch.addEventListener('input', () => {
-            const searchText = lessonSearch.value.toLowerCase();
+
+        // Elementos DOM
+        const lessonInput = document.getElementById('lessonInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const lessonContent = document.getElementById('lessonContent');
+        const lessonTitle = document.getElementById('lessonTitle');
+        const theoryContent = document.getElementById('theoryContent');
+        const practiceBtn = document.getElementById('practiceBtn');
+
+        // Cargar lección
+        function loadLesson() {
+            const input = lessonInput.value.trim().toLowerCase();
             
-            lessonItems.forEach(item => {
-                const lessonText = item.textContent.toLowerCase();
-                if (lessonText.includes(searchText)) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        });
-        
-        // Seleccionar lección
-        lessonItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const lessonNum = item.getAttribute('data-lesson');
-                startLesson(lessonNum);
-            });
-        });
-        
-        // Iniciar lección
-        function startLesson(lessonNum) {
-            document.querySelector('.lesson-selector').classList.add('hidden');
-            chatContainer.classList.remove('hidden');
+            if (!input) {
+                alert("Please enter a lesson number or name");
+                return;
+            }
             
-            addMsg(`You've selected Lesson ${lessonNum}: ${lessons[lessonNum]}`, 'bot');
-            addMsg("How can I help you with this lesson? You can ask questions or type 'practice' for exercises.", 'bot');
+            let lesson;
+            
+            // Buscar por número
+            if (lessons[input]) {
+                lesson = lessons[input];
+            } 
+            // Buscar por palabra clave
+            else if (input.includes("greet") && lessons[1]) {
+                lesson = lessons[1];
+            } 
+            else if ((input.includes("conversation") || input.includes("everyday")) && lessons[2]) {
+                lesson = lessons[2];
+            }
+            else if ((input.includes("present") || input.includes("simple")) && lessons[3]) {
+                lesson = lessons[3];
+            }
+            else {
+                alert("Lesson not found. Try: 1, 2, 3, 'greetings', 'conversations', or 'present'");
+                return;
+            }
+            
+            // Mostrar contenido
+            lessonTitle.textContent = lesson.title;
+            theoryContent.textContent = lesson.theory;
+            lessonContent.style.display = 'block';
+            
+            // Desplazar a la lección
+            lessonContent.scrollIntoView({ behavior: 'smooth' });
+            
+            // Leer el título en voz alta
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(lesson.title);
+                window.speechSynthesis.speak(utterance);
+            }
         }
-        
-        // Añadir mensaje al chat
-        function addMsg(text, type) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `msg ${type}`;
-            msgDiv.textContent = text;
-            chat.appendChild(msgDiv);
-            chat.scrollTop = chat.scrollHeight;
+
+        // Iniciar práctica
+        function startPractice() {
+            alert("Practice session would start here. This feature will be implemented in the next version.");
         }
-        
-        // Enviar mensaje
-        function sendMessage() {
-            const text = input.value.trim();
-            if (!text) return;
-            
-            input.value = '';
-            addMsg(text, 'user');
-            
-            // Respuesta simple del bot
-            setTimeout(() => {
-                let response;
-                
-                if (text.toLowerCase().includes('practice')) {
-                    response = "Let's practice! Translate this sentence to English: 'Hola, ¿cómo estás?'";
-                } else if (text.toLowerCase().includes('hello') || text.toLowerCase().includes('hi')) {
-                    response = "Hello! How can I help you with your English practice today?";
-                } else if (text.includes('?')) {
-                    response = "That's a good question. In English, we would typically say...";
-                } else {
-                    response = "I understand. Would you like to practice some exercises or learn more about this topic?";
-                }
-                
-                addMsg(response, 'bot');
-                
-                // Leer respuesta en voz alta
-                if ('speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(response);
-                    window.speechSynthesis.speak(utterance);
-                }
-            }, 500);
-        }
-        
+
         // Event listeners
-        sendBtn.addEventListener('click', sendMessage);
+        searchBtn.addEventListener('click', loadLesson);
         
-        input.addEventListener('keypress', (e) => {
+        lessonInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                sendMessage();
+                loadLesson();
             }
         });
+        
+        practiceBtn.addEventListener('click', startPractice);
     </script>
 </body>
 </html>
