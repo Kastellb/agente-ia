@@ -45,11 +45,27 @@
             color: white;
             padding: 20px;
             text-align: center;
+            position: relative;
         }
 
         h1 {
             font-size: 24px;
             margin-bottom: 8px;
+        }
+
+        .voice-search-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
 
         .search-section {
@@ -101,6 +117,15 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .audio-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .audio-btn:active {
+            transform: scale(0.95);
         }
 
         .audio-btn.stop {
@@ -110,6 +135,7 @@
         .audio-btn:disabled {
             background: var(--secondary);
             cursor: not-allowed;
+            transform: none;
         }
 
         .speed-control {
@@ -143,7 +169,7 @@
         }
 
         .practice-btn {
-            background: var(--primary);
+            background: var(--success);
             color: white;
             border: none;
             border-radius: 8px;
@@ -153,6 +179,16 @@
             cursor: pointer;
             display: block;
             width: 100%;
+            transition: background-color 0.2s;
+        }
+
+        .practice-btn:hover {
+            background: #0da271;
+        }
+
+        .practice-btn:disabled {
+            background: var(--secondary);
+            cursor: not-allowed;
         }
 
         .status-indicator {
@@ -162,12 +198,45 @@
             color: var(--secondary);
         }
 
+        .voice-commands {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         footer {
             text-align: center;
             padding: 20px;
             color: var(--secondary);
             font-size: 14px;
             border-top: 1px solid #e2e8f0;
+        }
+
+        .pulse {
+            animation: pulse-animation 1.5s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
 
         @media (max-width: 600px) {
@@ -182,6 +251,14 @@
             .audio-controls {
                 flex-wrap: wrap;
             }
+            
+            .voice-search-btn {
+                position: relative;
+                right: auto;
+                top: auto;
+                margin-top: 10px;
+                align-self: center;
+            }
         }
     </style>
 </head>
@@ -190,11 +267,19 @@
         <header>
             <h1>English Leveler</h1>
             <p>Learn and practice English</p>
+            <button class="voice-search-btn" id="voiceSearchBtn" title="Voice Search">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+            </button>
         </header>
 
         <div class="search-section">
             <div class="search-box">
-                <input type="text" id="lessonInput" placeholder="Enter lesson number or name (e.g. 1 or Greetings)">
+                <input type="text" id="lessonInput" placeholder="Enter lesson number or name (e.g. 'Lesson 45' or 'Past Perfect')">
                 <button id="searchBtn">Load Lesson</button>
             </div>
             
@@ -221,6 +306,10 @@
                 </div>
             </div>
             
+            <div class="voice-commands">
+                <p>Try saying: <strong>"Lesson 45"</strong>, <strong>"Future Continuous"</strong>, or <strong>"Practice"</strong></p>
+            </div>
+            
             <div class="status-indicator" id="statusText">Select a lesson to begin</div>
         </div>
 
@@ -229,7 +318,7 @@
             <div class="theory-content" id="theoryContent"></div>
             
             <div class="practice-section">
-                <button class="practice-btn" id="practiceBtn">Start Practice</button>
+                <button class="practice-btn" id="practiceBtn" disabled>Start Practice</button>
             </div>
         </div>
 
@@ -239,174 +328,6 @@
     </div>
 
     <script>
-        // Datos de lecciones
-        const lessons = {
-            1: {
-                title: "Lesson 1: Greetings and Introductions",
-                theory: `In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English.
-
-IMPORTANT PHRASES:
-- Hello / Hi / Hey (informal)
-- Good morning / Good afternoon / Good evening
-- How are you? / How's it going? (informal)
-- I'm fine, thank you. And you?
-- Nice to meet you.
-- What's your name?
-- My name is...
-
-FORMAL VS INFORMAL:
-Formal greetings are used in professional settings or with people you don't know well. Informal greetings are for friends, family, and casual situations.
-
-EXAMPLE DIALOGUE:
-A: Hello, my name is Maria. What's your name?
-B: Hi Maria, I'm John. Nice to meet you.
-A: Nice to meet you too, John. How are you?
-B: I'm good, thanks. How about you?
-A: I'm doing well, thank you.
-
-CULTURAL NOTES:
-In English-speaking countries, it's common to greet people with a smile and direct eye contact. Handshakes are common in formal settings, while hugs might be appropriate among friends.`
-            },
-            2: {
-                title: "Lesson 2: Everyday Conversations",
-                theory: `This lesson focuses on common everyday conversations you might encounter in English-speaking environments.
-
-ESSENTIAL PHRASES:
-- Could you please help me?
-- Where is the...?
-- How much does this cost?
-- I would like to order...
-- What time is it?
-- Excuse me / Pardon me
-
-SHOPPING:
-When shopping, you might need to ask about prices, sizes, or locations of items. Remember to be polite by using "please" and "thank you."
-
-EXAMPLE DIALOGUE (IN A STORE):
-A: Excuse me, how much is this shirt?
-B: It's $25.
-A: Do you have it in a larger size?
-B: Yes, let me check for you.
-
-ORDERING FOOD:
-When ordering food, you can use "I'd like..." or "I'll have..." followed by what you want to order.
-
-EXAMPLE DIALOGUE (IN A CAFE):
-A: What can I get for you today?
-B: I'll have a coffee and a sandwich, please.
-A: Anything else?
-B: No, that's all. Thank you.`
-            },
-            3: {
-                title: "Lesson 3: Present Simple Tense",
-                theory: `The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements.
-
-FORM:
-- Affirmative: Subject + verb (add -s/-es for he/she/it)
-- Negative: Subject + do/does + not + verb
-- Questions: Do/Does + subject + verb
-
-USAGE:
-1. Habits and routines: I drink coffee every morning.
-2. Permanent situations: He works in a bank.
-3. General truths: Water boils at 100 degrees Celsius.
-4. Fixed arrangements: The train leaves at 8 PM.
-
-TIME EXPRESSIONS:
-- always, usually, often, sometimes, rarely, never
-- every day/week/month/year
-- on Mondays, at weekends
-
-EXAMPLES:
-- She doesn't eat meat. (Negative)
-- Do you like music? (Question)
-- The sun rises in the east. (General truth)
-- They play tennis every Sunday. (Habit)`
-            },
-            greetings: {
-                title: "Lesson 1: Greetings and Introductions",
-                theory: `In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English.
-
-IMPORTANT PHRASES:
-- Hello / Hi / Hey (informal)
-- Good morning / Good afternoon / Good evening
-- How are you? / How's it going? (informal)
-- I'm fine, thank you. And you?
-- Nice to meet you.
-- What's your name?
-- My name is...
-
-FORMAL VS INFORMAL:
-Formal greetings are used in professional settings or with people you don't know well. Informal greetings are for friends, family, and casual situations.
-
-EXAMPLE DIALOGUE:
-A: Hello, my name is Maria. What's your name?
-B: Hi Maria, I'm John. Nice to meet you.
-A: Nice to meet you too, John. How are you?
-B: I'm good, thanks. How about you?
-A: I'm doing well, thank you.
-
-CULTURAL NOTES:
-In English-speaking countries, it's common to greet people with a smile and direct eye contact. Handshakes are common in formal settings, while hugs might be appropriate among friends.`
-            },
-            conversations: {
-                title: "Lesson 2: Everyday Conversations",
-                theory: `This lesson focuses on common everyday conversations you might encounter in English-speaking environments.
-
-ESSENTIAL PHRASES:
-- Could you please help me?
-- Where is the...?
-- How much does this cost?
-- I would like to order...
-- What time is it?
-- Excuse me / Pardon me
-
-SHOPPING:
-When shopping, you might need to ask about prices, sizes, or locations of items. Remember to be polite by using "please" and "thank you."
-
-EXAMPLE DIALOGUE (IN A STORE):
-A: Excuse me, how much is this shirt?
-B: It's $25.
-A: Do you have it in a larger size?
-B: Yes, let me check for you.
-
-ORDERING FOOD:
-When ordering food, you can use "I'd like..." or "I'll have..." followed by what you want to order.
-
-EXAMPLE DIALOGUE (IN A CAFE):
-A: What can I get for you today?
-B: I'll have a coffee and a sandwich, please.
-A: Anything else?
-B: No, that's all. Thank you.`
-            },
-            present: {
-                title: "Lesson 3: Present Simple Tense",
-                theory: `The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements.
-
-FORM:
-- Affirmative: Subject + verb (add -s/-es for he/she/it)
-- Negative: Subject + do/does + not + verb
-- Questions: Do/Does + subject + verb
-
-USAGE:
-1. Habits and routines: I drink coffee every morning.
-2. Permanent situations: He works in a bank.
-3. General truths: Water boils at 100 degrees Celsius.
-4. Fixed arrangements: The train leaves at 8 PM.
-
-TIME EXPRESSIONS:
-- always, usually, often, sometimes, rarely, never
-- every day/week/month/year
-- on Mondays, at weekends
-
-EXAMPLES:
-- She doesn't eat meat. (Negative)
-- Do you like music? (Question)
-- The sun rises in the east. (General truth)
-- They play tennis every Sunday. (Habit)`
-            }
-        };
-
         // Elementos DOM
         const lessonInput = document.getElementById('lessonInput');
         const searchBtn = document.getElementById('searchBtn');
@@ -418,52 +339,151 @@ EXAMPLES:
         const stopBtn = document.getElementById('stopBtn');
         const speedSelect = document.getElementById('speedSelect');
         const statusText = document.getElementById('statusText');
+        const voiceSearchBtn = document.getElementById('voiceSearchBtn');
 
         // Variables de estado
         let currentUtterance = null;
         let currentLessonText = "";
+        let currentLessonData = null;
+        let recognition = null;
+
+        // Configuración de Groq API (reemplaza con tu API key real)
+        const GROQ_API_KEY = "your-groq-api-key-here"; // Reemplazar con tu API key real
+        const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+        // Inicializar reconocimiento de voz si está disponible
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                lessonInput.value = transcript;
+                loadLesson();
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                statusText.textContent = "Error with voice recognition. Please try typing instead.";
+            };
+        } else {
+            voiceSearchBtn.disabled = true;
+            voiceSearchBtn.title = "Voice recognition not supported";
+        }
+
+        // Función para obtener contenido de la lección desde Groq
+        async function getLessonContent(lessonQuery) {
+            statusText.innerHTML = "Loading lesson content... <span class='loading'></span>";
+            
+            try {
+                const response = await fetch(GROQ_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${GROQ_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.1-8b-instant", // Puedes cambiar al modelo que prefieras
+                        messages: [
+                            {
+                                role: "system",
+                                content: "You are an English teaching assistant. Provide comprehensive, engaging lesson content with unique examples and practice exercises. Structure your response with clear sections for theory and practice. Always generate fresh content, never repeating the same examples."
+                            },
+                            {
+                                role: "user",
+                                content: `Create English lesson content for: ${lessonQuery}. Include both theoretical explanations and practical exercises.`
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error("Error fetching from Groq API:", error);
+                // Fallback content if API fails
+                return `# ${lessonQuery}\n\n## Theory\nThis lesson covers ${lessonQuery}. Unfortunately, we couldn't connect to the lesson database at this time. Please try again later.\n\n## Practice\nTry to find examples of ${lessonQuery} in English texts around you.`;
+            }
+        }
+
+        // Función para obtener ejercicios de práctica desde Groq
+        async function getPracticeContent(lessonQuery) {
+            statusText.innerHTML = "Generating practice exercises... <span class='loading'></span>";
+            
+            try {
+                const response = await fetch(GROQ_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${GROQ_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.1-8b-instant",
+                        messages: [
+                            {
+                                role: "system",
+                                content: "You are an English teaching assistant. Create unique, engaging practice exercises that test comprehension of the lesson topic. Include a variety of question types and provide answers."
+                            },
+                            {
+                                role: "user",
+                                content: `Create practice exercises for the English lesson: ${lessonQuery}. Include different question types.`
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1500
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error("Error fetching practice from Groq API:", error);
+                // Fallback practice content
+                return `Practice Exercises for ${lessonQuery}:\n\n1. Create 3 original sentences using what you've learned.\n2. Explain the concept to someone else in your own words.\n3. Find examples of this concept in an English book or website.`;
+            }
+        }
 
         // Cargar lección
-        function loadLesson() {
-            const input = lessonInput.value.trim().toLowerCase();
+        async function loadLesson() {
+            const input = lessonInput.value.trim();
             
             if (!input) {
                 alert("Please enter a lesson number or name");
                 return;
             }
             
-            let lesson;
-            
-            // Buscar por número
-            if (lessons[input]) {
-                lesson = lessons[input];
-            } 
-            // Buscar por palabra clave
-            else if (input.includes("greet") && lessons[1]) {
-                lesson = lessons[1];
-            } 
-            else if ((input.includes("conversation") || input.includes("everyday")) && lessons[2]) {
-                lesson = lessons[2];
-            }
-            else if ((input.includes("present") || input.includes("simple")) && lessons[3]) {
-                lesson = lessons[3];
-            }
-            else {
-                alert("Lesson not found. Try: 1, 2, 3, 'greetings', 'conversations', or 'present'");
-                return;
-            }
+            // Obtener contenido de la lección desde Groq
+            const lessonContentText = await getLessonContent(input);
             
             // Mostrar contenido
-            lessonTitle.textContent = lesson.title;
-            theoryContent.textContent = lesson.theory;
+            lessonTitle.textContent = input;
+            theoryContent.textContent = lessonContentText;
             lessonContent.style.display = 'block';
             
             // Guardar texto para lectura
-            currentLessonText = `${lesson.title}. ${lesson.theory}`;
+            currentLessonText = `${input}. ${lessonContentText}`;
+            currentLessonData = {
+                title: input,
+                theory: lessonContentText
+            };
             
-            // Habilitar controles de audio
+            // Habilitar controles
             playBtn.disabled = false;
             stopBtn.disabled = false;
+            practiceBtn.disabled = false;
             
             // Actualizar estado
             statusText.textContent = "Lesson loaded. Click play to listen";
@@ -537,8 +557,31 @@ EXAMPLES:
         }
 
         // Iniciar práctica
-        function startPractice() {
-            alert("Practice session would start here. This feature will be implemented in the next version.");
+        async function startPractice() {
+            if (!currentLessonData) return;
+            
+            // Obtener ejercicios de práctica desde Groq
+            const practiceContent = await getPracticeContent(currentLessonData.title);
+            
+            // Mostrar ejercicios de práctica
+            theoryContent.textContent = `${currentLessonData.theory}\n\n--- PRACTICE EXERCISES ---\n\n${practiceContent}`;
+            
+            // Actualizar texto para lectura
+            currentLessonText = `${currentLessonData.title} - Practice Exercises. ${practiceContent}`;
+            
+            // Actualizar estado
+            statusText.textContent = "Practice exercises loaded. Click play to listen";
+            
+            // Desplazar a la lección
+            theoryContent.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Iniciar búsqueda por voz
+        function startVoiceSearch() {
+            if (recognition) {
+                statusText.textContent = "Listening... Speak now";
+                recognition.start();
+            }
         }
 
         // Cargar voces disponibles
@@ -567,6 +610,7 @@ EXAMPLES:
         stopBtn.addEventListener('click', stopAudio);
         speedSelect.addEventListener('change', changeSpeed);
         practiceBtn.addEventListener('click', startPractice);
+        voiceSearchBtn.addEventListener('click', startVoiceSearch);
 
         // Inicializar
         window.addEventListener('load', () => {
