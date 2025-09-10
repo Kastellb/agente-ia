@@ -14,6 +14,7 @@
             --success: #22c55e;
             --warning: #f59e0b;
             --error: #ef4444;
+            --highlight: #fbbf24;
         }
 
         * {
@@ -178,7 +179,35 @@
             border-radius: 8px;
             margin-bottom: 20px;
             line-height: 1.8;
-            white-space: pre-line;
+        }
+
+        .theory-content b {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .theory-content .example {
+            background: #e6f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .theory-content .tip {
+            background: #f0f9eb;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid var(--success);
+        }
+
+        .theory-content .warning {
+            background: #fef7ec;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid var(--warning);
         }
 
         .practice-section {
@@ -395,7 +424,7 @@
 
         <div class="search-section">
             <div class="search-box">
-                <input type="text" id="lessonInput" placeholder="Enter lesson number or name (e.g. 'Lesson 45' or 'Past Perfect')">
+                <input type="text" id="lessonInput" placeholder="Enter lesson number or name (e.g. 'Lesson 1' or 'Present Simple')">
                 <button id="searchBtn">Load Lesson</button>
             </div>
             
@@ -430,7 +459,7 @@
             </div>
             
             <div class="voice-commands">
-                <p>Try saying: <strong>"Lesson 45"</strong>, <strong>"Future Continuous"</strong>, or <strong>"Practice"</strong></p>
+                <p>Try saying: <strong>"Lesson 1"</strong>, <strong>"Present Simple"</strong>, or <strong>"Practice"</strong></p>
             </div>
             
             <div class="status-indicator" id="statusText">Select a lesson to begin</div>
@@ -493,9 +522,45 @@
         let availableVoices = [];
         let recognition = null;
 
-        // Configuración de Groq API (reemplaza con tu API key real)
-        const GROQ_API_KEY = "your-groq-api-key-here"; // Reemplazar con tu API key real
-        const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+        // Contenido de lecciones de ejemplo (en un caso real, esto vendría de Groq API)
+        const lessonContents = {
+            1: `<b>Greetings and Introductions</b>
+
+Welcome to your first English lesson! In this lesson, you'll learn how to greet people and introduce yourself properly.
+
+<b>Basic Greetings:</b>
+- <b>Hello</b> / <b>Hi</b> - Standard greetings for any time
+- <b>Good morning</b> (before 12pm)
+- <b>Good afternoon</b> (12pm-6pm)
+- <b>Good evening</b> (after 6pm)
+
+<div class="tip">
+💡 <b>Tip:</b> "Hi" is more informal than "Hello". Use "Hello" in formal situations.
+</div>
+
+<b>Asking How Someone Is:</b>
+- How are you?
+- How's it going? (informal)
+- How do you do? (very formal)
+
+<b>Responding:</b>
+- I'm fine, thank you. And you?
+- Pretty good, thanks!
+- Not bad, how about you?
+
+<div class="example">
+<b>Example Conversation:</b>
+A: <b>Hello</b>, my name is Maria. What's your name?
+B: <b>Hi Maria</b>, I'm John. <b>Nice to meet you</b>.
+A: <b>Nice to meet you too</b>, John. <b>How are you</b>?
+B: <b>I'm good, thanks. How about you</b>?
+A: <b>I'm doing well, thank you</b>.
+</div>
+
+<b>Cultural Note:</b> In English-speaking countries, people often greet with a smile and direct eye contact. Handshakes are common in formal settings.`
+
+            // Más lecciones se cargarían dinámicamente desde Groq API
+        };
 
         // Inicializar reconocimiento de voz si está disponible
         function initSpeechRecognition() {
@@ -583,119 +648,122 @@
             }
         }
 
-        // Función para obtener contenido de la lección desde Groq
+        // Función para obtener contenido de la lección
         async function getLessonContent(lessonQuery) {
             statusText.innerHTML = "Loading lesson content... <span class='loading'></span>";
             
-            try {
-                // Extraer número de lección si es posible
-                const lessonNumMatch = lessonQuery.match(/\d+/);
-                const lessonNumber = lessonNumMatch ? parseInt(lessonNumMatch[0]) : 0;
-                
-                const response = await fetch(GROQ_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${GROQ_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: "llama-3.1-8b-instant",
-                        messages: [
-                            {
-                                role: "system",
-                                content: "You are an English teaching assistant at St. Mary's College. Provide comprehensive, engaging lesson content with unique examples. Structure your response with clear sections for theory. Always generate fresh content, never repeating the same examples. Focus on proper English grammar and pronunciation."
-                            },
-                            {
-                                role: "user",
-                                content: `Create English lesson content for: ${lessonQuery}. If this is lesson ${lessonNumber} and lesson number is greater than 1, assume the student has completed previous lessons.`
-                            }
-                        ],
-                        temperature: 0.7,
-                        max_tokens: 2000
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
-                }
-
-                const data = await response.json();
+            // Simular carga (en un caso real, esto sería una llamada a Groq API)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Extraer número de lección si es posible
+            const lessonNumMatch = lessonQuery.match(/\d+/);
+            const lessonNumber = lessonNumMatch ? parseInt(lessonNumMatch[0]) : 1;
+            
+            // Usar contenido predefinido para la lección 1, simular API para otras
+            if (lessonNumber === 1 && lessonContents[1]) {
                 return {
-                    content: data.choices[0].message.content,
+                    content: lessonContents[1],
                     number: lessonNumber
                 };
-            } catch (error) {
-                console.error("Error fetching from Groq API:", error);
-                // Fallback content if API fails
-                return {
-                    content: `# ${lessonQuery}\n\n## Theory\nThis lesson covers ${lessonQuery}. Please try again later if the content doesn't load properly.`,
-                    number: 0
-                };
             }
+            
+            // Para otras lecciones, simular contenido de API
+            return {
+                content: `<b>${lessonQuery}</b>
+
+This is a comprehensive lesson about <b>${lessonQuery}</b>. 
+
+<div class="tip">
+💡 <b>Learning Tip:</b> Practice daily for just 15 minutes to see significant improvement in your English skills.
+</div>
+
+<div class="example">
+<b>Real-life Example:</b>
+When learning about ${lessonQuery}, try to create your own sentences using the new grammar or vocabulary. This helps with retention and practical application.
+</div>
+
+<b>Key Points to Remember:</b>
+- Practice makes perfect
+- Don't be afraid to make mistakes
+- Try thinking in English instead of translating from your native language
+
+<div class="warning">
+⚠️ <b>Common Mistake:</b> Many learners struggle with ${lessonQuery} at first. Be patient with yourself and keep practicing!
+</div>`,
+                number: lessonNumber
+            };
         }
 
-        // Función para obtener ejercicios de práctica desde Groq
+        // Función para obtener ejercicios de práctica
         async function getPracticeContent(lessonQuery, lessonNumber, previousScore = 0) {
             statusText.innerHTML = "Generating practice exercises... <span class='loading'></span>";
             
-            try {
-                const response = await fetch(GROQ_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${GROQ_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: "llama-3.1-8b-instant",
-                        messages: [
-                            {
-                                role: "system",
-                                content: `You are an English teaching assistant. Create unique, engaging practice exercises that test comprehension of the lesson topic. 
-                                Include 5 multiple-choice questions with 4 options each. Format your response as JSON with this structure: 
-                                {
-                                  "questions": [
-                                    {
-                                      "question": "question text",
-                                      "options": ["option1", "option2", "option3", "option4"],
-                                      "correctIndex": 0
-                                    }
-                                  ]
-                                }
-                                The questions must be completely different from any previous questions. Focus on proper English grammar.`
-                            },
-                            {
-                                role: "user",
-                                content: `Create practice exercises for the English lesson: ${lessonQuery}. 
-                                This is lesson number ${lessonNumber}. 
-                                The student's previous score was ${previousScore}%. 
-                                Generate completely new questions that are different from any previous exercises.`
-                            }
-                        ],
-                        temperature: 0.9, // Higher temperature for more variety
-                        response_format: { type: "json_object" },
-                        max_tokens: 2000
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                return JSON.parse(data.choices[0].message.content);
-            } catch (error) {
-                console.error("Error fetching practice from Groq API:", error);
-                // Fallback practice content
+            // Simular carga (en un caso real, esto sería una llamada a Groq API)
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // Para la lección 1, usar preguntas predefinidas
+            if (lessonNumber === 1) {
                 return {
                     questions: [
                         {
-                            question: "Based on what you've learned, which option best demonstrates proper English usage?",
-                            options: ["I is going to the store", "She are studying English", "They have completed the lesson", "He don't understand"],
+                            question: "Which greeting is most appropriate for a formal business meeting?",
+                            options: ["Hey there!", "What's up?", "Hello, how do you do?", "Hi, how's it going?"],
+                            correctIndex: 2
+                        },
+                        {
+                            question: "How should you respond to 'How are you?' in a formal setting?",
+                            options: ["I'm fine, thanks. And you?", "Not bad", "Same as always", "Can't complain"],
+                            correctIndex: 0
+                        },
+                        {
+                            question: "What is the best way to introduce yourself to someone new?",
+                            options: ["I'm John", "The name's John", "Hello, my name is John", "Hey, I'm John"],
+                            correctIndex: 2
+                        },
+                        {
+                            question: "When is it appropriate to use 'Good evening'?",
+                            options: ["Before 12pm", "Between 12pm-6pm", "After 6pm", "Any time of day"],
+                            correctIndex: 2
+                        },
+                        {
+                            question: "Which response is most polite when someone says 'Nice to meet you'?",
+                            options: ["You too", "Likewise", "Nice to meet you too", "Same here"],
                             correctIndex: 2
                         }
                     ]
                 };
             }
+            
+            // Para otras lecciones, generar preguntas variadas
+            return {
+                questions: [
+                    {
+                        question: `Based on what you learned about ${lessonQuery}, which option demonstrates correct usage?`,
+                        options: ["Option with typical mistake", "Incorrect usage", "Correct application", "Mixed usage"],
+                        correctIndex: 2
+                    },
+                    {
+                        question: `What is the main rule to remember about ${lessonQuery}?`,
+                        options: ["First incorrect option", "Second incorrect option", "Correct rule", "Misconception"],
+                        correctIndex: 2
+                    },
+                    {
+                        question: `Which sentence uses ${lessonQuery} properly?`,
+                        options: ["Sentence with error", "Correct sentence", "Another incorrect option", "Mixed correct/incorrect"],
+                        correctIndex: 1
+                    },
+                    {
+                        question: `When would you typically use ${lessonQuery}?`,
+                        options: ["Incorrect context", "Specialized situation", "Common situation", "Rarely used"],
+                        correctIndex: 2
+                    },
+                    {
+                        question: `What is a common mistake learners make with ${lessonQuery}?`,
+                        options: ["Not a real mistake", "Occasional error", "Common error", "Advanced mistake"],
+                        correctIndex: 2
+                    }
+                ]
+            };
         }
 
         // Cargar lección
@@ -707,17 +775,17 @@
                 return;
             }
             
-            // Obtener contenido de la lección desde Groq
+            // Obtener contenido de la lección
             const lessonData = await getLessonContent(input);
             
             // Mostrar contenido
             lessonTitle.textContent = input;
-            theoryContent.textContent = lessonData.content;
+            theoryContent.innerHTML = lessonData.content;
             lessonContent.style.display = 'block';
             quizContainer.style.display = 'none';
             
-            // Guardar texto para lectura (sin caracteres especiales)
-            currentLessonText = `${input}. ${lessonData.content.replace(/[#*_\-\[\]()]/g, '')}`;
+            // Guardar texto para lectura (sin HTML)
+            currentLessonText = `${input}. ${theoryContent.textContent}`;
             currentLessonNumber = lessonData.number;
             
             // Habilitar controles
@@ -810,7 +878,7 @@
             // Obtener el puntaje anterior del localStorage
             const previousScore = localStorage.getItem(`lesson-${currentLessonNumber-1}-score`) || 0;
             
-            // Obtener ejercicios de práctica desde Groq
+            // Obtener ejercicios de práctica
             currentQuiz = await getPracticeContent(lessonInput.value, currentLessonNumber, previousScore);
             
             // Inicializar quiz
