@@ -111,8 +111,25 @@ select,button{font:600 14px/1 system-ui}
 }
 .msg.welcome {
   background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
+  color: white;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
   text-align: center;
-  padding: 16px;
+  margin: 10px 0;
+  position: relative;
+  overflow: hidden;
+}
+.msg.welcome::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid #e94057;
 }
 
 /* Bot avatar */
@@ -128,6 +145,7 @@ select,button{font:600 14px/1 system-ui}
   color: white;
   font-weight: bold;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 /* Message controls */
@@ -265,6 +283,12 @@ select,button{font:600 14px/1 system-ui}
   }
   .lesson-btn {
     flex: 1 0 calc(50% - 8px);
+  }
+  .msg.welcome {
+    padding: 16px;
+  }
+  .msg.welcome::before {
+    display: none;
   }
 }
 </style>
@@ -421,8 +445,12 @@ function addWelcomeMessage() {
   const welcomeMsg = document.createElement('div');
   welcomeMsg.className = 'msg welcome';
   welcomeMsg.innerHTML = `
+    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+      <div class="bot-avatar" style="margin: 0 auto; margin-bottom: 10px;">SMC</div>
+    </div>
     <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Welcome to English Leveler!</div>
-    <div>I'm your English learning assistant. Please select a lesson to begin:</div>
+    <div style="margin-bottom: 16px;">I'm your AI English learning assistant from St. Mary's College. I'm here to help you improve your English skills through interactive lessons and practice.</div>
+    <div style="font-weight: 600; margin-bottom: 10px;">Please select a lesson to begin:</div>
   `;
   
   // Add lesson selection buttons
@@ -448,7 +476,7 @@ function addWelcomeMessage() {
   welcomeMessageElement = welcomeMsg;
   
   // Speak welcome message
-  speak("Welcome to English Leveler! I'm your English learning assistant. Please select a lesson to begin.");
+  speak("Welcome to English Leveler! I'm your AI English learning assistant from St. Mary's College. I'm here to help you improve your English skills through interactive lessons and practice. Please select a lesson to begin.");
 }
 
 function removeWelcomeMessage() {
