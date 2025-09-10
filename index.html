@@ -158,23 +158,129 @@
             color: #64748b;
         }
 
-        .start-button {
+        .lesson-selector {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 600px;
+            align-self: center;
+        }
+
+        .selector-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--brand);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .selector-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        select {
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            font-size: 16px;
+            min-width: 200px;
+            flex: 1;
+        }
+
+        .select-button {
             background: var(--bot);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 16px 32px;
-            font-size: 18px;
-            font-weight: 700;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(11, 136, 230, 0.3);
         }
 
-        .start-button:hover {
+        .select-button:hover {
             background: #0a76cc;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(11, 136, 230, 0.4);
+        }
+
+        .lesson-content {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            background: #f1f5f9;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .lesson-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--bot);
+        }
+
+        .lesson-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--brand);
+        }
+
+        .lesson-theory {
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .lesson-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: "•";
+            color: var(--bot);
+            font-size: 24px;
+        }
+
+        .section-content {
+            padding-left: 25px;
+        }
+
+        .back-button {
+            background: #64748b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #475569;
         }
 
         footer {
@@ -203,6 +309,14 @@
             
             .welcome-subtitle {
                 font-size: 16px;
+            }
+            
+            .selector-group {
+                flex-direction: column;
+            }
+            
+            select {
+                width: 100%;
             }
         }
     </style>
@@ -239,7 +353,46 @@
                         </div>
                     </div>
                     
-                    <button class="start-button">Get Started</button>
+                    <div class="lesson-selector">
+                        <h3 class="selector-title">Select a Lesson to Begin</h3>
+                        <div class="selector-group">
+                            <select id="lessonSelect">
+                                <option value="">-- Choose a lesson --</option>
+                                <option value="1">Lesson 1: Greetings and Introductions</option>
+                                <option value="2">Lesson 2: Everyday Conversations</option>
+                                <option value="3">Lesson 3: Present Simple Tense</option>
+                                <option value="4">Lesson 4: Past Simple Tense</option>
+                                <option value="5">Lesson 5: Future Tenses</option>
+                                <option value="6">Lesson 6: Adjectives and Adverbs</option>
+                                <option value="7">Lesson 7: Prepositions of Place</option>
+                                <option value="8">Lesson 8: Prepositions of Time</option>
+                                <option value="9">Lesson 9: Modal Verbs</option>
+                                <option value="10">Lesson 10: Conditionals</option>
+                                <option value="11">Lesson 11: Vocabulary Expansion</option>
+                                <option value="12">Lesson 12: Pronunciation Practice</option>
+                            </select>
+                            <button class="select-button" onclick="loadLesson()">Load Lesson</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="lessonContent" class="lesson-content">
+                    <div class="lesson-header">
+                        <h2 id="lessonTitle" class="lesson-title"></h2>
+                        <button class="back-button" onclick="hideLesson()">Back to Selection</button>
+                    </div>
+                    
+                    <div id="lessonTheory" class="lesson-theory"></div>
+                    
+                    <div class="lesson-section">
+                        <h3 class="section-title">Objectives</h3>
+                        <ul id="lessonObjectives" class="section-content"></ul>
+                    </div>
+                    
+                    <div class="lesson-section">
+                        <h3 class="section-title">Topics Covered</h3>
+                        <ul id="lessonTopics" class="section-content"></ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -250,10 +403,56 @@
     </footer>
 
     <script>
-        document.querySelector('.start-button').addEventListener('click', function() {
-            alert('Welcome! Please select a lesson from the dropdown menu to begin.');
-        });
-        
+        // Datos de ejemplo para las lecciones
+        const lessonData = {
+            1: {
+                title: "Lesson 1: Greetings and Introductions",
+                theory: "In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English. Greetings are an essential part of daily communication and vary based on formality and context.",
+                objectives: [
+                    "Learn formal and informal greetings",
+                    "Practice introducing yourself and others",
+                    "Understand appropriate responses to greetings"
+                ],
+                topics: [
+                    "Hello, Hi, Hey variations",
+                    "Formal vs informal greetings",
+                    "Asking 'How are you?' and responding appropriately",
+                    "Introducing yourself and others"
+                ]
+            },
+            2: {
+                title: "Lesson 2: Everyday Conversations",
+                theory: "This lesson focuses on common everyday conversations you might encounter in English-speaking environments. You'll learn phrases for shopping, ordering food, asking for directions, and making small talk.",
+                objectives: [
+                    "Master common conversational phrases",
+                    "Practice asking for information and assistance",
+                    "Develop confidence in everyday interactions"
+                ],
+                topics: [
+                    "Asking for directions",
+                    "Ordering food and drinks",
+                    "Shopping vocabulary and phrases",
+                    "Making small talk about weather and hobbies"
+                ]
+            },
+            3: {
+                title: "Lesson 3: Present Simple Tense",
+                theory: "The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements. It is one of the most common tenses in English and essential for basic communication.",
+                objectives: [
+                    "Understand when to use Present Simple",
+                    "Learn the structure of affirmative, negative and interrogative forms",
+                    "Practice using third person singular correctly"
+                ],
+                topics: [
+                    "Forming Present Simple statements",
+                    "Creating questions and negatives",
+                    "Third person singular rules",
+                    "Adverbs of frequency with Present Simple"
+                ]
+            }
+            // Más lecciones pueden añadirse aquí
+        };
+
         // Efecto de escritura para el subtítulo
         const subtitle = document.querySelector('.welcome-subtitle');
         const originalText = subtitle.textContent;
@@ -269,6 +468,57 @@
         };
         
         setTimeout(typeWriter, 1000);
+
+        // Función para cargar la lección seleccionada
+        function loadLesson() {
+            const lessonSelect = document.getElementById('lessonSelect');
+            const lessonId = lessonSelect.value;
+            
+            if (!lessonId) {
+                alert('Please select a lesson first.');
+                return;
+            }
+            
+            const lesson = lessonData[lessonId];
+            if (!lesson) {
+                alert('Lesson content not available yet. Please select another lesson.');
+                return;
+            }
+            
+            // Actualizar el contenido de la lección
+            document.getElementById('lessonTitle').textContent = lesson.title;
+            document.getElementById('lessonTheory').textContent = lesson.theory;
+            
+            // Limpiar y llenar objetivos
+            const objectivesList = document.getElementById('lessonObjectives');
+            objectivesList.innerHTML = '';
+            lesson.objectives.forEach(obj => {
+                const li = document.createElement('li');
+                li.textContent = obj;
+                objectivesList.appendChild(li);
+            });
+            
+            // Limpiar y llenar temas
+            const topicsList = document.getElementById('lessonTopics');
+            topicsList.innerHTML = '';
+            lesson.topics.forEach(topic => {
+                const li = document.createElement('li');
+                li.textContent = topic;
+                topicsList.appendChild(li);
+            });
+            
+            // Mostrar el contenido de la lección
+            document.getElementById('lessonContent').style.display = 'block';
+            
+            // Desplazar hacia la lección
+            document.getElementById('lessonContent').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Función para ocultar la lección y volver a la selección
+        function hideLesson() {
+            document.getElementById('lessonContent').style.display = 'none';
+            document.getElementById('lessonSelect').value = '';
+        }
     </script>
 </body>
 </html>
