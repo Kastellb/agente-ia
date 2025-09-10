@@ -169,6 +169,35 @@ select,button{font:600 14px/1 system-ui}
   background:#6b7280;
 }
 
+/* Lesson selection buttons */
+.lesson-btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  background: var(--brand);
+  transition: all 0.2s ease;
+  margin: 4px;
+  flex: 1 0 calc(33.333% - 8px);
+  min-width: 120px;
+  text-align: center;
+}
+.lesson-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  background: #0a4d8c;
+}
+
+.lesson-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 12px 0;
+}
+
 /* Composer */
 .composer{
   background:#fff; border-radius:16px; padding:12px;
@@ -233,6 +262,9 @@ select,button{font:600 14px/1 system-ui}
   }
   .voice-slider {
     flex-grow: 1;
+  }
+  .lesson-btn {
+    flex: 1 0 calc(50% - 8px);
   }
 }
 </style>
@@ -311,6 +343,7 @@ let lessonData = null;
 let prevLessonData = null;
 let quizState = null;
 let lockedUntilPass = null;
+let welcomeMessageElement = null;
 
 // Estado de voz
 let currentUtterance = null;
@@ -389,13 +422,40 @@ function addWelcomeMessage() {
   welcomeMsg.className = 'msg welcome';
   welcomeMsg.innerHTML = `
     <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Welcome to English Leveler!</div>
-    <div>I'm your English learning assistant. Please tell me which lesson you want to review (e.g., "Lesson 1")</div>
+    <div>I'm your English learning assistant. Please select a lesson to begin:</div>
   `;
+  
+  // Add lesson selection buttons
+  const lessonGrid = document.createElement('div');
+  lessonGrid.className = 'lesson-grid';
+  
+  // Add buttons for first 12 lessons
+  for (let i = 1; i <= 12; i++) {
+    const lessonBtn = document.createElement('button');
+    lessonBtn.className = 'lesson-btn';
+    lessonBtn.textContent = `Lesson ${i}`;
+    lessonBtn.addEventListener('click', () => {
+      lessonSel.value = i;
+      loadLesson(i);
+    });
+    lessonGrid.appendChild(lessonBtn);
+  }
+  
+  welcomeMsg.appendChild(lessonGrid);
   chat.appendChild(welcomeMsg);
   chat.scrollTop = chat.scrollHeight;
   
+  welcomeMessageElement = welcomeMsg;
+  
   // Speak welcome message
-  speak("Welcome to English Leveler! I'm your English learning assistant. Please tell me which lesson you want to review, for example, Lesson 1.");
+  speak("Welcome to English Leveler! I'm your English learning assistant. Please select a lesson to begin.");
+}
+
+function removeWelcomeMessage() {
+  if (welcomeMessageElement) {
+    welcomeMessageElement.remove();
+    welcomeMessageElement = null;
+  }
 }
 
 function addInlineButtons(buttons) {
@@ -540,12 +600,8 @@ async function loadLesson(n) {
   prevLessonData = null;
   quizState = null;
 
-  // Clear chat but keep welcome message
-  const welcomeMsg = document.querySelector('.msg.welcome');
-  chat.innerHTML = '';
-  if (welcomeMsg) {
-    chat.appendChild(welcomeMsg);
-  }
+  // Remove welcome message when a lesson is selected
+  removeWelcomeMessage();
 
   addMsg(`Lesson ${n} selected. Loading content…`, "bot");
 
@@ -580,6 +636,12 @@ async function loadLesson(n) {
       if (Array.isArray(lessonData.topics) && lessonData.topics.length) {
         addMsg("Topics:\n" + lessonData.topics.map((x, i) => `${i+1}. ${x}`).join('\n'), "bot");
       }
+      
+      // Ask what the user wants to know about the lesson
+      setTimeout(() => {
+        addMsg("What would you like to know or practice from this lesson?", "bot");
+        speak("What would you like to know or practice from this lesson?");
+      }, 1000);
     } else {
       addMsg("Lesson 1 ready. Ask what you would like to reinforce.", "bot");
     }
@@ -680,6 +742,12 @@ function finishQuiz() {
       if (Array.isArray(lessonData.topics) && lessonData.topics.length) {
         addMsg("Topics:\n" + lessonData.topics.map((x, i) => `${i+1}. ${x}`).join('\n'), "bot");
       }
+      
+      // Ask what the user wants to know about the lesson
+      setTimeout(() => {
+        addMsg("What would you like to know or practice from this lesson?", "bot");
+        speak("What would you like to know or practice from this lesson?");
+      }, 1000);
     } else {
       addMsg(`Lesson ${quizState.forLesson} unlocked. Ask what you want to reinforce.`, "bot");
     }
