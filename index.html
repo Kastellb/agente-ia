@@ -13,6 +13,8 @@
             --accent: #ff6b6b;
             --light: #f8f9fa;
             --dark: #343a40;
+            --correct: #22c55e;
+            --incorrect: #ef4444;
         }
 
         * {
@@ -70,6 +72,59 @@
             gap: 20px;
         }
 
+        .toolbar {
+            background: #fff;
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.08);
+        }
+
+        .label {
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        #lesson {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            min-width: 200px;
+        }
+
+        .status {
+            font-size: 13px;
+            color: #334155;
+            background: #0b3b7112;
+            border: 1px dashed #0b3b7130;
+            padding: 8px 12px;
+            border-radius: 10px;
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .voice-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .voice-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .voice-slider {
+            width: 100px;
+        }
+
         .chat-container {
             background: #fff;
             border-radius: 16px;
@@ -80,114 +135,23 @@
             flex-direction: column;
         }
 
-        .welcome-message {
+        #chat {
+            flex: 1;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 30px 20px;
+            gap: 16px;
+            padding: 10px;
+            max-height: 50vh;
         }
 
-        .bot-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--bot);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            color: white;
-            font-weight: bold;
-            font-size: 24px;
-            box-shadow: 0 4px 12px rgba(11, 136, 230, 0.3);
-        }
-
-        .welcome-title {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--brand);
-            margin-bottom: 12px;
-        }
-
-        .welcome-subtitle {
-            font-size: 18px;
-            color: #64748b;
-            margin-bottom: 25px;
-            max-width: 600px;
+        .msg {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
             line-height: 1.5;
-        }
-
-        .features {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            margin: 20px 0 30px;
-            max-width: 800px;
-        }
-
-        .feature {
-            background: #f7f9fc;
-            border-radius: 12px;
-            padding: 20px;
-            width: 230px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease;
-        }
-
-        .feature:hover {
-            transform: translateY(-5px);
-        }
-
-        .feature-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-            color: var(--bot);
-        }
-
-        .feature-title {
-            font-weight: 700;
-            color: var(--dark);
-            margin-bottom: 8px;
-        }
-
-        .feature-desc {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .start-button {
-            background: var(--bot);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 16px 32px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(11, 136, 230, 0.3);
-        }
-
-        .start-button:hover {
-            background: #0a76cc;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(11, 136, 230, 0.4);
-        }
-
-        .lesson-input-container {
-            display: none;
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 25px;
-            margin: 20px 0;
-            width: 100%;
-            max-width: 600px;
-            align-self: center;
-            text-align: center;
-            animation: fadeIn 0.5s ease;
+            white-space: pre-wrap;
+            animation: fadeIn 0.3s ease;
         }
 
         @keyframes fadeIn {
@@ -195,121 +159,184 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .input-title {
-            font-size: 20px;
+        .msg.bot {
+            background: var(--bot);
+            color: #fff;
+            border-bottom-left-radius: 6px;
+            align-self: flex-start;
+        }
+
+        .msg.user {
+            background: var(--user);
+            color: #fff;
+            border-bottom-right-radius: 6px;
+            align-self: flex-end;
+        }
+
+        .msg.welcome {
+            background: linear-gradient(135deg, #8a2387 0%, #e94057 50%, #f27121 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            align-self: center;
+            max-width: 90%;
+        }
+
+        .bot-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bot);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .msg-controls {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .msg-control {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .inline-btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 8px 0 4px;
+        }
+
+        .inline-btn {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 16px;
             font-weight: 700;
-            color: var(--brand);
+            color: #fff;
+            cursor: pointer;
+            background: var(--bot);
+        }
+
+        .inline-btn.secondary {
+            background: #6b7280;
+        }
+
+        .composer {
+            background: #fff;
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        #text {
+            width: 100%;
+            border: 0;
+            outline: 0;
+            font-size: 16px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: #f7f9fc;
+        }
+
+        .btnrow {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #send { background: #22c55e; } 
+        #mic { background: #0ea5e9; } 
+        #stop { background: #ef4444; }
+
+        .quiz-container {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .quiz-question {
+            font-weight: 600;
             margin-bottom: 15px;
         }
 
-        .input-instruction {
-            font-size: 16px;
-            color: #64748b;
-            margin-bottom: 20px;
-        }
-
-        .input-group {
+        .quiz-options {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        input {
-            padding: 12px 16px;
-            border-radius: 10px;
+        .quiz-option {
+            padding: 12px;
+            background: white;
             border: 1px solid #cbd5e1;
-            background: #fff;
-            font-size: 16px;
-            min-width: 200px;
-            flex: 1;
-        }
-
-        .action-button {
-            background: var(--bot);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .action-button:hover {
-            background: #0a76cc;
-            transform: translateY(-2px);
-        }
-
-        .lesson-content {
-            display: none;
-            margin-top: 30px;
-            padding: 25px;
-            border-radius: 12px;
-            background: #f1f5f9;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .lesson-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--bot);
-        }
-
-        .lesson-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--brand);
-        }
-
-        .lesson-theory {
-            margin-bottom: 25px;
-            line-height: 1.6;
-            font-size: 16px;
-        }
-
-        .lesson-section {
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--dark);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .section-title::before {
-            content: "•";
-            color: var(--bot);
-            font-size: 24px;
-        }
-
-        .section-content {
-            padding-left: 25px;
-        }
-
-        .back-button {
-            background: #64748b;
-            color: white;
-            border: none;
             border-radius: 8px;
-            padding: 10px 20px;
-            font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
         }
 
-        .back-button:hover {
-            background: #475569;
+        .quiz-option:hover {
+            background: #f1f5f9;
+        }
+
+        .quiz-option.correct {
+            background: var(--correct);
+            color: white;
+        }
+
+        .quiz-option.incorrect {
+            background: var(--incorrect);
+            color: white;
+        }
+
+        .quiz-result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .quiz-pass {
+            background: var(--correct);
+            color: white;
+        }
+
+        .quiz-fail {
+            background: var(--incorrect);
+            color: white;
+        }
+
+        .hidden {
+            display: none;
         }
 
         footer {
@@ -322,30 +349,22 @@
         }
 
         @media (max-width: 768px) {
-            .features {
+            .toolbar {
                 flex-direction: column;
-                align-items: center;
+                align-items: flex-start;
             }
             
-            .feature {
+            .voice-controls {
+                margin-left: 0;
                 width: 100%;
-                max-width: 300px;
             }
             
-            .welcome-title {
-                font-size: 24px;
+            .voice-slider {
+                flex-grow: 1;
             }
             
-            .welcome-subtitle {
-                font-size: 16px;
-            }
-            
-            .input-group {
-                flex-direction: column;
-            }
-            
-            input {
-                width: 100%;
+            .msg {
+                max-width: 90%;
             }
         }
     </style>
@@ -358,72 +377,61 @@
 
     <main>
         <div class="container">
+            <div class="toolbar">
+                <span class="label">Select lesson:</span>
+                <select id="lesson" aria-label="Select lesson">
+                    <option value="">-- Select a lesson --</option>
+                    <option value="1">Lesson 1: Greetings and Introductions</option>
+                    <option value="2">Lesson 2: Everyday Conversations</option>
+                    <option value="3">Lesson 3: Present Simple Tense</option>
+                    <option value="4">Lesson 4: Past Simple Tense</option>
+                    <option value="5">Lesson 5: Future Tenses</option>
+                    <option value="6">Lesson 6: Adjectives and Adverbs</option>
+                    <option value="7">Lesson 7: Prepositions of Place</option>
+                    <option value="8">Lesson 8: Prepositions of Time</option>
+                    <option value="9">Lesson 9: Modal Verbs</option>
+                    <option value="10">Lesson 10: Conditionals</option>
+                    <option value="11">Lesson 11: Vocabulary Expansion</option>
+                    <option value="12">Lesson 12: Pronunciation Practice</option>
+                </select>
+                <div class="voice-controls">
+                    <span class="voice-label">Speed:</span>
+                    <input type="range" id="voiceSpeed" class="voice-slider" min="0.5" max="2" step="0.1" value="1">
+                    <span id="speedValue">1.0x</span>
+                </div>
+                <span id="status" class="status">Please select a lesson to begin.</span>
+            </div>
+
             <div class="chat-container">
-                <div class="welcome-message">
-                    <div class="bot-avatar">SMC</div>
-                    <h2 class="welcome-title">Welcome to English Leveler!</h2>
-                    <p class="welcome-subtitle">Your AI-powered English learning assistant from St. Mary's College. I'm here to help you improve your English skills through interactive lessons and personalized practice.</p>
-                    
-                    <div class="features">
-                        <div class="feature">
-                            <div class="feature-icon">🎯</div>
-                            <h3 class="feature-title">Adaptive Learning</h3>
-                            <p class="feature-desc">Personalized lessons based on your progress and needs</p>
-                        </div>
-                        <div class="feature">
-                            <div class="feature-icon">🎙️</div>
-                            <h3 class="feature-title">Voice Practice</h3>
-                            <p class="feature-desc">Improve your pronunciation with speech recognition</p>
-                        </div>
-                        <div class="feature">
-                            <div class="feature-icon">📊</div>
-                            <h3 class="feature-title">Progress Tracking</h3>
-                            <p class="feature-desc">Monitor your improvement with detailed analytics</p>
-                        </div>
-                    </div>
-                    
-                    <button class="start-button" onclick="showLessonInput()">Get Started</button>
-                </div>
-                
-                <div id="lessonInputContainer" class="lesson-input-container">
-                    <h3 class="input-title">Enter Lesson Number</h3>
-                    <p class="input-instruction">Please type the number of the lesson you want to review (1-12)</p>
-                    
-                    <div class="input-group">
-                        <input type="number" id="lessonInput" placeholder="Example: 3" min="1" max="12">
-                        <button class="action-button" onclick="loadLesson()">Load Lesson</button>
+                <div id="chat" aria-live="polite">
+                    <div class="msg welcome">
+                        <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Welcome to English Leveler!</div>
+                        <div>I'm your English learning assistant. Please select a lesson to begin.</div>
                     </div>
                 </div>
-                
-                <div id="lessonContent" class="lesson-content">
-                    <div class="lesson-header">
-                        <h2 id="lessonTitle" class="lesson-title"></h2>
-                        <button class="back-button" onclick="backToInput()">Back</button>
-                    </div>
-                    
-                    <div id="lessonTheory" class="lesson-theory"></div>
-                    
-                    <div class="lesson-section">
-                        <h3 class="section-title">Objectives</h3>
-                        <ul id="lessonObjectives" class="section-content"></ul>
-                    </div>
-                    
-                    <div class="lesson-section">
-                        <h3 class="section-title">Topics Covered</h3>
-                        <ul id="lessonTopics" class="section-content"></ul>
-                    </div>
-                    
-                    <div class="lesson-section">
-                        <h3 class="section-title">Practice Exercises</h3>
-                        <div id="lessonExercises" class="section-content">
-                            <p>Complete the following exercises to practice what you've learned:</p>
-                            <ol>
-                                <li>Write five sentences using the concepts from this lesson</li>
-                                <li>Record yourself reading the theory section aloud</li>
-                                <li>Create a short dialogue incorporating the key phrases</li>
-                            </ol>
-                            <button class="action-button" style="margin-top: 15px;">Submit Exercises</button>
-                        </div>
+
+                <div class="composer">
+                    <input id="text" placeholder="Type your message or ask a question..." autocomplete="off">
+                    <div class="btnrow">
+                        <button id="send" class="btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+                            </svg>
+                            Send
+                        </button>
+                        <button id="mic" class="btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14Z" fill="currentColor"/>
+                                <path d="M17 11C17 14.31 14.31 17 11 17C7.69 17 5 14.31 5 11H3C3 15.42 6.58 19 11 19C15.42 19 19 15.42 19 11H17Z" fill="currentColor"/>
+                            </svg>
+                            Speak
+                        </button>
+                        <button id="stop" class="btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M6 6H18V18H6V6Z" fill="currentColor"/>
+                            </svg>
+                            Stop
+                        </button>
                     </div>
                 </div>
             </div>
@@ -435,154 +443,467 @@
     </footer>
 
     <script>
-        // Datos de ejemplo para las lecciones
+        // Configuración
+        const PASS_MARK = 90;
+        const MAX_QUESTIONS = 5;
+        
+        // Elementos DOM
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('text');
+        const sendBtn = document.getElementById('send');
+        const micBtn = document.getElementById('mic');
+        const stopBtn = document.getElementById('stop');
+        const lessonSel = document.getElementById('lesson');
+        const statusEl = document.getElementById('status');
+        const voiceSpeed = document.getElementById('voiceSpeed');
+        const speedValue = document.getElementById('speedValue');
+        
+        // Estado de la aplicación
+        let currentLesson = null;
+        let quizState = null;
+        let isSpeaking = false;
+        let speechRate = parseFloat(voiceSpeed.value);
+        
+        // Datos de ejemplo para lecciones y preguntas
         const lessonData = {
             1: {
-                title: "Lesson 1: Greetings and Introductions",
-                theory: "In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English. Greetings are an essential part of daily communication and vary based on formality and context. You'll practice both formal greetings for professional settings and informal greetings for casual situations with friends and acquaintances.",
+                title: "Greetings and Introductions",
+                theory: "In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English.",
                 objectives: [
                     "Learn formal and informal greetings",
                     "Practice introducing yourself and others",
-                    "Understand appropriate responses to greetings",
-                    "Master basic question forms for getting to know someone"
+                    "Understand appropriate responses to greetings"
                 ],
                 topics: [
-                    "Hello, Hi, Hey variations and when to use them",
-                    "Formal vs informal greetings: Good morning/afternoon/evening",
+                    "Hello, Hi, Hey variations",
+                    "Formal vs informal greetings",
                     "Asking 'How are you?' and responding appropriately",
-                    "Introducing yourself: My name is.../I'm...",
-                    "Introducing others: This is.../I'd like you to meet..."
+                    "Introducing yourself and others"
                 ]
             },
             2: {
-                title: "Lesson 2: Everyday Conversations",
-                theory: "This lesson focuses on common everyday conversations you might encounter in English-speaking environments. You'll learn essential phrases for shopping, ordering food, asking for directions, and making small talk. Mastering these conversational patterns will help you navigate daily life in English with confidence.",
+                title: "Everyday Conversations",
+                theory: "This lesson focuses on common everyday conversations you might encounter in English-speaking environments.",
                 objectives: [
-                    "Master common conversational phrases for daily situations",
-                    "Practice asking for information and assistance politely",
-                    "Develop confidence in everyday interactions",
-                    "Learn to understand and respond to common questions"
+                    "Master common conversational phrases",
+                    "Practice asking for information and assistance",
+                    "Develop confidence in everyday interactions"
                 ],
                 topics: [
-                    "Asking for directions: Excuse me, where is...?/How do I get to...?",
-                    "Ordering food and drinks: I'd like.../Could I have...?",
-                    "Shopping vocabulary and phrases: How much does this cost?",
-                    "Making small talk about weather, hobbies, and current events",
-                    "Expressing needs and preferences in various situations"
+                    "Asking for directions",
+                    "Ordering food and drinks",
+                    "Shopping vocabulary and phrases",
+                    "Making small talk about weather and hobbies"
                 ]
             },
             3: {
-                title: "Lesson 3: Present Simple Tense",
-                theory: "The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements. It is one of the most common tenses in English and essential for basic communication. This lesson will help you understand when and how to use this fundamental tense correctly.",
+                title: "Present Simple Tense",
+                theory: "The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements.",
                 objectives: [
-                    "Understand when to use the Present Simple tense",
+                    "Understand when to use Present Simple",
                     "Learn the structure of affirmative, negative and interrogative forms",
-                    "Practice using third person singular correctly (he/she/it + s)",
-                    "Master adverbs of frequency with Present Simple"
+                    "Practice using third person singular correctly"
                 ],
                 topics: [
-                    "Forming Present Simple statements: I work, You study, He plays",
-                    "Creating questions and negatives: Do you work?/I don't work",
-                    "Third person singular rules: adds -s, -es, or -ies",
-                    "Adverbs of frequency: always, usually, often, sometimes, never",
-                    "Using Present Simple for schedules and timetables"
-                ]
-            },
-            4: {
-                title: "Lesson 4: Past Simple Tense",
-                theory: "The Past Simple tense is used to talk about completed actions or events in the past. It's essential for storytelling, describing past experiences, and discussing historical events. This lesson will help you master regular and irregular past forms to talk about the past with confidence.",
-                objectives: [
-                    "Learn when to use the Past Simple tense",
-                    "Master regular and irregular verb forms in the past",
-                    "Practice forming questions and negatives in the past",
-                    "Develop ability to tell stories and describe past events"
-                ],
-                topics: [
-                    "Regular past simple verbs: worked, studied, played",
-                    "Common irregular verbs: went, saw, ate, came, did",
-                    "Forming questions: Did you go...?/What did you do?",
-                    "Forming negatives: I didn't go/I didn't see",
-                    "Time expressions: yesterday, last week, two years ago"
+                    "Forming Present Simple statements",
+                    "Creating questions and negatives",
+                    "Third person singular rules",
+                    "Adverbs of frequency with Present Simple"
                 ]
             }
-            // Más lecciones pueden añadirse aquí
-        };
-
-        // Efecto de escritura para el subtítulo
-        const subtitle = document.querySelector('.welcome-subtitle');
-        const originalText = subtitle.textContent;
-        subtitle.textContent = '';
-        
-        let i = 0;
-        const typeWriter = () => {
-            if (i < originalText.length) {
-                subtitle.textContent += originalText.charAt(i);
-                i++;
-                setTimeout(typeWriter, 20);
-            }
+            // Más lecciones...
         };
         
-        setTimeout(typeWriter, 1000);
-
-        // Función para mostrar el campo de entrada de lección
-        function showLessonInput() {
-            document.getElementById('lessonInputContainer').style.display = 'block';
-            document.getElementById('lessonInput').focus();
-            document.getElementById('lessonInputContainer').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Función para cargar la lección
-        function loadLesson() {
-            const lessonInput = document.getElementById('lessonInput');
-            const lessonId = parseInt(lessonInput.value);
+        // Preguntas de evaluación por lección
+        const quizQuestions = {
+            1: [
+                {
+                    question: "Which greeting is most formal?",
+                    options: ["Hey", "Hi", "Hello", "What's up"],
+                    answer: 2
+                },
+                {
+                    question: "How would you respond to 'How are you?' in a formal setting?",
+                    options: ["I'm good", "Fine, thanks", "I'm well, thank you. And you?", "Not bad"],
+                    answer: 2
+                },
+                {
+                    question: "Which is a proper introduction?",
+                    options: ["Me John", "This is John", "Him John", "John is here"],
+                    answer: 1
+                }
+            ],
+            2: [
+                {
+                    question: "How would you ask for directions to the library?",
+                    options: [
+                        "Where library?",
+                        "How to get library?",
+                        "Could you tell me how to get to the library?",
+                        "Library where?"
+                    ],
+                    answer: 2
+                },
+                {
+                    question: "What would you say to order a coffee?",
+                    options: [
+                        "Give me coffee",
+                        "I want coffee",
+                        "I'll have a coffee, please",
+                        "Coffee now"
+                    ],
+                    answer: 2
+                }
+            ]
+            // Más preguntas...
+        };
+        
+        // Función para añadir mensaje al chat
+        function addMsg(text, who = "bot") {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `msg ${who}`;
             
-            if (!lessonId || lessonId < 1 || lessonId > 12) {
-                alert('Please enter a valid lesson number between 1 and 12.');
+            if (who === "bot") {
+                const container = document.createElement('div');
+                container.style.display = 'flex';
+                container.style.alignItems = 'flex-start';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'bot-avatar';
+                avatar.textContent = 'SMC';
+                
+                const content = document.createElement('div');
+                content.textContent = text;
+                
+                container.appendChild(avatar);
+                container.appendChild(content);
+                msgDiv.appendChild(container);
+                
+                // Controles de voz
+                const controls = document.createElement('div');
+                controls.className = 'msg-controls';
+                controls.innerHTML = `
+                    <button class="msg-control" onclick="speakMessage('${text.replace(/'/g, "\\'")}')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 9V15H7L12 20V4L7 9H3Z" fill="currentColor"/>
+                        </svg>
+                        Speak
+                    </button>
+                `;
+                msgDiv.appendChild(controls);
+            } else {
+                msgDiv.textContent = text;
+            }
+            
+            chat.appendChild(msgDiv);
+            chat.scrollTop = chat.scrollHeight;
+            return msgDiv;
+        }
+        
+        // Función para sintetizar voz
+        function speak(text, rate = speechRate) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = rate;
+                
+                // Buscar voz en inglés
+                const voices = window.speechSynthesis.getVoices();
+                const englishVoice = voices.find(voice => 
+                    voice.lang.startsWith('en-') || voice.lang.startsWith('en_')
+                );
+                
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                }
+                
+                utterance.onstart = () => {
+                    isSpeaking = true;
+                };
+                
+                utterance.onend = () => {
+                    isSpeaking = false;
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        // Función para hablar mensaje
+        function speakMessage(text) {
+            speak(text);
+        }
+        
+        // Función para detener voz
+        function stopSpeech() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                isSpeaking = false;
+            }
+        }
+        
+        // Función para cargar lección
+        function loadLesson(lessonNum) {
+            currentLesson = lessonNum;
+            
+            // Limpiar chat
+            chat.innerHTML = '';
+            
+            // Verificar si necesita evaluación previa
+            if (lessonNum > 1) {
+                const previousLesson = lessonNum - 1;
+                statusEl.textContent = `Before starting Lesson ${lessonNum}, you need to pass a review of Lesson ${previousLesson}.`;
+                
+                addMsg(`Before we begin Lesson ${lessonNum}, you need to complete a short review of Lesson ${previousLesson}. You must score at least ${PASS_MARK}% to proceed.`, "bot");
+                
+                // Mostrar botones para comenzar evaluación
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'inline-btns';
+                
+                const startBtn = document.createElement('button');
+                startBtn.className = 'inline-btn';
+                startBtn.textContent = 'Start Review';
+                startBtn.onclick = () => startQuiz(previousLesson);
+                
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'inline-btn secondary';
+                cancelBtn.textContent = 'Not Now';
+                cancelBtn.onclick = () => {
+                    addMsg(`No problem. When you're ready, select Lesson ${lessonNum} again to start the review.`, "bot");
+                };
+                
+                buttonsDiv.appendChild(startBtn);
+                buttonsDiv.appendChild(cancelBtn);
+                chat.appendChild(buttonsDiv);
+                
                 return;
             }
             
-            const lesson = lessonData[lessonId];
-            if (!lesson) {
-                alert('Lesson content not available yet. Please try another lesson.');
+            // Si es la lección 1 o ya pasó la evaluación
+            statusEl.textContent = `Lesson ${lessonNum} - ${lessonData[lessonNum].title}`;
+            
+            // Mostrar contenido de la lección
+            addMsg(`Lesson ${lessonNum}: ${lessonData[lessonNum].title}`, "bot");
+            addMsg(lessonData[lessonNum].theory, "bot");
+            
+            // Objetivos
+            addMsg("Objectives:", "bot");
+            lessonData[lessonNum].objectives.forEach((obj, i) => {
+                addMsg(`${i+1}. ${obj}`, "bot");
+            });
+            
+            // Temas
+            addMsg("Topics:", "bot");
+            lessonData[lessonNum].topics.forEach((topic, i) => {
+                addMsg(`${i+1}. ${topic}`, "bot");
+            });
+            
+            addMsg("What would you like to know or practice from this lesson?", "bot");
+            speak("Welcome to Lesson " + lessonNum + ". " + lessonData[lessonNum].theory);
+        }
+        
+        // Función para iniciar evaluación
+        function startQuiz(lessonNum) {
+            quizState = {
+                lesson: lessonNum,
+                questions: quizQuestions[lessonNum] || [],
+                currentQuestion: 0,
+                score: 0
+            };
+            
+            if (quizState.questions.length === 0) {
+                addMsg("No review questions available for this lesson. You can proceed to the next lesson.", "bot");
+                loadLesson(currentLesson);
                 return;
             }
             
-            // Actualizar el contenido de la lección
-            document.getElementById('lessonTitle').textContent = lesson.title;
-            document.getElementById('lessonTheory').textContent = lesson.theory;
+            // Limitar a máximo de preguntas
+            if (quizState.questions.length > MAX_QUESTIONS) {
+                quizState.questions = quizState.questions.slice(0, MAX_QUESTIONS);
+            }
             
-            // Limpiar y llenar objetivos
-            const objectivesList = document.getElementById('lessonObjectives');
-            objectivesList.innerHTML = '';
-            lesson.objectives.forEach(obj => {
-                const li = document.createElement('li');
-                li.textContent = obj;
-                objectivesList.appendChild(li);
-            });
-            
-            // Limpiar y llenar temas
-            const topicsList = document.getElementById('lessonTopics');
-            topicsList.innerHTML = '';
-            lesson.topics.forEach(topic => {
-                const li = document.createElement('li');
-                li.textContent = topic;
-                topicsList.appendChild(li);
-            });
-            
-            // Ocultar entrada y mostrar contenido
-            document.getElementById('lessonInputContainer').style.display = 'none';
-            document.getElementById('lessonContent').style.display = 'block';
-            
-            // Desplazar hacia la lección
-            document.getElementById('lessonContent').scrollIntoView({ behavior: 'smooth' });
+            chat.innerHTML = '';
+            addMsg(`Review of Lesson ${lessonNum} - Answer the following questions:`, "bot");
+            displayQuestion();
         }
-
-        // Función para volver al campo de entrada
-        function backToInput() {
-            document.getElementById('lessonContent').style.display = 'none';
-            document.getElementById('lessonInputContainer').style.display = 'block';
-            document.getElementById('lessonInput').value = '';
-            document.getElementById('lessonInputContainer').scrollIntoView({ behavior: 'smooth' });
+        
+        // Función para mostrar pregunta
+        function displayQuestion() {
+            const question = quizState.questions[quizState.currentQuestion];
+            
+            const quizDiv = document.createElement('div');
+            quizDiv.className = 'quiz-container';
+            
+            const questionEl = document.createElement('div');
+            questionEl.className = 'quiz-question';
+            questionEl.textContent = `Question ${quizState.currentQuestion + 1}/${quizState.questions.length}: ${question.question}`;
+            
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'quiz-options';
+            
+            question.options.forEach((option, index) => {
+                const optionBtn = document.createElement('div');
+                optionBtn.className = 'quiz-option';
+                optionBtn.textContent = option;
+                optionBtn.onclick = () => checkAnswer(index);
+                optionsDiv.appendChild(optionBtn);
+            });
+            
+            quizDiv.appendChild(questionEl);
+            quizDiv.appendChild(optionsDiv);
+            chat.appendChild(quizDiv);
+            
+            speak(`Question ${quizState.currentQuestion + 1}. ${question.question}`);
+        }
+        
+        // Función para verificar respuesta
+        function checkAnswer(selectedIndex) {
+            const question = quizState.questions[quizState.currentQuestion];
+            const options = document.querySelectorAll('.quiz-option');
+            
+            // Deshabilitar opciones
+            options.forEach(opt => {
+                opt.onclick = null;
+                opt.style.cursor = 'default';
+            });
+            
+            // Marcar respuesta correcta/incorrecta
+            if (selectedIndex === question.answer) {
+                options[selectedIndex].classList.add('correct');
+                quizState.score++;
+                speak("Correct!");
+            } else {
+                options[selectedIndex].classList.add('incorrect');
+                options[question.answer].classList.add('correct');
+                speak("Incorrect. The right answer is: " + question.options[question.answer]);
+            }
+            
+            // Esperar y mostrar siguiente pregunta o resultados
+            setTimeout(() => {
+                quizState.currentQuestion++;
+                
+                if (quizState.currentQuestion < quizState.questions.length) {
+                    chat.innerHTML = '';
+                    displayQuestion();
+                } else {
+                    showQuizResults();
+                }
+            }, 2000);
+        }
+        
+        // Función para mostrar resultados del quiz
+        function showQuizResults() {
+            const scorePercent = Math.round((quizState.score / quizState.questions.length) * 100);
+            
+            chat.innerHTML = '';
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `quiz-result ${scorePercent >= PASS_MARK ? 'quiz-pass' : 'quiz-fail'}`;
+            resultDiv.textContent = `Your score: ${quizState.score}/${quizState.questions.length} (${scorePercent}%)`;
+            
+            chat.appendChild(resultDiv);
+            
+            if (scorePercent >= PASS_MARK) {
+                addMsg(`Congratulations! You passed the review with ${scorePercent}%. Now let's start Lesson ${currentLesson}.`, "bot");
+                speak(`Congratulations! You passed with ${scorePercent} percent. Now let's start Lesson ${currentLesson}.`);
+                
+                // Cargar lección actual después de pasar la evaluación
+                setTimeout(() => loadLesson(currentLesson), 3000);
+            } else {
+                addMsg(`You scored ${scorePercent}%, but you need at least ${PASS_MARK}% to proceed. Please review Lesson ${quizState.lesson} and try again.`, "bot");
+                speak(`You scored ${scorePercent} percent, but you need at least ${PASS_MARK} percent to proceed. Please review the previous lesson and try again.`);
+                
+                // Botón para reintentar
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'inline-btn';
+                retryBtn.textContent = 'Try Again';
+                retryBtn.onclick = () => startQuiz(quizState.lesson);
+                chat.appendChild(retryBtn);
+            }
+        }
+        
+        // Función para enviar mensaje
+        function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+            
+            input.value = '';
+            addMsg(text, "user");
+            
+            // Aquí se integraría con Groq API para obtener respuesta
+            // Por ahora simulamos una respuesta después de un breve retraso
+            setTimeout(() => {
+                const responses = [
+                    "That's a great question! In English, we usually say...",
+                    "I understand what you're asking. The correct way to say that is...",
+                    "Good question! The answer is...",
+                    "Let me explain that concept to you...",
+                    "Here's how we typically express that in English..."
+                ];
+                
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMsg(randomResponse, "bot");
+                speak(randomResponse);
+            }, 1000);
+        }
+        
+        // Inicializar reconocimiento de voz (si está disponible)
+        let recognition = null;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                input.value = transcript;
+            };
+            
+            recognition.onend = function() {
+                micBtn.textContent = 'Speak';
+            };
+        } else {
+            micBtn.disabled = true;
+            micBtn.title = "Speech recognition not supported";
+        }
+        
+        // Event Listeners
+        sendBtn.addEventListener('click', sendMessage);
+        
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        micBtn.addEventListener('click', () => {
+            if (recognition) {
+                recognition.start();
+                micBtn.textContent = 'Listening...';
+            }
+        });
+        
+        stopBtn.addEventListener('click', stopSpeech);
+        
+        lessonSel.addEventListener('change', () => {
+            const lessonNum = parseInt(lessonSel.value);
+            if (lessonNum) {
+                loadLesson(lessonNum);
+            }
+        });
+        
+        voiceSpeed.addEventListener('input', () => {
+            speechRate = parseFloat(voiceSpeed.value);
+            speedValue.textContent = speechRate.toFixed(1) + 'x';
+        });
+        
+        // Inicializar voces
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                // Voces cargadas
+            };
         }
     </script>
 </body>
