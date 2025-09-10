@@ -138,7 +138,7 @@
             transform: none;
         }
 
-        .speed-control {
+        .voice-selector {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -189,6 +189,98 @@
         .practice-btn:disabled {
             background: var(--secondary);
             cursor: not-allowed;
+        }
+
+        .quiz-container {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .quiz-question {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-option {
+            padding: 12px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quiz-option:hover {
+            background: #f1f5f9;
+        }
+
+        .quiz-option.selected {
+            background: #dbeafe;
+            border-color: var(--primary);
+        }
+
+        .quiz-option.correct {
+            background: #dcfce7;
+            border-color: var(--success);
+        }
+
+        .quiz-option.incorrect {
+            background: #fee2e2;
+            border-color: var(--error);
+        }
+
+        .quiz-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .quiz-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .quiz-next {
+            background: var(--primary);
+            color: white;
+        }
+
+        .quiz-submit {
+            background: var(--success);
+            color: white;
+        }
+
+        .quiz-result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .quiz-pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .quiz-fail {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
         .status-indicator {
@@ -259,6 +351,11 @@
                 margin-top: 10px;
                 align-self: center;
             }
+            
+            .voice-selector {
+                margin-left: 0;
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
@@ -296,7 +393,14 @@
                     </svg>
                 </button>
                 
-                <div class="speed-control">
+                <div class="voice-selector">
+                    <label for="voiceSelect">Voice:</label>
+                    <select id="voiceSelect">
+                        <option value="">Default</option>
+                    </select>
+                </div>
+                
+                <div class="voice-selector">
                     <label for="speedSelect">Speed:</label>
                     <select id="speedSelect">
                         <option value="0.8">Slow</option>
@@ -318,7 +422,18 @@
             <div class="theory-content" id="theoryContent"></div>
             
             <div class="practice-section">
-                <button class="practice-btn" id="practiceBtn" disabled>Start Practice</button>
+                <button class="practice-btn" id="practiceBtn">Start Practice</button>
+            </div>
+            
+            <div class="quiz-container" id="quizContainer">
+                <div class="quiz-question" id="quizQuestion"></div>
+                <div class="quiz-options" id="quizOptions"></div>
+                <div class="quiz-navigation">
+                    <button class="quiz-btn" id="prevQuestionBtn" style="visibility: hidden;">Previous</button>
+                    <button class="quiz-btn quiz-next" id="nextQuestionBtn">Next</button>
+                    <button class="quiz-btn quiz-submit" id="submitQuizBtn" style="display: none;">Submit</button>
+                </div>
+                <div class="quiz-result" id="quizResult" style="display: none;"></div>
             </div>
         </div>
 
@@ -337,21 +452,33 @@
         const practiceBtn = document.getElementById('practiceBtn');
         const playBtn = document.getElementById('playBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const voiceSelect = document.getElementById('voiceSelect');
         const speedSelect = document.getElementById('speedSelect');
         const statusText = document.getElementById('statusText');
         const voiceSearchBtn = document.getElementById('voiceSearchBtn');
+        const quizContainer = document.getElementById('quizContainer');
+        const quizQuestion = document.getElementById('quizQuestion');
+        const quizOptions = document.getElementById('quizOptions');
+        const prevQuestionBtn = document.getElementById('prevQuestionBtn');
+        const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+        const submitQuizBtn = document.getElementById('submitQuizBtn');
+        const quizResult = document.getElementById('quizResult');
 
         // Variables de estado
         let currentUtterance = null;
         let currentLessonText = "";
-        let currentLessonData = null;
-        let recognition = null;
+        let currentLessonNumber = 0;
+        let currentQuiz = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let availableVoices = [];
 
         // Configuración de Groq API (reemplaza con tu API key real)
         const GROQ_API_KEY = "your-groq-api-key-here"; // Reemplazar con tu API key real
         const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
         // Inicializar reconocimiento de voz si está disponible
+        let recognition = null;
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
@@ -362,7 +489,7 @@
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
                 lessonInput.value = transcript;
-                loadLesson();
+                processVoiceInput(transcript);
             };
 
             recognition.onerror = function(event) {
@@ -374,11 +501,61 @@
             voiceSearchBtn.title = "Voice recognition not supported";
         }
 
+        // Procesar entrada de voz
+        function processVoiceInput(transcript) {
+            transcript = transcript.toLowerCase().trim();
+            
+            // Detectar si es un número de lección
+            const lessonMatch = transcript.match(/lesson\s+(\d+)|lecture\s+(\d+)|module\s+(\d+)|(\d+)/);
+            if (lessonMatch) {
+                const lessonNum = lessonMatch[1] || lessonMatch[2] || lessonMatch[3] || lessonMatch[4];
+                lessonInput.value = `Lesson ${lessonNum}`;
+                loadLesson();
+                return;
+            }
+            
+            // Detectar si es una solicitud de práctica
+            if (transcript.includes('practice') || transcript.includes('exercise') || transcript.includes('quiz')) {
+                if (currentLessonNumber > 0) {
+                    startPractice();
+                } else {
+                    statusText.textContent = "Please select a lesson first";
+                }
+                return;
+            }
+            
+            // Búsqueda por nombre de lección
+            lessonInput.value = transcript;
+            loadLesson();
+        }
+
+        // Cargar voces disponibles
+        function loadVoices() {
+            availableVoices = speechSynthesis.getVoices().filter(voice => 
+                voice.lang.startsWith('en') || voice.lang.startsWith('es')
+            );
+            
+            // Limpiar selector de voces
+            voiceSelect.innerHTML = '<option value="">Default</option>';
+            
+            // Añadir voces disponibles
+            availableVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+            });
+        }
+
         // Función para obtener contenido de la lección desde Groq
         async function getLessonContent(lessonQuery) {
             statusText.innerHTML = "Loading lesson content... <span class='loading'></span>";
             
             try {
+                // Extraer número de lección si es posible
+                const lessonNumMatch = lessonQuery.match(/\d+/);
+                const lessonNumber = lessonNumMatch ? parseInt(lessonNumMatch[0]) : 0;
+                
                 const response = await fetch(GROQ_API_URL, {
                     method: 'POST',
                     headers: {
@@ -386,15 +563,15 @@
                         'Authorization': `Bearer ${GROQ_API_KEY}`
                     },
                     body: JSON.stringify({
-                        model: "llama-3.1-8b-instant", // Puedes cambiar al modelo que prefieras
+                        model: "llama-3.1-8b-instant",
                         messages: [
                             {
                                 role: "system",
-                                content: "You are an English teaching assistant. Provide comprehensive, engaging lesson content with unique examples and practice exercises. Structure your response with clear sections for theory and practice. Always generate fresh content, never repeating the same examples."
+                                content: "You are an English teaching assistant. Provide comprehensive, engaging lesson content with unique examples. Structure your response with clear sections for theory. Always generate fresh content, never repeating the same examples."
                             },
                             {
                                 role: "user",
-                                content: `Create English lesson content for: ${lessonQuery}. Include both theoretical explanations and practical exercises.`
+                                content: `Create English lesson content for: ${lessonQuery}. If this is lesson ${lessonNumber} and lesson number is greater than 1, assume the student has completed previous lessons.`
                             }
                         ],
                         temperature: 0.7,
@@ -407,16 +584,22 @@
                 }
 
                 const data = await response.json();
-                return data.choices[0].message.content;
+                return {
+                    content: data.choices[0].message.content,
+                    number: lessonNumber
+                };
             } catch (error) {
                 console.error("Error fetching from Groq API:", error);
                 // Fallback content if API fails
-                return `# ${lessonQuery}\n\n## Theory\nThis lesson covers ${lessonQuery}. Unfortunately, we couldn't connect to the lesson database at this time. Please try again later.\n\n## Practice\nTry to find examples of ${lessonQuery} in English texts around you.`;
+                return {
+                    content: `# ${lessonQuery}\n\n## Theory\nThis lesson covers ${lessonQuery}. Unfortunately, we couldn't connect to the lesson database at this time. Please try again later.`,
+                    number: 0
+                };
             }
         }
 
         // Función para obtener ejercicios de práctica desde Groq
-        async function getPracticeContent(lessonQuery) {
+        async function getPracticeContent(lessonQuery, lessonNumber, previousScore = 0) {
             statusText.innerHTML = "Generating practice exercises... <span class='loading'></span>";
             
             try {
@@ -431,15 +614,30 @@
                         messages: [
                             {
                                 role: "system",
-                                content: "You are an English teaching assistant. Create unique, engaging practice exercises that test comprehension of the lesson topic. Include a variety of question types and provide answers."
+                                content: `You are an English teaching assistant. Create unique, engaging practice exercises that test comprehension of the lesson topic. 
+                                Include 5 multiple-choice questions with 4 options each. Format your response as JSON with this structure: 
+                                {
+                                  "questions": [
+                                    {
+                                      "question": "question text",
+                                      "options": ["option1", "option2", "option3", "option4"],
+                                      "correctIndex": 0
+                                    }
+                                  ]
+                                }
+                                The questions must be completely different from any previous questions.`
                             },
                             {
                                 role: "user",
-                                content: `Create practice exercises for the English lesson: ${lessonQuery}. Include different question types.`
+                                content: `Create practice exercises for the English lesson: ${lessonQuery}. 
+                                This is lesson number ${lessonNumber}. 
+                                The student's previous score was ${previousScore}%. 
+                                Generate completely new questions that are different from any previous exercises.`
                             }
                         ],
-                        temperature: 0.7,
-                        max_tokens: 1500
+                        temperature: 0.9, // Higher temperature for more variety
+                        response_format: { type: "json_object" },
+                        max_tokens: 2000
                     })
                 });
 
@@ -448,11 +646,19 @@
                 }
 
                 const data = await response.json();
-                return data.choices[0].message.content;
+                return JSON.parse(data.choices[0].message.content);
             } catch (error) {
                 console.error("Error fetching practice from Groq API:", error);
                 // Fallback practice content
-                return `Practice Exercises for ${lessonQuery}:\n\n1. Create 3 original sentences using what you've learned.\n2. Explain the concept to someone else in your own words.\n3. Find examples of this concept in an English book or website.`;
+                return {
+                    questions: [
+                        {
+                            question: "Create 3 original sentences using what you've learned in this lesson.",
+                            options: ["I will practice this", "This is a good exercise", "Learning is important", "All of the above"],
+                            correctIndex: 3
+                        }
+                    ]
+                };
             }
         }
 
@@ -466,19 +672,17 @@
             }
             
             // Obtener contenido de la lección desde Groq
-            const lessonContentText = await getLessonContent(input);
+            const lessonData = await getLessonContent(input);
             
             // Mostrar contenido
             lessonTitle.textContent = input;
-            theoryContent.textContent = lessonContentText;
+            theoryContent.textContent = lessonData.content;
             lessonContent.style.display = 'block';
+            quizContainer.style.display = 'none';
             
             // Guardar texto para lectura
-            currentLessonText = `${input}. ${lessonContentText}`;
-            currentLessonData = {
-                title: input,
-                theory: lessonContentText
-            };
+            currentLessonText = `${input}. ${lessonData.content}`;
+            currentLessonNumber = lessonData.number;
             
             // Habilitar controles
             playBtn.disabled = false;
@@ -492,7 +696,7 @@
             lessonContent.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Reproducir audio
+        // Reproducir audio con voz de alta calidad
         function playAudio() {
             if (!currentLessonText) return;
             
@@ -502,18 +706,28 @@
             // Crear nueva utterance
             currentUtterance = new SpeechSynthesisUtterance(currentLessonText);
             
-            // Configurar voz en inglés
-            const voices = speechSynthesis.getVoices();
-            const englishVoice = voices.find(voice => 
-                voice.lang.startsWith('en') && voice.localService === true
-            );
-            
-            if (englishVoice) {
-                currentUtterance.voice = englishVoice;
+            // Configurar voz seleccionada o la mejor voz disponible
+            const selectedVoiceName = voiceSelect.value;
+            if (selectedVoiceName) {
+                const selectedVoice = availableVoices.find(voice => voice.name === selectedVoiceName);
+                if (selectedVoice) {
+                    currentUtterance.voice = selectedVoice;
+                }
+            } else {
+                // Seleccionar la mejor voz disponible (preferiblemente inglés UK o US)
+                const preferredVoices = availableVoices.filter(voice => 
+                    voice.lang.includes('en-GB') || voice.lang.includes('en-US')
+                );
+                
+                if (preferredVoices.length > 0) {
+                    currentUtterance.voice = preferredVoices[0];
+                }
             }
             
-            // Configurar velocidad
+            // Configurar parámetros para mejor calidad de voz
             currentUtterance.rate = parseFloat(speedSelect.value);
+            currentUtterance.pitch = 1.0;
+            currentUtterance.volume = 1.0;
             
             // Eventos
             currentUtterance.onstart = () => {
@@ -547,34 +761,122 @@
             }
         }
 
-        // Cambiar velocidad
-        function changeSpeed() {
-            if (currentUtterance && speechSynthesis.speaking) {
-                currentUtterance.rate = parseFloat(speedSelect.value);
-                stopAudio();
-                playAudio();
-            }
-        }
-
         // Iniciar práctica
         async function startPractice() {
-            if (!currentLessonData) return;
+            if (!currentLessonNumber) return;
+            
+            // Obtener el puntaje anterior del localStorage
+            const previousScore = localStorage.getItem(`lesson-${currentLessonNumber-1}-score`) || 0;
             
             // Obtener ejercicios de práctica desde Groq
-            const practiceContent = await getPracticeContent(currentLessonData.title);
+            currentQuiz = await getPracticeContent(lessonInput.value, currentLessonNumber, previousScore);
             
-            // Mostrar ejercicios de práctica
-            theoryContent.textContent = `${currentLessonData.theory}\n\n--- PRACTICE EXERCISES ---\n\n${practiceContent}`;
+            // Inicializar quiz
+            userAnswers = new Array(currentQuiz.questions.length).fill(null);
+            currentQuestionIndex = 0;
             
-            // Actualizar texto para lectura
-            currentLessonText = `${currentLessonData.title} - Practice Exercises. ${practiceContent}`;
+            // Mostrar quiz y ocultar teoría
+            theoryContent.style.display = 'none';
+            quizContainer.style.display = 'block';
+            practiceBtn.disabled = true;
+            
+            // Mostrar primera pregunta
+            showQuestion(0);
             
             // Actualizar estado
-            statusText.textContent = "Practice exercises loaded. Click play to listen";
-            
-            // Desplazar a la lección
-            theoryContent.scrollIntoView({ behavior: 'smooth' });
+            statusText.textContent = "Practice session started. Good luck!";
         }
+
+        // Mostrar pregunta del quiz
+        function showQuestion(index) {
+            const question = currentQuiz.questions[index];
+            quizQuestion.textContent = question.question;
+            
+            // Limpiar opciones anteriores
+            quizOptions.innerHTML = '';
+            
+            // Añadir nuevas opciones
+            question.options.forEach((option, optionIndex) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'quiz-option';
+                if (userAnswers[index] === optionIndex) {
+                    optionElement.classList.add('selected');
+                }
+                optionElement.textContent = option;
+                optionElement.addEventListener('click', () => selectAnswer(optionIndex));
+                quizOptions.appendChild(optionElement);
+            });
+            
+            // Actualizar navegación
+            prevQuestionBtn.style.visibility = index > 0 ? 'visible' : 'hidden';
+            nextQuestionBtn.style.display = index < currentQuiz.questions.length - 1 ? 'block' : 'none';
+            submitQuizBtn.style.display = index === currentQuiz.questions.length - 1 ? 'block' : 'none';
+        }
+
+        // Seleccionar respuesta
+        function selectAnswer(optionIndex) {
+            userAnswers[currentQuestionIndex] = optionIndex;
+            
+            // Actualizar visualización de opciones
+            const options = quizOptions.querySelectorAll('.quiz-option');
+            options.forEach((option, idx) => {
+                option.classList.toggle('selected', idx === optionIndex);
+            });
+        }
+
+        // Navegación entre preguntas
+        nextQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < currentQuiz.questions.length - 1) {
+                currentQuestionIndex++;
+                showQuestion(currentQuestionIndex);
+            }
+        });
+
+        prevQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                showQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Enviar quiz
+        submitQuizBtn.addEventListener('click', () => {
+            // Calcular puntaje
+            let correctAnswers = 0;
+            userAnswers.forEach((answer, index) => {
+                if (answer === currentQuiz.questions[index].correctIndex) {
+                    correctAnswers++;
+                }
+            });
+            
+            const score = Math.round((correctAnswers / currentQuiz.questions.length) * 100);
+            
+            // Guardar puntaje
+            localStorage.setItem(`lesson-${currentLessonNumber}-score`, score);
+            
+            // Mostrar resultado
+            quizResult.style.display = 'block';
+            if (score >= 70) {
+                quizResult.className = 'quiz-result quiz-pass';
+                quizResult.textContent = `Congratulations! You scored ${score}% and passed the quiz.`;
+            } else {
+                quizResult.className = 'quiz-result quiz-fail';
+                quizResult.textContent = `You scored ${score}%. You need at least 70% to pass. Please review the lesson and try again.`;
+            }
+            
+            // Deshabilitar opciones
+            const options = quizOptions.querySelectorAll('.quiz-option');
+            options.forEach((option, index) => {
+                option.style.cursor = 'default';
+                if (index === currentQuiz.questions[currentQuestionIndex].correctIndex) {
+                    option.classList.add('correct');
+                } else if (index === userAnswers[currentQuestionIndex] && index !== currentQuiz.questions[currentQuestionIndex].correctIndex) {
+                    option.classList.add('incorrect');
+                }
+            });
+            
+            submitQuizBtn.disabled = true;
+        });
 
         // Iniciar búsqueda por voz
         function startVoiceSearch() {
@@ -582,19 +884,6 @@
                 statusText.textContent = "Listening... Speak now";
                 recognition.start();
             }
-        }
-
-        // Cargar voces disponibles
-        function loadVoices() {
-            // En algunos navegadores, las voces no están disponibles inmediatamente
-            if (speechSynthesis.getVoices().length > 0) {
-                return;
-            }
-            
-            // Esperar a que las voces estén cargadas
-            speechSynthesis.onvoiceschanged = () => {
-                console.log("Voices loaded:", speechSynthesis.getVoices().length);
-            };
         }
 
         // Event listeners
@@ -608,13 +897,14 @@
         
         playBtn.addEventListener('click', playAudio);
         stopBtn.addEventListener('click', stopAudio);
-        speedSelect.addEventListener('change', changeSpeed);
         practiceBtn.addEventListener('click', startPractice);
         voiceSearchBtn.addEventListener('click', startVoiceSearch);
 
         // Inicializar
         window.addEventListener('load', () => {
+            // Cargar voces disponibles
             loadVoices();
+            speechSynthesis.onvoiceschanged = loadVoices;
             
             // Verificar compatibilidad con speech synthesis
             if (!('speechSynthesis' in window)) {
