@@ -1,1031 +1,474 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>St. Mary's College - English Leveler v1.1</title>
-    <style>
-        :root {
-            --primary: #0b3b71;
-            --secondary: #64748b;
-            --background: #eef2f7;
-            --card: #ffffff;
-            --text: #1e293b;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --highlight: #fbbf24;
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>St. Mary’s College — English Leveler v2.6</title>
+<style>
+:root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:#0f172a; display:flex; flex-direction:column;
+}
+header{
+  background:var(--brand); color:#fff; padding:12px 16px;
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+}
+h1{margin:0;font-size:16px;font-weight:800}
+.badge{font-size:12px;opacity:.9}
+main{flex:1;display:flex;justify-content:center}
+.wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+/* Top toolbar */
+.toolbar{
+  background:#fff; border-radius:14px; padding:10px;
+  display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+  box-shadow:0 12px 28px rgba(2,6,23,.08)
+}
+.label{font-weight:800}
+select,button{font:600 14px/1 system-ui}
+#lesson{
+  padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1;
+  background:#f8fafc; min-width:280px;
+}
+.status{
+  font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130;
+  padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center;
+}
 
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--background);
-            color: var(--text);
-            line-height: 1.6;
-            padding: 20px;
-            min-height: 100vh;
-        }
+/* Chat area */
+#chat{
+  background:#fff; border-radius:16px; padding:12px 12px 4px;
+  min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12)
+}
+.msg{
+  max-width:min(720px,92%); padding:10px 12px; border-radius:12px;
+  margin:10px 0; line-height:1.45; white-space:pre-wrap
+}
+.msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
+.msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: var(--card);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
+/* Inline buttons inside chat */
+.inline-btns{ display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 2px }
+.inline-btn{
+  border:0; border-radius:10px; padding:8px 12px; font-weight:800; color:#fff; cursor:pointer; background:#0b88e6;
+}
+.inline-btn.secondary{ background:#6b7280 }
 
-        header {
-            background: var(--primary);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-        }
+/* Composer: input arriba, botones debajo */
+.composer{
+  background:#fff; border-radius:14px; padding:10px;
+  box-shadow:0 12px 28px rgba(2,6,23,.08);
+  display:flex; flex-direction:column; gap:10px;
+}
+#text{
+  width:100%; border:0; outline:0; font-size:16px; padding:12px;
+  border-radius:10px; background:#f7f9fc
+}
+.btnrow{
+  display:flex; gap:10px; flex-wrap:wrap;
+}
+.btn{
+  border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer
+}
+#send{background:#22c55e} #mic{background:#0ea5e9} #stop{background:#ef4444}
 
-        h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .version {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .voice-search-btn {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .voice-search-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .search-section {
-            padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        #lessonInput {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        #searchBtn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0 20px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        #searchBtn:hover {
-            background: #0a3260;
-        }
-
-        .audio-controls {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-
-        .audio-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s, background-color 0.2s;
-        }
-
-        .audio-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .audio-btn:active {
-            transform: scale(0.95);
-        }
-
-        .audio-btn.stop {
-            background: var(--error);
-        }
-
-        .audio-btn:disabled {
-            background: var(--secondary);
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .voice-selector {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .lesson-content {
-            padding: 0 20px 20px;
-            display: none;
-        }
-
-        .lesson-header {
-            margin: 20px 0 15px;
-            color: var(--primary);
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 10px;
-        }
-
-        .theory-content {
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            line-height: 1.8;
-        }
-
-        .theory-content b {
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        .theory-content .example {
-            background: #e6f7ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid var(--primary);
-        }
-
-        .theory-content .tip {
-            background: #f0f9eb;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid var(--success);
-        }
-
-        .theory-content .warning {
-            background: #fef7ec;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid var(--warning);
-        }
-
-        .practice-section {
-            margin-top: 25px;
-        }
-
-        .practice-btn {
-            background: var(--success);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 20px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            display: block;
-            width: 100%;
-            transition: background-color 0.2s;
-        }
-
-        .practice-btn:hover {
-            background: #1da750;
-        }
-
-        .practice-btn:disabled {
-            background: var(--secondary);
-            cursor: not-allowed;
-        }
-
-        .quiz-container {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .quiz-question {
-            font-weight: 600;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .quiz-options {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .quiz-option {
-            padding: 12px;
-            background: white;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .quiz-option:hover {
-            background: #f1f5f9;
-        }
-
-        .quiz-option.selected {
-            background: #dbeafe;
-            border-color: var(--primary);
-        }
-
-        .quiz-option.correct {
-            background: #dcfce7;
-            border-color: var(--success);
-        }
-
-        .quiz-option.incorrect {
-            background: #fee2e2;
-            border-color: var(--error);
-        }
-
-        .quiz-navigation {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .quiz-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .quiz-next {
-            background: var(--primary);
-            color: white;
-        }
-
-        .quiz-submit {
-            background: var(--success);
-            color: white;
-        }
-
-        .quiz-result {
-            text-align: center;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-weight: 600;
-        }
-
-        .quiz-pass {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .quiz-fail {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-indicator {
-            text-align: center;
-            padding: 10px;
-            font-style: italic;
-            color: var(--secondary);
-        }
-
-        .voice-commands {
-            margin-top: 15px;
-            padding: 10px;
-            background: #f0f9ff;
-            border-radius: 8px;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: var(--secondary);
-            font-size: 14px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .pulse {
-            animation: pulse-animation 1.5s infinite;
-        }
-
-        @keyframes pulse-animation {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        @media (max-width: 600px) {
-            .search-box {
-                flex-direction: column;
-            }
-            
-            #searchBtn {
-                padding: 12px;
-            }
-            
-            .audio-controls {
-                flex-wrap: wrap;
-            }
-            
-            .voice-search-btn {
-                position: relative;
-                right: auto;
-                top: auto;
-                margin-top: 10px;
-                align-self: center;
-            }
-            
-            .voice-selector {
-                margin-left: 0;
-                margin-top: 10px;
-                width: 100%;
-                justify-content: center;
-            }
-        }
-    </style>
+/* Mobile tweaks */
+@media (max-width:640px){
+  h1{font-size:14px}
+  .msg{max-width:96%}
+  #lesson{min-width:unset}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>St. Mary's College - English Leveler</h1>
-            <div class="version">v1.1</div>
-            <button class="voice-search-btn" id="voiceSearchBtn" title="Voice Search">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-            </button>
-        </header>
+<header>
+  <h1>St. Mary’s College — English Leveler v2.6</h1>
+  <span class="badge">Voice + Text • EN only • JSON-driven (1–13)</span>
+</header>
 
-        <div class="search-section">
-            <div class="search-box">
-                <input type="text" id="lessonInput" placeholder="Enter lesson number or name (e.g. 'Lesson 1' or 'Present Simple')">
-                <button id="searchBtn">Load Lesson</button>
-            </div>
-            
-            <div class="audio-controls">
-                <button class="audio-btn" id="playBtn" disabled>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                </button>
-                <button class="audio-btn stop" id="stopBtn" disabled>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="6" y="4" width="4" height="16"></rect>
-                        <rect x="14" y="4" width="4" height="16"></rect>
-                    </svg>
-                </button>
-                
-                <div class="voice-selector">
-                    <label for="voiceSelect">Voice:</label>
-                    <select id="voiceSelect">
-                        <option value="">Default English</option>
-                    </select>
-                </div>
-                
-                <div class="voice-selector">
-                    <label for="speedSelect">Speed:</label>
-                    <select id="speedSelect">
-                        <option value="0.8">Slow</option>
-                        <option value="1" selected>Normal</option>
-                        <option value="1.2">Fast</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="voice-commands">
-                <p>Try saying: <strong>"Lesson 1"</strong>, <strong>"Present Simple"</strong>, or <strong>"Practice"</strong></p>
-            </div>
-            
-            <div class="status-indicator" id="statusText">Select a lesson to begin</div>
-        </div>
+<main>
+  <div class="wrap">
 
-        <div class="lesson-content" id="lessonContent">
-            <h2 class="lesson-header" id="lessonTitle"></h2>
-            <div class="theory-content" id="theoryContent"></div>
-            
-            <div class="practice-section">
-                <button class="practice-btn" id="practiceBtn">Start Practice</button>
-            </div>
-            
-            <div class="quiz-container" id="quizContainer">
-                <div class="quiz-question" id="quizQuestion"></div>
-                <div class="quiz-options" id="quizOptions"></div>
-                <div class="quiz-navigation">
-                    <button class="quiz-btn" id="prevQuestionBtn" style="visibility: hidden;">Previous</button>
-                    <button class="quiz-btn quiz-next" id="nextQuestionBtn">Next</button>
-                    <button class="quiz-btn quiz-submit" id="submitQuizBtn" style="display: none;">Submit</button>
-                </div>
-                <div class="quiz-result" id="quizResult" style="display: none;"></div>
-            </div>
-        </div>
-
-        <footer>
-            <p>St. Mary's College English Leveler v1.1 • © 2023</p>
-        </footer>
+    <div class="toolbar">
+      <span class="label">Select lesson:</span>
+      <select id="lesson" aria-label="Select lesson"></select>
+      <span id="status" class="status">Please select a lesson to begin.</span>
     </div>
 
-    <script>
-        // Elementos DOM
-        const lessonInput = document.getElementById('lessonInput');
-        const searchBtn = document.getElementById('searchBtn');
-        const lessonContent = document.getElementById('lessonContent');
-        const lessonTitle = document.getElementById('lessonTitle');
-        const theoryContent = document.getElementById('theoryContent');
-        const practiceBtn = document.getElementById('practiceBtn');
-        const playBtn = document.getElementById('playBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const voiceSelect = document.getElementById('voiceSelect');
-        const speedSelect = document.getElementById('speedSelect');
-        const statusText = document.getElementById('statusText');
-        const voiceSearchBtn = document.getElementById('voiceSearchBtn');
-        const quizContainer = document.getElementById('quizContainer');
-        const quizQuestion = document.getElementById('quizQuestion');
-        const quizOptions = document.getElementById('quizOptions');
-        const prevQuestionBtn = document.getElementById('prevQuestionBtn');
-        const nextQuestionBtn = document.getElementById('nextQuestionBtn');
-        const submitQuizBtn = document.getElementById('submitQuizBtn');
-        const quizResult = document.getElementById('quizResult');
+    <div id="chat" aria-live="polite"></div>
 
-        // Variables de estado
-        let currentUtterance = null;
-        let currentLessonText = "";
-        let currentLessonNumber = 0;
-        let currentQuiz = null;
-        let currentQuestionIndex = 0;
-        let userAnswers = [];
-        let availableVoices = [];
-        let recognition = null;
+    <div class="composer">
+      <input id="text" placeholder="Type your message and press Enter…" autocomplete="off">
+      <div class="btnrow">
+        <button id="send" class="btn">Send</button>
+        <button id="mic"  class="btn">Speak</button>
+        <button id="stop" class="btn">Stop</button>
+      </div>
+    </div>
 
-        // Contenido de lecciones de ejemplo (en un caso real, esto vendría de Groq API)
-        const lessonContents = {
-            1: `<b>Greetings and Introductions</b>
+  </div>
+</main>
 
-Welcome to your first English lesson! In this lesson, you'll learn how to greet people and introduce yourself properly.
+<script>
+/* ===== CONFIG ===== */
+const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; // tu Worker
+const JSON_BASE  = "https://www.leccion.datafast.pw/lessons/";             // carpeta de JSON
+const JSON_COUNT = 13;                                                      // tenemos 13 JSON
+const PASS_MARK  = 90;                                                      // mínimo 90%
+const MAX_QUEST  = 10;                                                      // hasta 10 preguntas
 
-<b>Basic Greetings:</b>
-- <b>Hello</b> / <b>Hi</b> - Standard greetings for any time
-- <b>Good morning</b> (before 12pm)
-- <b>Good afternoon</b> (12pm-6pm)
-- <b>Good evening</b> (after 6pm)
+/* ===== Estado ===== */
+const chat   = document.getElementById('chat');
+const input  = document.getElementById('text');
+const send   = document.getElementById('send');
+const mic    = document.getElementById('mic');
+const stopBtn= document.getElementById('stop');
+const lessonSel = document.getElementById('lesson');
+const statusEl  = document.getElementById('status');
 
-<div class="tip">
-💡 <b>Tip:</b> "Hi" is more informal than "Hello". Use "Hello" in formal situations.
-</div>
+let currentLesson = null;
+let lessonData = null;       // JSON lección actual
+let prevLessonData = null;   // JSON lección anterior
+let quizState = null;        // {active, items, i, correct, total, forLesson}
+let lockedUntilPass = null;  // número de lección bloqueada hasta pasar quiz
 
-<b>Asking How Someone Is:</b>
-- How are you?
-- How's it going? (informal)
-- How do you do? (very formal)
+/* ===== Utilidades visuales y TTS ===== */
+function addMsg(text, who="bot"){
+  const clean = cleanDisplay(String(text||''));
+  const d=document.createElement('div');
+  d.className = `msg ${who}`;
+  d.textContent = clean;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+function addInlineButtons(buttons){
+  const wrap = document.createElement('div');
+  wrap.className = 'inline-btns';
+  buttons.forEach(b=>{
+    const btn = document.createElement('button');
+    btn.className = 'inline-btn' + (b.secondary?' secondary':'');
+    btn.textContent = b.text;
+    btn.addEventListener('click', b.onClick);
+    wrap.appendChild(btn);
+  });
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+  return wrap;
+}
+function sanitizeSpeak(s){
+  return (s||"")
+    .replace(/https?:\/\/\S+/g,'')
+    .replace(/[`*_~#>\[\]\(\){}|\\]/g,' ')
+    .replace(/[•▪︎●◦\-\u2022]\s+/g,' ')
+    .replace(/[\u2190-\u21FF]/g,' ')
+    .replace(/[\u2460-\u24FF]/g,' ')
+    .replace(/[\u2500-\u25FF]/g,' ')
+    .replace(/[\u2600-\u27BF]/g,' ')
+    .replace(/[\u{1F000}-\u{1FAFF}]/gu,' ')
+    .replace(/\s{2,}/g,' ').trim();
+}
+function cleanDisplay(s){
+  return (s||"")
+    .replace(/[*_~`#>|]/g,'')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
+function pickEnglishVoice(){
+  const voices = window.speechSynthesis.getVoices() || [];
+  const en = voices.find(v=>/^en(-|_)/i.test(v.lang)) || voices[0];
+  return en || null;
+}
+function speak(text){
+  try{
+    const t = sanitizeSpeak(String(text||''));
+    if(!t) return;
+    const u = new SpeechSynthesisUtterance(t);
+    const v = pickEnglishVoice();
+    if(v) u.voice = v;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+window.speechSynthesis?.addEventListener('voiceschanged', ()=>{});
 
-<b>Responding:</b>
-- I'm fine, thank you. And you?
-- Pretty good, thanks!
-- Not bad, how about you?
+/* ===== STT (inglés) ===== */
+let rec=null,isRec=false;
+function sttStart(){
+  if(isRec) return;
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ addMsg("Voice recognition is not supported. Please type your message.","bot"); return; }
+  rec = new SR();
+  rec.lang = 'en-US'; rec.continuous=false; rec.interimResults=false;
+  rec.onresult = (e)=>{
+    const t = e.results?.[0]?.[0]?.transcript||"";
+    if(t){ input.value=t; sendMsg(); }
+  };
+  rec.onstart = ()=>{ isRec=true; speak("Listening"); };
+  rec.onerror= ()=>{ isRec=false; };
+  rec.onend  = ()=>{ isRec=false; };
+  rec.start();
+}
+function stopAll(){ try{speechSynthesis.cancel()}catch(e){} try{rec&&rec.abort()}catch(e){} }
 
-<div class="example">
-<b>Example Conversation:</b>
-A: <b>Hello</b>, my name is Maria. What's your name?
-B: <b>Hi Maria</b>, I'm John. <b>Nice to meet you</b>.
-A: <b>Nice to meet you too</b>, John. <b>How are you</b>?
-B: <b>I'm good, thanks. How about you</b>?
-A: <b>I'm doing well, thank you</b>.
-</div>
+/* ===== Carga de JSON ===== */
+async function fetchJSON(url){
+  const r = await fetch(url, { cache:'no-store' });
+  if(!r.ok) throw new Error(r.status+" "+r.statusText);
+  return await r.json();
+}
+async function loadLesson(n){
+  currentLesson = n;
+  lessonData = null; prevLessonData = null; quizState=null;
 
-<b>Cultural Note:</b> In English-speaking countries, people often greet with a smile and direct eye contact. Handshakes are common in formal settings.`
+  // Limpia mensajes previos de selección anterior (para evitar confusiones)
+  addMsg(`Lesson ${n} selected. Preparing materials…`, "bot");
 
-            // Más lecciones se cargarían dinámicamente desde Groq API
-        };
+  // Carga JSON de la lección actual (solo para mostrar si se desbloquea)
+  try{
+    if(n <= JSON_COUNT){
+      lessonData = await fetchJSON(`${JSON_BASE}lesson${n}.json`);
+    }
+  }catch(e){ /* si falla, se continúa con contexto mínimo */ }
 
-        // Inicializar reconocimiento de voz si está disponible
-        function initSpeechRecognition() {
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
-                recognition.continuous = false;
-                recognition.lang = 'en-US';
-                recognition.interimResults = false;
+  // Carga JSON de la lección anterior para el quiz
+  try{
+    if(n > 1 && (n-1) <= JSON_COUNT){
+      prevLessonData = await fetchJSON(`${JSON_BASE}lesson${n-1}.json`);
+    }
+  }catch(e){ /* opcional */ }
 
-                recognition.onresult = function(event) {
-                    const transcript = event.results[0][0].transcript;
-                    lessonInput.value = transcript;
-                    processVoiceInput(transcript);
-                };
+  // Status visible
+  const titleTxt = lessonData?.title ? `Lesson ${n} — ${lessonData.title}` : `Lesson ${n}`;
 
-                recognition.onerror = function(event) {
-                    console.error('Speech recognition error', event.error);
-                    statusText.textContent = "Error with voice recognition. Please try typing instead.";
-                };
-            } else {
-                voiceSearchBtn.disabled = true;
-                voiceSearchBtn.title = "Voice recognition not supported";
-            }
-        }
+  if(n === 1){
+    statusEl.textContent = `${titleTxt}. You can start now.`;
+    if(lessonData){
+      addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot");
+      if(Array.isArray(lessonData.objectives)&&lessonData.objectives.length){
+        addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+      }
+      if(Array.isArray(lessonData.topics)&&lessonData.topics.length){
+        addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+      }
+    }else{
+      addMsg("Lesson 1 ready. Ask what you would like to reinforce.", "bot");
+    }
+    lockedUntilPass=null;
+  } else {
+    statusEl.textContent = `${titleTxt}. First, a review of Lesson ${n-1} (need ≥ ${PASS_MARK}% to unlock).`;
+    addMsg(`Before we begin Lesson ${n}, you must pass a short diagnostic from Lesson ${n-1}. You need at least ${PASS_MARK}%.`, "bot");
+    const quizItems = Array.isArray(prevLessonData?.quizPrevious) ? prevLessonData.quizPrevious.slice(0, MAX_QUEST) : [];
+    if(!quizItems.length){
+      addMsg("This review has no configured questions yet. Please ask your instructor to add 'quizPrevious' to the previous lesson.", "bot");
+      lockedUntilPass = n; // bloqueo hasta que exista quiz
+      return;
+    }
+    addMsg("Are you ready to start the review now?", "bot");
+    addInlineButtons([
+      { text:"Ready", onClick: ()=> startQuiz(n, quizItems) },
+      { text:"Not now", onClick: ()=> {
+          addMsg(`No problem. Please review Lesson ${n-1} first. When you're ready, select Lesson ${n} again to start the review.`, "bot");
+          lockedUntilPass = n;
+        }, secondary:true
+      }
+    ]);
+  }
+}
 
-        // Procesar entrada de voz
-        function processVoiceInput(transcript) {
-            transcript = transcript.toLowerCase().trim();
-            
-            // Detectar si es un número de lección
-            const lessonMatch = transcript.match(/lesson\s+(\d+)|lecture\s+(\d+)|module\s+(\d+)|(\d+)/);
-            if (lessonMatch) {
-                const lessonNum = lessonMatch[1] || lessonMatch[2] || lessonMatch[3] || lessonMatch[4];
-                lessonInput.value = `Lesson ${lessonNum}`;
-                loadLesson();
-                return;
-            }
-            
-            // Detectar si es una solicitud de práctica
-            if (transcript.includes('practice') || transcript.includes('exercise') || transcript.includes('quiz')) {
-                if (currentLessonNumber > 0) {
-                    startPractice();
-                } else {
-                    statusText.textContent = "Please select a lesson first";
-                }
-                return;
-            }
-            
-            // Búsqueda por nombre de lección
-            lessonInput.value = transcript;
-            loadLesson();
-        }
+/* ===== Quiz local (estricto) ===== */
+function normalize(s){
+  return String(s||'')
+    .toLowerCase()
+    .replace(/[\u2018\u2019']/g,"'")
+    .replace(/[^a-z0-9' ]+/g,' ')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
+function checkAnswer(user, expected){
+  const u = normalize(user);
+  const e = normalize(expected).replace(/\.\.\./g,''); // quitar '...'
+  if(!u || !e) return false;
+  return u===e || u.includes(e); // permite respuesta más larga que contenga la clave
+}
+function startQuiz(forLesson, items){
+  quizState = {
+    active:true,
+    items:[...items],
+    i:0,
+    correct:0,
+    total: Math.min(items.length, MAX_QUEST),
+    forLesson
+  };
+  lockedUntilPass = forLesson;
+  addMsg(`Review started (${quizState.total} questions) — from Lesson ${forLesson-1}. Answer in English.`, "bot");
+  askNextQuestion();
+}
+function askNextQuestion(){
+  const q = quizState.items[quizState.i];
+  addMsg(`Q${quizState.i+1}/${quizState.total}: ${q.question}`, "bot");
+  speak(`Question ${quizState.i+1}. ${q.question}`);
+}
+function handleQuizAnswer(userText){
+  const q = quizState.items[quizState.i];
+  const ok = checkAnswer(userText, q.answer);
+  if(ok){
+    quizState.correct++;
+    addMsg("Correct.", "bot");
+  }else{
+    addMsg(`Not quite. Expected: ${q.answer}`, "bot");
+  }
+  quizState.i++;
+  if(quizState.i>=quizState.total){
+    finishQuiz();
+  }else{
+    askNextQuestion();
+  }
+}
+function finishQuiz(){
+  const pct = Math.round((quizState.correct/quizState.total)*100);
+  addMsg(`Review finished. Score: ${quizState.correct}/${quizState.total} — ${pct}%`, "bot");
+  if(pct>=PASS_MARK){
+    addMsg(`Great! You unlocked Lesson ${quizState.forLesson}.`, "bot");
+    localStorage.setItem(`smc.unlock.${quizState.forLesson}`,'1');
+    lockedUntilPass=null;
+    // Mostrar Lesson actual (AHORA sí)
+    if(lessonData){
+      addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot");
+      if(Array.isArray(lessonData.objectives)&&lessonData.objectives.length){
+        addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+      }
+      if(Array.isArray(lessonData.topics)&&lessonData.topics.length){
+        addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+      }
+    }else{
+      addMsg(`Lesson ${quizState.forLesson} unlocked. Ask what you want to reinforce.`, "bot");
+    }
+  }else{
+    addMsg(`You need at least ${PASS_MARK}% to proceed. Please review Lesson ${quizState.forLesson-1} and try again.`, "bot");
+    lockedUntilPass = quizState.forLesson;
+  }
+  quizState=null;
+}
 
-        // Cargar solo voces en inglés
-        function loadEnglishVoices() {
-            availableVoices = speechSynthesis.getVoices().filter(voice => 
-                voice.lang.startsWith('en') && !voice.localService // Prefer cloud-based voices for better quality
-            );
-            
-            // Limpiar selector de voces
-            voiceSelect.innerHTML = '<option value="">Default English</option>';
-            
-            // Añadir solo voces en inglés
-            availableVoices.forEach(voice => {
-                // Filtrar para obtener solo las mejores voces en inglés
-                if (voice.lang.includes('en-') && (voice.name.includes('Google') || voice.name.includes('Microsoft') || voice.name.includes('Alex') || voice.name.includes('Samantha'))) {
-                    const option = document.createElement('option');
-                    option.value = voice.name;
-                    option.textContent = `${voice.name} (${voice.lang})`;
-                    voiceSelect.appendChild(option);
-                }
-            });
-            
-            // Si no hay voces premium, usar las disponibles
-            if (voiceSelect.options.length <= 1) {
-                availableVoices.forEach(voice => {
-                    if (voice.lang.startsWith('en-')) {
-                        const option = document.createElement('option');
-                        option.value = voice.name;
-                        option.textContent = `${voice.name} (${voice.lang})`;
-                        voiceSelect.appendChild(option);
-                    }
-                });
-            }
-        }
+/* ===== Prompt estricto basado en JSON (para el modelo) ===== */
+function buildPrompt(userText){
+  const n = currentLesson;
+  const title = lessonData?.title || `Lesson ${n}`;
+  const theory = lessonData?.theory || "";
+  const objectives = Array.isArray(lessonData?.objectives) ? lessonData.objectives : [];
+  const topics = Array.isArray(lessonData?.topics) ? lessonData.topics : [];
 
-        // Función para obtener contenido de la lección
-        async function getLessonContent(lessonQuery) {
-            statusText.innerHTML = "Loading lesson content... <span class='loading'></span>";
-            
-            // Simular carga (en un caso real, esto sería una llamada a Groq API)
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Extraer número de lección si es posible
-            const lessonNumMatch = lessonQuery.match(/\d+/);
-            const lessonNumber = lessonNumMatch ? parseInt(lessonNumMatch[0]) : 1;
-            
-            // Usar contenido predefinido para la lección 1, simular API para otras
-            if (lessonNumber === 1 && lessonContents[1]) {
-                return {
-                    content: lessonContents[1],
-                    number: lessonNumber
-                };
-            }
-            
-            // Para otras lecciones, simular contenido de API
-            return {
-                content: `<b>${lessonQuery}</b>
+  const rules =
+`ROLE: You are the English leveling instructor for St. Mary’s College.
+LANGUAGE: Reply in ENGLISH ONLY.
+FORMAT: Plain text. No markdown, no asterisks, no emojis, no decorative symbols.
+TONE: Clear, concise, encouraging. Natural phrasing. Use minimal IPA or simple syllable hints only when essential.
+SCOPE: Strictly about Lesson ${n} — ${title}. If the user asks off-topic, provide a SHORT helpful note and redirect to Lesson ${n}.
+TEACHING: First, briefly explain the what/why/how based on the lesson JSON; then answer. Correct grammar and suggest natural phrasing.
+PRONUNCIATION: Avoid characters that TTS reads awkwardly. No bullets or decorative marks.`;
 
-This is a comprehensive lesson about <b>${lessonQuery}</b>. 
+  const jsonContext =
+`JSON_TITLE: ${title}
+JSON_THEORY: ${theory}
+JSON_OBJECTIVES:
+${objectives.map((x,i)=>`${i+1}. ${x}`).join('\n')}
+JSON_TOPICS:
+${topics.map((x,i)=>`${i+1}. ${x}`).join('\n')}`;
 
-<div class="tip">
-💡 <b>Learning Tip:</b> Practice daily for just 15 minutes to see significant improvement in your English skills.
-</div>
+  return `LESSON=${n}\n${rules}\n${jsonContext}\nUSER: ${userText}`;
+}
 
-<div class="example">
-<b>Real-life Example:</b>
-When learning about ${lessonQuery}, try to create your own sentences using the new grammar or vocabulary. This helps with retention and practical application.
-</div>
+/* ===== Backend ===== */
+async function askInstructor(text){
+  const r = await fetch(WORKER_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ text: buildPrompt(text), lang:"en-US" })
+  });
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const data = await r.json().catch(()=>({ reply:"Connection error." }));
+  return String(data.reply||"");
+}
 
-<b>Key Points to Remember:</b>
-- Practice makes perfect
-- Don't be afraid to make mistakes
-- Try thinking in English instead of translating from your native language
+/* ===== Envío ===== */
+async function sendMsg(){
+  const t=(input.value||"").trim();
+  if(!t) return;
+  input.value="";
+  addMsg(t,"user");
 
-<div class="warning">
-⚠️ <b>Common Mistake:</b> Many learners struggle with ${lessonQuery} at first. Be patient with yourself and keep practicing!
-</div>`,
-                number: lessonNumber
-            };
-        }
+  // Si hay quiz en curso, no llamamos al modelo
+  if(quizState?.active){
+    handleQuizAnswer(t);
+    return;
+  }
+  // Si la lección está bloqueada por no pasar el quiz
+  if(lockedUntilPass && currentLesson===lockedUntilPass){
+    addMsg(`Lesson ${currentLesson} is locked. Please review Lesson ${currentLesson-1} and start the review again.`, "bot");
+    return;
+  }
+  // Si aún no se seleccionó lección
+  if(!currentLesson){
+    addMsg("Please select a lesson first.", "bot");
+    return;
+  }
 
-        // Función para obtener ejercicios de práctica
-        async function getPracticeContent(lessonQuery, lessonNumber, previousScore = 0) {
-            statusText.innerHTML = "Generating practice exercises... <span class='loading'></span>";
-            
-            // Simular carga (en un caso real, esto sería una llamada a Groq API)
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            // Para la lección 1, usar preguntas predefinidas
-            if (lessonNumber === 1) {
-                return {
-                    questions: [
-                        {
-                            question: "Which greeting is most appropriate for a formal business meeting?",
-                            options: ["Hey there!", "What's up?", "Hello, how do you do?", "Hi, how's it going?"],
-                            correctIndex: 2
-                        },
-                        {
-                            question: "How should you respond to 'How are you?' in a formal setting?",
-                            options: ["I'm fine, thanks. And you?", "Not bad", "Same as always", "Can't complain"],
-                            correctIndex: 0
-                        },
-                        {
-                            question: "What is the best way to introduce yourself to someone new?",
-                            options: ["I'm John", "The name's John", "Hello, my name is John", "Hey, I'm John"],
-                            correctIndex: 2
-                        },
-                        {
-                            question: "When is it appropriate to use 'Good evening'?",
-                            options: ["Before 12pm", "Between 12pm-6pm", "After 6pm", "Any time of day"],
-                            correctIndex: 2
-                        },
-                        {
-                            question: "Which response is most polite when someone says 'Nice to meet you'?",
-                            options: ["You too", "Likewise", "Nice to meet you too", "Same here"],
-                            correctIndex: 2
-                        }
-                    ]
-                };
-            }
-            
-            // Para otras lecciones, generar preguntas variadas
-            return {
-                questions: [
-                    {
-                        question: `Based on what you learned about ${lessonQuery}, which option demonstrates correct usage?`,
-                        options: ["Option with typical mistake", "Incorrect usage", "Correct application", "Mixed usage"],
-                        correctIndex: 2
-                    },
-                    {
-                        question: `What is the main rule to remember about ${lessonQuery}?`,
-                        options: ["First incorrect option", "Second incorrect option", "Correct rule", "Misconception"],
-                        correctIndex: 2
-                    },
-                    {
-                        question: `Which sentence uses ${lessonQuery} properly?`,
-                        options: ["Sentence with error", "Correct sentence", "Another incorrect option", "Mixed correct/incorrect"],
-                        correctIndex: 1
-                    },
-                    {
-                        question: `When would you typically use ${lessonQuery}?`,
-                        options: ["Incorrect context", "Specialized situation", "Common situation", "Rarely used"],
-                        correctIndex: 2
-                    },
-                    {
-                        question: `What is a common mistake learners make with ${lessonQuery}?`,
-                        options: ["Not a real mistake", "Occasional error", "Common error", "Advanced mistake"],
-                        correctIndex: 2
-                    }
-                ]
-            };
-        }
+  try{
+    const reply = await askInstructor(t);
+    addMsg(reply,"bot"); speak(reply);
+  }catch(e){
+    addMsg("Connection error with the server.", "bot");
+  }
+}
 
-        // Cargar lección
-        async function loadLesson() {
-            const input = lessonInput.value.trim();
-            
-            if (!input) {
-                alert("Please enter a lesson number or name");
-                return;
-            }
-            
-            // Obtener contenido de la lección
-            const lessonData = await getLessonContent(input);
-            
-            // Mostrar contenido
-            lessonTitle.textContent = input;
-            theoryContent.innerHTML = lessonData.content;
-            lessonContent.style.display = 'block';
-            quizContainer.style.display = 'none';
-            
-            // Guardar texto para lectura (sin HTML)
-            currentLessonText = `${input}. ${theoryContent.textContent}`;
-            currentLessonNumber = lessonData.number;
-            
-            // Habilitar controles
-            playBtn.disabled = false;
-            stopBtn.disabled = false;
-            practiceBtn.disabled = false;
-            
-            // Actualizar estado
-            statusText.textContent = "Lesson loaded. Click play to listen";
-            
-            // Desplazar a la lección
-            lessonContent.scrollIntoView({ behavior: 'smooth' });
-        }
+/* ===== Eventos UI ===== */
+send.addEventListener('click', sendMsg);
+input.addEventListener('keydown', e=>{
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+});
+mic.addEventListener('click', sttStart);
+stopBtn.addEventListener('click', stopAll);
+lessonSel.addEventListener('change', ()=>{
+  const v = lessonSel.value;
+  if(!v){ statusEl.textContent="Please select a lesson to begin."; return; }
+  loadLesson(+v);
+});
 
-        // Reproducir audio con voz de alta calidad en inglés
-        function playAudio() {
-            if (!currentLessonText) return;
-            
-            // Detener audio actual si está reproduciendo
-            stopAudio();
-            
-            // Crear nueva utterance
-            currentUtterance = new SpeechSynthesisUtterance(currentLessonText);
-            
-            // Configurar voz seleccionada o la mejor voz disponible en inglés
-            const selectedVoiceName = voiceSelect.value;
-            if (selectedVoiceName) {
-                const selectedVoice = availableVoices.find(voice => voice.name === selectedVoiceName);
-                if (selectedVoice) {
-                    currentUtterance.voice = selectedVoice;
-                }
-            } else {
-                // Seleccionar la mejor voz disponible en inglés
-                const preferredVoices = availableVoices.filter(voice => 
-                    voice.lang.includes('en-US') || voice.lang.includes('en-GB')
-                );
-                
-                if (preferredVoices.length > 0) {
-                    // Preferir voces de alta calidad
-                    const qualityVoice = preferredVoices.find(voice => 
-                        voice.name.includes('Google') || voice.name.includes('Microsoft') || 
-                        voice.name.includes('Samantha') || voice.name.includes('Alex')
-                    ) || preferredVoices[0];
-                    
-                    currentUtterance.voice = qualityVoice;
-                }
-            }
-            
-            // Configurar parámetros para mejor calidad de voz
-            currentUtterance.rate = parseFloat(speedSelect.value);
-            currentUtterance.pitch = 1.0;
-            currentUtterance.volume = 1.0;
-            
-            // Eventos
-            currentUtterance.onstart = () => {
-                statusText.textContent = "Playing...";
-                playBtn.disabled = true;
-            };
-            
-            currentUtterance.onend = () => {
-                statusText.textContent = "Playback finished";
-                playBtn.disabled = false;
-                currentUtterance = null;
-            };
-            
-            currentUtterance.onerror = (event) => {
-                console.error('Speech synthesis error:', event);
-                statusText.textContent = "Error playing audio";
-                playBtn.disabled = false;
-                currentUtterance = null;
-            };
-            
-            // Reproducir
-            speechSynthesis.speak(currentUtterance);
-        }
+/* ===== Construir combo (placeholder + 1–270; títulos de JSON 1–13) ===== */
+(async function buildLessons(){
+  // Opción placeholder
+  const ph = document.createElement('option');
+  ph.value=""; ph.textContent="— Select a lesson —";
+  lessonSel.appendChild(ph);
 
-        // Detener audio
-        function stopAudio() {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-                statusText.textContent = "Playback stopped";
-                playBtn.disabled = false;
-            }
-        }
+  // Prellenar 1–270
+  for(let i=1;i<=270;i++){
+    const o=document.createElement('option');
+    o.value=String(i); o.textContent = `Lesson ${i}`;
+    lessonSel.appendChild(o);
+  }
 
-        // Iniciar práctica
-        async function startPractice() {
-            if (!currentLessonNumber) return;
-            
-            // Obtener el puntaje anterior del localStorage
-            const previousScore = localStorage.getItem(`lesson-${currentLessonNumber-1}-score`) || 0;
-            
-            // Obtener ejercicios de práctica
-            currentQuiz = await getPracticeContent(lessonInput.value, currentLessonNumber, previousScore);
-            
-            // Inicializar quiz
-            userAnswers = new Array(currentQuiz.questions.length).fill(null);
-            currentQuestionIndex = 0;
-            
-            // Mostrar quiz y ocultar teoría
-            theoryContent.style.display = 'none';
-            quizContainer.style.display = 'block';
-            practiceBtn.disabled = true;
-            
-            // Mostrar primera pregunta
-            showQuestion(0);
-            
-            // Actualizar estado
-            statusText.textContent = "Practice session started. Good luck!";
-        }
+  // Enriquecer títulos 1–13 leyendo JSON
+  for(let i=1;i<=JSON_COUNT;i++){
+    try{
+      const j = await fetchJSON(`${JSON_BASE}lesson${i}.json`);
+      if(j?.title){
+        const opt = lessonSel.options[i]; // +1 por el placeholder
+        if(opt) opt.textContent = `Lesson ${i} — ${j.title}`;
+      }
+    }catch(e){ /* si falla, queda "Lesson i" */}
+  }
 
-        // Mostrar pregunta del quiz
-        function showQuestion(index) {
-            const question = currentQuiz.questions[index];
-            quizQuestion.textContent = question.question;
-            
-            // Limpiar opciones anteriores
-            quizOptions.innerHTML = '';
-            
-            // Añadir nuevas opciones
-            question.options.forEach((option, optionIndex) => {
-                const optionElement = document.createElement('div');
-                optionElement.className = 'quiz-option';
-                if (userAnswers[index] === optionIndex) {
-                    optionElement.classList.add('selected');
-                }
-                optionElement.textContent = option;
-                optionElement.addEventListener('click', () => selectAnswer(optionIndex));
-                quizOptions.appendChild(optionElement);
-            });
-            
-            // Actualizar navegación
-            prevQuestionBtn.style.visibility = index > 0 ? 'visible' : 'hidden';
-            nextQuestionBtn.style.display = index < currentQuiz.questions.length - 1 ? 'block' : 'none';
-            submitQuizBtn.style.display = index === currentQuiz.questions.length - 1 ? 'block' : 'none';
-        }
-
-        // Seleccionar respuesta
-        function selectAnswer(optionIndex) {
-            userAnswers[currentQuestionIndex] = optionIndex;
-            
-            // Actualizar visualización de opciones
-            const options = quizOptions.querySelectorAll('.quiz-option');
-            options.forEach((option, idx) => {
-                option.classList.toggle('selected', idx === optionIndex);
-            });
-        }
-
-        // Navegación entre preguntas
-        nextQuestionBtn.addEventListener('click', () => {
-            if (currentQuestionIndex < currentQuiz.questions.length - 1) {
-                currentQuestionIndex++;
-                showQuestion(currentQuestionIndex);
-            }
-        });
-
-        prevQuestionBtn.addEventListener('click', () => {
-            if (currentQuestionIndex > 0) {
-                currentQuestionIndex--;
-                showQuestion(currentQuestionIndex);
-            }
-        });
-
-        // Enviar quiz
-        submitQuizBtn.addEventListener('click', () => {
-            // Calcular puntaje
-            let correctAnswers = 0;
-            userAnswers.forEach((answer, index) => {
-                if (answer === currentQuiz.questions[index].correctIndex) {
-                    correctAnswers++;
-                }
-            });
-            
-            const score = Math.round((correctAnswers / currentQuiz.questions.length) * 100);
-            
-            // Guardar puntaje
-            localStorage.setItem(`lesson-${currentLessonNumber}-score`, score);
-            
-            // Mostrar resultado
-            quizResult.style.display = 'block';
-            if (score >= 70) {
-                quizResult.className = 'quiz-result quiz-pass';
-                quizResult.textContent = `Congratulations! You scored ${score}% and passed the quiz.`;
-            } else {
-                quizResult.className = 'quiz-result quiz-fail';
-                quizResult.textContent = `You scored ${score}%. You need at least 70% to pass. Please review the lesson and try again.`;
-            }
-            
-            // Deshabilitar opciones
-            const options = quizOptions.querySelectorAll('.quiz-option');
-            options.forEach((option, index) => {
-                option.style.cursor = 'default';
-                if (index === currentQuiz.questions[currentQuestionIndex].correctIndex) {
-                    option.classList.add('correct');
-                } else if (index === userAnswers[currentQuestionIndex] && index !== currentQuiz.questions[currentQuestionIndex].correctIndex) {
-                    option.classList.add('incorrect');
-                }
-            });
-            
-            submitQuizBtn.disabled = true;
-        });
-
-        // Iniciar búsqueda por voz
-        function startVoiceSearch() {
-            if (recognition) {
-                statusText.textContent = "Listening... Speak now";
-                recognition.start();
-            }
-        }
-
-        // Event listeners
-        searchBtn.addEventListener('click', loadLesson);
-        
-        lessonInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                loadLesson();
-            }
-        });
-        
-        playBtn.addEventListener('click', playAudio);
-        stopBtn.addEventListener('click', stopAudio);
-        practiceBtn.addEventListener('click', startPractice);
-        voiceSearchBtn.addEventListener('click', startVoiceSearch);
-
-        // Inicializar
-        window.addEventListener('load', () => {
-            // Inicializar reconocimiento de voz
-            initSpeechRecognition();
-            
-            // Cargar voces disponibles en inglés
-            loadEnglishVoices();
-            speechSynthesis.onvoiceschanged = loadEnglishVoices;
-            
-            // Verificar compatibilidad con speech synthesis
-            if (!('speechSynthesis' in window)) {
-                statusText.textContent = "Speech synthesis not supported in your browser";
-                playBtn.disabled = true;
-                stopBtn.disabled = true;
-            }
-        });
-    </script>
+  // Estado inicial
+  lessonSel.value = "";
+  statusEl.textContent = "Please select a lesson to begin.";
+  addMsg("Welcome! Select your lesson above. If you choose Lesson 2 or higher, you must pass a short review from the previous lesson (≥ 90%) to unlock it.", "bot");
+})();
+</script>
 </body>
 </html>
