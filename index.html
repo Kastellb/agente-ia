@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v2.6</title>
+<title>St. Mary’s College — English Leveler v3.0</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ select,button{font:600 14px/1 system-ui}
 .msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
 .msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
 
-/* Inline buttons inside chat */
+/* Inline buttons */
 .inline-btns{ display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 2px }
 .inline-btn{
   border:0; border-radius:10px; padding:8px 12px; font-weight:800; color:#fff; cursor:pointer; background:#0b88e6;
@@ -84,7 +84,7 @@ select,button{font:600 14px/1 system-ui}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v2.6</h1>
+  <h1>St. Mary’s College — English Leveler v3.0</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
 </header>
 
@@ -113,11 +113,9 @@ select,button{font:600 14px/1 system-ui}
 
 <script>
 /* ===== CONFIG ===== */
-const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; 
-const JSON_BASE  = "https://leccion.datafast.pw/lessons/";  
-const JSON_COUNT = 270;                                                     
-const PASS_MARK  = 90;                                                      
-const MAX_QUEST  = 10;                                                      
+const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
+const JSON_BASE  = "https://leccion.datafast.pw/lessons/";
+const JSON_COUNT = 270;
 
 /* ===== Estado ===== */
 const chat   = document.getElementById('chat');
@@ -129,14 +127,11 @@ const lessonSel = document.getElementById('lesson');
 const statusEl  = document.getElementById('status');
 
 let currentLesson = null;
-let lessonData = null;       // JSON lección actual
-let prevLessonData = null;   // JSON lección anterior
-let quizState = null;        
-let lockedUntilPass = null;  
+let lessonData = null;
 
 /* ===== Utilidades visuales ===== */
 function addMsg(text, who="bot"){
-  const clean = cleanDisplay(String(text||''));
+  const clean = (String(text||'')).trim();
   const d=document.createElement('div');
   d.className = `msg ${who}`;
   d.textContent = clean;
@@ -144,10 +139,12 @@ function addMsg(text, who="bot"){
   chat.scrollTop = chat.scrollHeight;
   return d;
 }
-function cleanDisplay(s){
-  return (s||"").replace(/[*_~`#>|]/g,'').replace(/\s{2,}/g,' ').trim();
+function speak(text){ 
+  try{ 
+    const u=new SpeechSynthesisUtterance(text); 
+    window.speechSynthesis.speak(u);
+  }catch(e){} 
 }
-function speak(text){ try{ const u=new SpeechSynthesisUtterance(text); window.speechSynthesis.speak(u);}catch(e){} }
 function stopAll(){ try{speechSynthesis.cancel()}catch(e){} }
 
 /* ===== Carga de JSON ===== */
@@ -158,26 +155,25 @@ async function fetchJSON(url){
 }
 async function loadLesson(n){
   currentLesson = n;
-  lessonData = null; prevLessonData = null; quizState=null;
+  lessonData = null;
 
   addMsg(`Lesson ${n} selected. Preparing materials…`, "bot");
 
-  try{ if(n <= JSON_COUNT){ lessonData = await fetchJSON(`${JSON_BASE}lesson${n}.json`); } }catch(e){ }
-  try{ if(n > 1 && (n-1) <= JSON_COUNT){ prevLessonData = await fetchJSON(`${JSON_BASE}lesson${n-1}.json`);} }catch(e){ }
+  try{ 
+    if(n <= JSON_COUNT){ 
+      lessonData = await fetchJSON(`${JSON_BASE}lesson${n}.json`); 
+    } 
+  }catch(e){ }
 
   const titleTxt = lessonData?.title ? `Lesson ${n} — ${lessonData.title}` : `Lesson ${n}`;
-  if(n === 1){
-    statusEl.textContent = `${titleTxt}. You can start now.`;
-    if(lessonData){ addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot"); }
-    lockedUntilPass=null;
-  } else {
-    statusEl.textContent = `${titleTxt}. First, a review of Lesson ${n-1}.`;
-    addMsg(`Before we begin Lesson ${n}, you must pass a short review from Lesson ${n-1}.`, "bot");
-    lockedUntilPass = n;
+  statusEl.textContent = `${titleTxt}. You can start now.`;
+
+  if(lessonData){ 
+    addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot"); 
   }
 }
 
-/* ===== Prompt estricto basado en JSON (para el modelo) ===== */
+/* ===== Prompt educativo y estructurado ===== */
 function buildPrompt(userText){
   const n = currentLesson;
   const title = lessonData?.title || `Lesson ${n}`;
@@ -186,12 +182,12 @@ function buildPrompt(userText){
   const topics = Array.isArray(lessonData?.topics) ? lessonData.topics : [];
 
   return `
-ROLE: You are the English instructor for St. Mary’s College.
+ROLE: You are an English instructor for St. Mary’s College.
 LANGUAGE: Reply in ENGLISH ONLY.
-FORMAT: Plain text, no markdown, no emojis, no decorative symbols.
-TONE: Clear, concise, motivating, natural teacher style.
-FOCUS: Use the lesson JSON as context. Expand the theory into a short academic explanation with examples.
-SCOPE: Stay strictly within Lesson ${n} — ${title}.
+TONE: Clear, motivating, professional teacher.
+TASK: Based on the lesson JSON, create a complete academic learning unit.
+Always keep answers focused on Lesson ${n} — ${title}.
+If the user asks off-topic, redirect politely back to this lesson.
 
 JSON CONTEXT:
 Title: ${title}
@@ -200,6 +196,24 @@ Objectives:
 ${objectives.map((x,i)=>`${i+1}. ${x}`).join('\n')}
 Topics:
 ${topics.map((x,i)=>`${i+1}. ${x}`).join('\n')}
+
+OUTPUT FORMAT:
+1. 🎯 Learning Objective
+   - Clear statement of what the student will achieve.
+
+2. 🧩 Key Content
+   - Explanation of the main theory.
+   - Formal vs informal expressions (if relevant).
+   - Cultural notes when possible.
+
+3. 💬 Examples
+   - At least 3 short sample dialogues or sentences.
+
+4. 🎭 Suggested Activities
+   - Interactive tasks (role-play, matching, games).
+
+5. 🧪 Practice Evaluation
+   - 2–3 short questions or tasks the student can try.
 
 USER REQUEST: ${userText}
   `.trim();
@@ -224,25 +238,34 @@ async function sendMsg(){
   input.value="";
   addMsg(t,"user");
 
-  if(lockedUntilPass && currentLesson===lockedUntilPass){
-    addMsg(`Lesson ${currentLesson} is locked. Please review Lesson ${currentLesson-1}.`, "bot");
-    return;
+  if(!currentLesson){ 
+    addMsg("Please select a lesson first.", "bot"); 
+    return; 
   }
-  if(!currentLesson){ addMsg("Please select a lesson first.", "bot"); return; }
 
-  try{ const reply = await askInstructor(t); addMsg(reply,"bot"); speak(reply); }
+  try{ 
+    const reply = await askInstructor(t); 
+    addMsg(reply,"bot"); 
+    speak(reply); 
+  }
   catch(e){ addMsg("Connection error with the server.", "bot"); }
 }
 
 /* ===== Eventos UI ===== */
 send.addEventListener('click', sendMsg);
-input.addEventListener('keydown', e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); } });
+input.addEventListener('keydown', e=>{
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+});
 mic.addEventListener('click', ()=> addMsg("🎤 Voice input not yet active","bot"));
 stopBtn.addEventListener('click', stopAll);
-lessonSel.addEventListener('change', ()=>{ const v = lessonSel.value; if(!v){ statusEl.textContent="Please select a lesson to begin."; return; } loadLesson(+v); });
+lessonSel.addEventListener('change', ()=>{
+  const v = lessonSel.value; 
+  if(!v){ statusEl.textContent="Please select a lesson to begin."; return; } 
+  loadLesson(+v);
+});
 
 /* ===== Construir combo ===== */
-(async function buildLessons(){
+(function buildLessons(){
   const ph = document.createElement('option');
   ph.value=""; ph.textContent="— Select a lesson —";
   lessonSel.appendChild(ph);
@@ -252,6 +275,7 @@ lessonSel.addEventListener('change', ()=>{ const v = lessonSel.value; if(!v){ st
     o.value=String(i); o.textContent = `Lesson ${i}`;
     lessonSel.appendChild(o);
   }
+
   lessonSel.value = "";
   statusEl.textContent = "Please select a lesson to begin.";
   addMsg("Welcome! Select your lesson above.", "bot");
@@ -259,4 +283,5 @@ lessonSel.addEventListener('change', ()=>{ const v = lessonSel.value; if(!v){ st
 </script>
 </body>
 </html>
+
 
