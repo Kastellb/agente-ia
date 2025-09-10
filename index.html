@@ -11,6 +11,9 @@
             --background: #f8fafc;
             --card: #ffffff;
             --text: #1e293b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
         }
 
         * {
@@ -57,6 +60,7 @@
         .search-box {
             display: flex;
             gap: 10px;
+            margin-bottom: 15px;
         }
 
         #lessonInput {
@@ -77,6 +81,44 @@
             cursor: pointer;
         }
 
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .audio-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .audio-btn.stop {
+            background: var(--error);
+        }
+
+        .audio-btn:disabled {
+            background: var(--secondary);
+            cursor: not-allowed;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 15px;
+        }
+
         .lesson-content {
             padding: 0 20px 20px;
             display: none;
@@ -93,6 +135,7 @@
             border-radius: 8px;
             margin-bottom: 20px;
             line-height: 1.8;
+            white-space: pre-line;
         }
 
         .practice-section {
@@ -112,6 +155,13 @@
             width: 100%;
         }
 
+        .status-indicator {
+            text-align: center;
+            padding: 10px;
+            font-style: italic;
+            color: var(--secondary);
+        }
+
         footer {
             text-align: center;
             padding: 20px;
@@ -128,6 +178,10 @@
             #searchBtn {
                 padding: 12px;
             }
+            
+            .audio-controls {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
@@ -143,6 +197,31 @@
                 <input type="text" id="lessonInput" placeholder="Enter lesson number or name (e.g. 1 or Greetings)">
                 <button id="searchBtn">Load Lesson</button>
             </div>
+            
+            <div class="audio-controls">
+                <button class="audio-btn" id="playBtn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                </button>
+                <button class="audio-btn stop" id="stopBtn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                </button>
+                
+                <div class="speed-control">
+                    <label for="speedSelect">Speed:</label>
+                    <select id="speedSelect">
+                        <option value="0.8">Slow</option>
+                        <option value="1" selected>Normal</option>
+                        <option value="1.2">Fast</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="status-indicator" id="statusText">Select a lesson to begin</div>
         </div>
 
         <div class="lesson-content" id="lessonContent">
@@ -335,6 +414,14 @@ EXAMPLES:
         const lessonTitle = document.getElementById('lessonTitle');
         const theoryContent = document.getElementById('theoryContent');
         const practiceBtn = document.getElementById('practiceBtn');
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const speedSelect = document.getElementById('speedSelect');
+        const statusText = document.getElementById('statusText');
+
+        // Variables de estado
+        let currentUtterance = null;
+        let currentLessonText = "";
 
         // Cargar lección
         function loadLesson() {
@@ -371,19 +458,100 @@ EXAMPLES:
             theoryContent.textContent = lesson.theory;
             lessonContent.style.display = 'block';
             
+            // Guardar texto para lectura
+            currentLessonText = `${lesson.title}. ${lesson.theory}`;
+            
+            // Habilitar controles de audio
+            playBtn.disabled = false;
+            stopBtn.disabled = false;
+            
+            // Actualizar estado
+            statusText.textContent = "Lesson loaded. Click play to listen";
+            
             // Desplazar a la lección
             lessonContent.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Reproducir audio
+        function playAudio() {
+            if (!currentLessonText) return;
             
-            // Leer el título en voz alta
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(lesson.title);
-                window.speechSynthesis.speak(utterance);
+            // Detener audio actual si está reproduciendo
+            stopAudio();
+            
+            // Crear nueva utterance
+            currentUtterance = new SpeechSynthesisUtterance(currentLessonText);
+            
+            // Configurar voz en inglés
+            const voices = speechSynthesis.getVoices();
+            const englishVoice = voices.find(voice => 
+                voice.lang.startsWith('en') && voice.localService === true
+            );
+            
+            if (englishVoice) {
+                currentUtterance.voice = englishVoice;
+            }
+            
+            // Configurar velocidad
+            currentUtterance.rate = parseFloat(speedSelect.value);
+            
+            // Eventos
+            currentUtterance.onstart = () => {
+                statusText.textContent = "Playing...";
+                playBtn.disabled = true;
+            };
+            
+            currentUtterance.onend = () => {
+                statusText.textContent = "Playback finished";
+                playBtn.disabled = false;
+                currentUtterance = null;
+            };
+            
+            currentUtterance.onerror = (event) => {
+                console.error('Speech synthesis error:', event);
+                statusText.textContent = "Error playing audio";
+                playBtn.disabled = false;
+                currentUtterance = null;
+            };
+            
+            // Reproducir
+            speechSynthesis.speak(currentUtterance);
+        }
+
+        // Detener audio
+        function stopAudio() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                statusText.textContent = "Playback stopped";
+                playBtn.disabled = false;
+            }
+        }
+
+        // Cambiar velocidad
+        function changeSpeed() {
+            if (currentUtterance && speechSynthesis.speaking) {
+                currentUtterance.rate = parseFloat(speedSelect.value);
+                stopAudio();
+                playAudio();
             }
         }
 
         // Iniciar práctica
         function startPractice() {
             alert("Practice session would start here. This feature will be implemented in the next version.");
+        }
+
+        // Cargar voces disponibles
+        function loadVoices() {
+            // En algunos navegadores, las voces no están disponibles inmediatamente
+            if (speechSynthesis.getVoices().length > 0) {
+                return;
+            }
+            
+            // Esperar a que las voces estén cargadas
+            speechSynthesis.onvoiceschanged = () => {
+                console.log("Voices loaded:", speechSynthesis.getVoices().length);
+            };
         }
 
         // Event listeners
@@ -395,7 +563,22 @@ EXAMPLES:
             }
         });
         
+        playBtn.addEventListener('click', playAudio);
+        stopBtn.addEventListener('click', stopAudio);
+        speedSelect.addEventListener('change', changeSpeed);
         practiceBtn.addEventListener('click', startPractice);
+
+        // Inicializar
+        window.addEventListener('load', () => {
+            loadVoices();
+            
+            // Verificar compatibilidad con speech synthesis
+            if (!('speechSynthesis' in window)) {
+                statusText.textContent = "Speech synthesis not supported in your browser";
+                playBtn.disabled = true;
+                stopBtn.disabled = true;
+            }
+        });
     </script>
 </body>
 </html>
