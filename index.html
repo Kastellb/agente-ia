@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Leveler</title>
+    <title>St. Mary's College - English Leveler v1.1</title>
     <style>
         :root {
-            --primary: #2563eb;
+            --primary: #0b3b71;
             --secondary: #64748b;
-            --background: #f8fafc;
+            --background: #eef2f7;
             --card: #ffffff;
             --text: #1e293b;
-            --success: #10b981;
+            --success: #22c55e;
             --warning: #f59e0b;
             --error: #ef4444;
         }
@@ -50,7 +50,12 @@
 
         h1 {
             font-size: 24px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
+        }
+
+        .version {
+            font-size: 14px;
+            opacity: 0.9;
         }
 
         .voice-search-btn {
@@ -66,6 +71,11 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .voice-search-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .search-section {
@@ -95,6 +105,11 @@
             padding: 0 20px;
             font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #searchBtn:hover {
+            background: #0a3260;
         }
 
         .audio-controls {
@@ -103,6 +118,7 @@
             justify-content: center;
             gap: 15px;
             margin-top: 15px;
+            flex-wrap: wrap;
         }
 
         .audio-btn {
@@ -142,7 +158,6 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-left: 15px;
         }
 
         .lesson-content {
@@ -153,6 +168,8 @@
         .lesson-header {
             margin: 20px 0 15px;
             color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
         }
 
         .theory-content {
@@ -183,7 +200,7 @@
         }
 
         .practice-btn:hover {
-            background: #0da271;
+            background: #1da750;
         }
 
         .practice-btn:disabled {
@@ -355,6 +372,8 @@
             .voice-selector {
                 margin-left: 0;
                 margin-top: 10px;
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -362,8 +381,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>English Leveler</h1>
-            <p>Learn and practice English</p>
+            <h1>St. Mary's College - English Leveler</h1>
+            <div class="version">v1.1</div>
             <button class="voice-search-btn" id="voiceSearchBtn" title="Voice Search">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
@@ -396,7 +415,7 @@
                 <div class="voice-selector">
                     <label for="voiceSelect">Voice:</label>
                     <select id="voiceSelect">
-                        <option value="">Default</option>
+                        <option value="">Default English</option>
                     </select>
                 </div>
                 
@@ -438,7 +457,7 @@
         </div>
 
         <footer>
-            <p>St. Mary's College English Leveler • © 2023</p>
+            <p>St. Mary's College English Leveler v1.1 • © 2023</p>
         </footer>
     </div>
 
@@ -472,33 +491,35 @@
         let currentQuestionIndex = 0;
         let userAnswers = [];
         let availableVoices = [];
+        let recognition = null;
 
         // Configuración de Groq API (reemplaza con tu API key real)
         const GROQ_API_KEY = "your-groq-api-key-here"; // Reemplazar con tu API key real
         const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
         // Inicializar reconocimiento de voz si está disponible
-        let recognition = null;
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'en-US';
-            recognition.interimResults = false;
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
 
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                lessonInput.value = transcript;
-                processVoiceInput(transcript);
-            };
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    lessonInput.value = transcript;
+                    processVoiceInput(transcript);
+                };
 
-            recognition.onerror = function(event) {
-                console.error('Speech recognition error', event.error);
-                statusText.textContent = "Error with voice recognition. Please try typing instead.";
-            };
-        } else {
-            voiceSearchBtn.disabled = true;
-            voiceSearchBtn.title = "Voice recognition not supported";
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                    statusText.textContent = "Error with voice recognition. Please try typing instead.";
+                };
+            } else {
+                voiceSearchBtn.disabled = true;
+                voiceSearchBtn.title = "Voice recognition not supported";
+            }
         }
 
         // Procesar entrada de voz
@@ -529,22 +550,37 @@
             loadLesson();
         }
 
-        // Cargar voces disponibles
-        function loadVoices() {
+        // Cargar solo voces en inglés
+        function loadEnglishVoices() {
             availableVoices = speechSynthesis.getVoices().filter(voice => 
-                voice.lang.startsWith('en') || voice.lang.startsWith('es')
+                voice.lang.startsWith('en') && !voice.localService // Prefer cloud-based voices for better quality
             );
             
             // Limpiar selector de voces
-            voiceSelect.innerHTML = '<option value="">Default</option>';
+            voiceSelect.innerHTML = '<option value="">Default English</option>';
             
-            // Añadir voces disponibles
+            // Añadir solo voces en inglés
             availableVoices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.name;
-                option.textContent = `${voice.name} (${voice.lang})`;
-                voiceSelect.appendChild(option);
+                // Filtrar para obtener solo las mejores voces en inglés
+                if (voice.lang.includes('en-') && (voice.name.includes('Google') || voice.name.includes('Microsoft') || voice.name.includes('Alex') || voice.name.includes('Samantha'))) {
+                    const option = document.createElement('option');
+                    option.value = voice.name;
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    voiceSelect.appendChild(option);
+                }
             });
+            
+            // Si no hay voces premium, usar las disponibles
+            if (voiceSelect.options.length <= 1) {
+                availableVoices.forEach(voice => {
+                    if (voice.lang.startsWith('en-')) {
+                        const option = document.createElement('option');
+                        option.value = voice.name;
+                        option.textContent = `${voice.name} (${voice.lang})`;
+                        voiceSelect.appendChild(option);
+                    }
+                });
+            }
         }
 
         // Función para obtener contenido de la lección desde Groq
@@ -567,7 +603,7 @@
                         messages: [
                             {
                                 role: "system",
-                                content: "You are an English teaching assistant. Provide comprehensive, engaging lesson content with unique examples. Structure your response with clear sections for theory. Always generate fresh content, never repeating the same examples."
+                                content: "You are an English teaching assistant at St. Mary's College. Provide comprehensive, engaging lesson content with unique examples. Structure your response with clear sections for theory. Always generate fresh content, never repeating the same examples. Focus on proper English grammar and pronunciation."
                             },
                             {
                                 role: "user",
@@ -592,7 +628,7 @@
                 console.error("Error fetching from Groq API:", error);
                 // Fallback content if API fails
                 return {
-                    content: `# ${lessonQuery}\n\n## Theory\nThis lesson covers ${lessonQuery}. Unfortunately, we couldn't connect to the lesson database at this time. Please try again later.`,
+                    content: `# ${lessonQuery}\n\n## Theory\nThis lesson covers ${lessonQuery}. Please try again later if the content doesn't load properly.`,
                     number: 0
                 };
             }
@@ -625,7 +661,7 @@
                                     }
                                   ]
                                 }
-                                The questions must be completely different from any previous questions.`
+                                The questions must be completely different from any previous questions. Focus on proper English grammar.`
                             },
                             {
                                 role: "user",
@@ -653,9 +689,9 @@
                 return {
                     questions: [
                         {
-                            question: "Create 3 original sentences using what you've learned in this lesson.",
-                            options: ["I will practice this", "This is a good exercise", "Learning is important", "All of the above"],
-                            correctIndex: 3
+                            question: "Based on what you've learned, which option best demonstrates proper English usage?",
+                            options: ["I is going to the store", "She are studying English", "They have completed the lesson", "He don't understand"],
+                            correctIndex: 2
                         }
                     ]
                 };
@@ -680,8 +716,8 @@
             lessonContent.style.display = 'block';
             quizContainer.style.display = 'none';
             
-            // Guardar texto para lectura
-            currentLessonText = `${input}. ${lessonData.content}`;
+            // Guardar texto para lectura (sin caracteres especiales)
+            currentLessonText = `${input}. ${lessonData.content.replace(/[#*_\-\[\]()]/g, '')}`;
             currentLessonNumber = lessonData.number;
             
             // Habilitar controles
@@ -696,7 +732,7 @@
             lessonContent.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Reproducir audio con voz de alta calidad
+        // Reproducir audio con voz de alta calidad en inglés
         function playAudio() {
             if (!currentLessonText) return;
             
@@ -706,7 +742,7 @@
             // Crear nueva utterance
             currentUtterance = new SpeechSynthesisUtterance(currentLessonText);
             
-            // Configurar voz seleccionada o la mejor voz disponible
+            // Configurar voz seleccionada o la mejor voz disponible en inglés
             const selectedVoiceName = voiceSelect.value;
             if (selectedVoiceName) {
                 const selectedVoice = availableVoices.find(voice => voice.name === selectedVoiceName);
@@ -714,13 +750,19 @@
                     currentUtterance.voice = selectedVoice;
                 }
             } else {
-                // Seleccionar la mejor voz disponible (preferiblemente inglés UK o US)
+                // Seleccionar la mejor voz disponible en inglés
                 const preferredVoices = availableVoices.filter(voice => 
-                    voice.lang.includes('en-GB') || voice.lang.includes('en-US')
+                    voice.lang.includes('en-US') || voice.lang.includes('en-GB')
                 );
                 
                 if (preferredVoices.length > 0) {
-                    currentUtterance.voice = preferredVoices[0];
+                    // Preferir voces de alta calidad
+                    const qualityVoice = preferredVoices.find(voice => 
+                        voice.name.includes('Google') || voice.name.includes('Microsoft') || 
+                        voice.name.includes('Samantha') || voice.name.includes('Alex')
+                    ) || preferredVoices[0];
+                    
+                    currentUtterance.voice = qualityVoice;
                 }
             }
             
@@ -902,9 +944,12 @@
 
         // Inicializar
         window.addEventListener('load', () => {
-            // Cargar voces disponibles
-            loadVoices();
-            speechSynthesis.onvoiceschanged = loadVoices;
+            // Inicializar reconocimiento de voz
+            initSpeechRecognition();
+            
+            // Cargar voces disponibles en inglés
+            loadEnglishVoices();
+            speechSynthesis.onvoiceschanged = loadEnglishVoices;
             
             // Verificar compatibilidad con speech synthesis
             if (!('speechSynthesis' in window)) {
