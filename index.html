@@ -3,83 +3,449 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v2.4</title>
+<title>St. Mary’s College — English Leveler v2.5</title>
 <style>
-:root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0; background:var(--bg);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  color:#0f172a; display:flex; flex-direction:column;
-}
-header{
-  background:var(--brand); color:#fff; padding:12px 16px;
-  display:flex; flex-wrap:wrap; gap:12px; align-items:center;
-}
-h1{margin:0;font-size:16px;font-weight:800}
-.badge{font-size:12px;opacity:.9}
-main{flex:1;display:flex;justify-content:center}
-.wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
-
-/* Top toolbar */
-.toolbar{
-  background:#fff; border-radius:14px; padding:10px;
-  display:flex; gap:12px; align-items:center; flex-wrap:wrap;
-  box-shadow:0 12px 28px rgba(2,6,23,.08)
-}
-.label{font-weight:800}
-select,button{font:600 14px/1 system-ui}
-#lesson{
-  padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1;
-  background:#f8fafc; min-width:280px;
-}
-.status{
-  font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130;
-  padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center;
+:root {
+  --brand: #0b3b71;
+  --brand-light: #1e4e8d;
+  --bg: #eef2f7;
+  --bot: #0b88e6;
+  --user: #12b886;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --gray-100: #f7f9fc;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --shadow-sm: 0 4px 12px rgba(2,6,23,.06);
+  --shadow-md: 0 12px 28px rgba(2,6,23,.08);
+  --shadow-lg: 0 12px 28px rgba(2,6,23,.12);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
 }
 
-/* Chat area */
-#chat{
-  background:#fff; border-radius:16px; padding:12px 12px 4px;
-  min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12)
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
-.msg{
-  max-width:min(720px,92%); padding:10px 12px; border-radius:12px;
-  margin:10px 0; line-height:1.45; white-space:pre-wrap
-}
-.msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
-.msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
 
-/* Composer: input arriba, botones debajo */
-.composer{
-  background:#fff; border-radius:14px; padding:10px;
-  box-shadow:0 12px 28px rgba(2,6,23,.08);
-  display:flex; flex-direction:column; gap:10px;
+html, body {
+  height: 100%;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--gray-800);
+  background: var(--bg);
 }
-#text{
-  width:100%; border:0; outline:0; font-size:16px; padding:12px;
-  border-radius:10px; background:#f7f9fc
+
+body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
 }
-.btnrow{
-  display:flex; gap:10px; flex-wrap:wrap;
+
+/* Header Styles */
+header {
+  background: var(--brand);
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 10;
 }
-.btn{
-  border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer
+
+h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
 }
-#send{background:#22c55e} #mic{background:#0ea5e9} #stop{background:#ef4444}
+
+.badge {
+  font-size: 13px;
+  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* Main Content */
+main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.wrap {
+  width: min(1000px, 100%);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Toolbar */
+.toolbar {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+}
+
+.label {
+  font-weight: 700;
+  color: var(--gray-700);
+  font-size: 14px;
+}
+
+select, button {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#lesson {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  background: var(--gray-100);
+  min-width: 280px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+#lesson:focus {
+  outline: none;
+  border-color: var(--bot);
+  box-shadow: 0 0 0 3px rgba(11, 136, 230, 0.15);
+}
+
+.status {
+  font-size: 13px;
+  color: var(--gray-700);
+  background: rgba(11, 59, 113, 0.06);
+  border: 1px dashed rgba(11, 59, 113, 0.2);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+.status.loading {
+  color: var(--brand);
+  background: rgba(11, 59, 113, 0.1);
+}
+
+.status.error {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.status.success {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Chat Area */
+#chat {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  min-height: 60vh;
+  max-height: 60vh;
+  overflow: auto;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.msg {
+  max-width: min(720px, 92%);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin: 4px 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease;
+}
+
+.msg.bot {
+  background: var(--bot);
+  color: white;
+  border-bottom-left-radius: 4px;
+}
+
+.msg.user {
+  background: var(--user);
+  color: white;
+  border-bottom-right-radius: 4px;
+  margin-left: auto;
+}
+
+.msg.system {
+  background: var(--gray-200);
+  color: var(--gray-700);
+  font-style: italic;
+  font-size: 14px;
+  text-align: center;
+  margin: 8px auto;
+  max-width: 80%;
+}
+
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray-600);
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+.thinking .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--gray-300);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.thinking .dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.thinking .dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+/* Composer */
+.composer {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#text {
+  width: 100%;
+  border: 1px solid var(--gray-300);
+  outline: none;
+  font-size: 16px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--gray-100);
+  transition: all 0.2s ease;
+  resize: vertical;
+  min-height: 50px;
+  max-height: 150px;
+}
+
+#text:focus {
+  border-color: var(--bot);
+  box-shadow: 0 0 0 3px rgba(11, 136, 230, 0.15);
+}
+
+.btnrow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#send {
+  background: var(--success);
+}
+
+#mic {
+  background: var(--bot);
+}
+
+#stop {
+  background: var(--error);
+}
+
+/* Recording indicator */
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--error);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: var(--radius-sm);
+  margin-top: 8px;
+  animation: pulse 2s infinite;
+}
+
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--error);
+  border-radius: 50%;
+}
 
 /* Mobile tweaks */
-@media (max-width:640px){
-  h1{font-size:14px}
-  .msg{max-width:96%}
-  #lesson{min-width:unset}
+@media (max-width: 768px) {
+  header {
+    padding: 12px 16px;
+  }
+  
+  h1 {
+    font-size: 16px;
+  }
+  
+  .badge {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+  
+  .wrap {
+    padding: 12px;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  #lesson {
+    min-width: 100%;
+  }
+  
+  .status {
+    min-height: unset;
+    width: 100%;
+  }
+  
+  .msg {
+    max-width: 96%;
+    padding: 10px 14px;
+  }
+  
+  .btn {
+    padding: 10px 14px;
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .btnrow {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 15px;
+  }
+  
+  .badge {
+    font-size: 11px;
+  }
+  
+  #chat {
+    min-height: 55vh;
+    max-height: 55vh;
+    padding: 12px;
+  }
+  
+  .composer {
+    padding: 12px;
+  }
+  
+  #text {
+    padding: 12px;
+    font-size: 15px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Scrollbar styling */
+#chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+#chat::-webkit-scrollbar-track {
+  background: var(--gray-200);
+  border-radius: 4px;
+}
+
+#chat::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 4px;
+}
+
+#chat::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
 }
 </style>
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v2.4</h1>
+  <h1>St. Mary’s College — English Leveler v2.5</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–13)</span>
 </header>
 
@@ -95,11 +461,31 @@ select,button{font:600 14px/1 system-ui}
     <div id="chat" aria-live="polite"></div>
 
     <div class="composer">
-      <input id="text" placeholder="Type your message and press Enter…" autocomplete="off">
+      <textarea id="text" placeholder="Type your message and press Enter…" autocomplete="off" rows="1"></textarea>
       <div class="btnrow">
-        <button id="send" class="btn">Send</button>
-        <button id="mic"  class="btn">Speak</button>
-        <button id="stop" class="btn">Stop</button>
+        <button id="send" class="btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 2L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Send
+        </button>
+        <button id="mic" class="btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 1C10.9391 1 9.92172 1.42143 9.17157 2.17157C8.42143 2.92172 8 3.93913 8 5V11C8 12.0609 8.42143 13.0783 9.17157 13.8284C9.92172 14.5786 10.9391 15 12 15C13.0609 15 14.0783 14.5786 14.8284 13.8284C15.5786 13.0783 16 12.0609 16 11V5C16 3.93913 15.5786 2.92172 14.8284 2.17157C14.0783 1.42143 13.0609 1 12 1Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19 10V11C19 13.9174 17.5362 16.5223 15.2426 18.2426C12.949 19.963 9.94904 20.4467 7.17158 19.5711C4.39412 18.6955 2.1532 16.5675 1.22183 13.8338C0.290455 11.1002 0.774135 8.00893 2.51472 5.60571C4.2553 3.20249 7.03848 1.75 10 1.75" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 19V23" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 23H16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Speak
+        </button>
+        <button id="stop" class="btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="6" width="12" height="12" rx="1" stroke="white" stroke-width="2"/>
+            <path d="M10 10H14V14H10V10Z" fill="white"/>
+          </svg>
+          Stop
+        </button>
       </div>
     </div>
 
@@ -124,16 +510,67 @@ const statusEl  = document.getElementById('status');
 let currentLesson = 1;
 let lessonData = null;       // JSON de la lección actual
 let prevLessonData = null;   // JSON de la lección anterior (para quiz)
+let isThinking = false;      // Para mostrar indicador de pensamiento
+let isRecording = false;     // Para controlar estado de grabación
 
 /* ===== Utilidades visuales y TTS ===== */
-function addMsg(text, who="bot"){
+function addMsg(text, who="bot", isSystem=false){
   const clean = cleanDisplay(String(text||''));
-  const d=document.createElement('div');
-  d.className = `msg ${who}`;
+  const d = document.createElement('div');
+  d.className = `msg ${isSystem ? 'system' : who}`;
   d.textContent = clean;
   chat.appendChild(d);
   chat.scrollTop = chat.scrollHeight;
 }
+
+function showThinking() {
+  if (isThinking) return;
+  isThinking = true;
+  
+  const thinkingEl = document.createElement('div');
+  thinkingEl.className = 'thinking';
+  thinkingEl.id = 'thinking-indicator';
+  thinkingEl.innerHTML = `
+    Thinking 
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  `;
+  
+  chat.appendChild(thinkingEl);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function hideThinking() {
+  isThinking = false;
+  const thinkingEl = document.getElementById('thinking-indicator');
+  if (thinkingEl) {
+    thinkingEl.remove();
+  }
+}
+
+function showRecordingIndicator() {
+  if (document.getElementById('recording-indicator')) return;
+  
+  const indicator = document.createElement('div');
+  indicator.className = 'recording-indicator';
+  indicator.id = 'recording-indicator';
+  indicator.innerHTML = `
+    <span class="recording-dot"></span>
+    Recording in progress... Click Stop when finished
+  `;
+  
+  const composer = document.querySelector('.composer');
+  composer.appendChild(indicator);
+}
+
+function hideRecordingIndicator() {
+  const indicator = document.getElementById('recording-indicator');
+  if (indicator) {
+    indicator.remove();
+  }
+}
+
 function sanitizeSpeak(s){
   return (s||"")
     .replace(/https?:\/\/\S+/g,'')
@@ -146,17 +583,20 @@ function sanitizeSpeak(s){
     .replace(/[\u{1F000}-\u{1FAFF}]/gu,' ')
     .replace(/\s{2,}/g,' ').trim();
 }
+
 function cleanDisplay(s){
   return (s||"")
     .replace(/[*_~`#>|]/g,'')
     .replace(/\s{2,}/g,' ')
     .trim();
 }
+
 function pickEnglishVoice(){
   const voices = window.speechSynthesis.getVoices() || [];
-  const en = voices.find(v=>/^en(-|_)/i.test(v.lang)) || voices[0];
+  const en = voices.find(v => /^en(-|_)/i.test(v.lang)) || voices[0];
   return en || null;
 }
+
 function speak(text){
   try{
     const t = sanitizeSpeak(String(text||''));
@@ -164,79 +604,176 @@ function speak(text){
     const u = new SpeechSynthesisUtterance(t);
     const v = pickEnglishVoice();
     if(v) u.voice = v;
+    u.rate = 0.9; // Velocidad ligeramente reducida para mejor comprensión
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
-  }catch(e){}
+  }catch(e){
+    console.error("Error with speech synthesis:", e);
+  }
 }
-window.speechSynthesis?.addEventListener('voiceschanged', ()=>{});
+
+// Inicializar voces
+if (window.speechSynthesis) {
+  window.speechSynthesis.addEventListener('voiceschanged', () => {});
+}
 
 /* ===== STT (inglés) ===== */
-let rec=null,isRec=false;
+let rec = null;
+
 function sttStart(){
-  if(isRec) return;
-  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ addMsg("Voice recognition is not supported. Please type your message.","bot"); return; }
-  rec = new SR();
-  rec.lang = 'en-US'; rec.continuous=false; rec.interimResults=false;
-  rec.onresult = (e)=>{
-    const t = e.results?.[0]?.[0]?.transcript||"";
-    if(t){ input.value=t; sendMsg(); }
-  };
-  rec.onstart = ()=>{ isRec=true; speak("Listening"); };
-  rec.onerror= ()=>{ isRec=false; };
-  rec.onend  = ()=>{ isRec=false; };
-  rec.start();
+  if(isRecording) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ 
+    addMsg("Voice recognition is not supported in your browser. Please type your message.", "bot"); 
+    return; 
+  }
+  
+  try {
+    rec = new SR();
+    rec.lang = 'en-US'; 
+    rec.continuous = false; 
+    rec.interimResults = false;
+    
+    rec.onresult = (e) => {
+      const t = e.results?.[0]?.[0]?.transcript || "";
+      if(t){ 
+        input.value = t; 
+        sendMsg(); 
+      }
+    };
+    
+    rec.onstart = () => { 
+      isRecording = true;
+      mic.disabled = true;
+      showRecordingIndicator();
+      speak("Listening"); 
+    };
+    
+    rec.onerror = (e) => { 
+      console.error("Speech recognition error:", e.error);
+      isRecording = false;
+      mic.disabled = false;
+      hideRecordingIndicator();
+      addMsg("Speech recognition error. Please try again or type your message.", "bot");
+    };
+    
+    rec.onend = () => {
+      isRecording = false;
+      mic.disabled = false;
+      hideRecordingIndicator();
+    };
+    
+    rec.start();
+  } catch (e) {
+    console.error("Error initializing speech recognition:", e);
+    addMsg("Error initializing voice recognition. Please check your microphone permissions.", "bot");
+  }
 }
-function stopAll(){ try{speechSynthesis.cancel()}catch(e){} try{rec&&rec.abort()}catch(e){} }
+
+function stopAll(){ 
+  try {
+    window.speechSynthesis.cancel();
+  } catch(e) {
+    console.error("Error stopping speech synthesis:", e);
+  }
+  
+  try {
+    if (rec && isRecording) {
+      rec.stop();
+    }
+  } catch(e) {
+    console.error("Error stopping recognition:", e);
+  }
+  
+  isRecording = false;
+  mic.disabled = false;
+  hideRecordingIndicator();
+}
 
 /* ===== Carga de JSON ===== */
 async function fetchJSON(url){
-  const r = await fetch(url, { cache:'no-store' });
-  if(!r.ok) throw new Error(r.status+" "+r.statusText);
-  return await r.json();
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if(!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    return await r.json();
+  } catch (e) {
+    console.error(`Error fetching ${url}:`, e);
+    throw e;
+  }
 }
+
 async function loadLesson(n){
+  // Validar número de lección
+  if (n < 1 || n > 270) {
+    addMsg("Please select a lesson between 1 and 270.", "bot");
+    return;
+  }
+  
   currentLesson = n;
   localStorage.setItem('smc.lesson', String(n));
-  lessonData = null; prevLessonData = null;
+  lessonData = null; 
+  prevLessonData = null;
+  
+  // Actualizar UI
   statusEl.textContent = `Loading Lesson ${n}…`;
-
-  try{
+  statusEl.className = 'status loading';
+  lessonSel.disabled = true;
+  
+  try {
+    // Cargar lección actual
     if(n <= JSON_COUNT){
       lessonData = await fetchJSON(`${JSON_BASE}lesson${n}.json`);
     }
-  }catch(e){
-    addMsg(`Lesson ${n} data could not be loaded. Proceeding with minimal context.`, "bot");
-  }
-
-  try{
+    
+    // Cargar lección previa si es necesario
     if(n > 1 && (n-1) <= JSON_COUNT){
-      prevLessonData = await fetchJSON(`${JSON_BASE}lesson${n-1}.json`);
+      try {
+        prevLessonData = await fetchJSON(`${JSON_BASE}lesson${n-1}.json`);
+      } catch(e) { 
+        // No crítico si falla
+        console.warn(`Could not load previous lesson ${n-1}:`, e);
+      }
     }
-  }catch(e){ /* opcional */ }
-
-  // Actualiza etiqueta del combo con título si existe
-  const opt = [...lessonSel.options].find(o=>+o.value===n);
-  if(opt && lessonData?.title){ opt.textContent = `Lesson ${n} — ${lessonData.title}`; }
-
-  // Línea de estado
-  const titleTxt = lessonData?.title ? `Lesson ${n} — ${lessonData.title}` : `Lesson ${n}`;
-  statusEl.textContent = (n<=1)
-    ? `${titleTxt}. You can start now. Ask about any concept you want to reinforce.`
-    : `${titleTxt}. First, a short review of Lesson ${n-1} (need ≥ 90% to unlock).`;
-
-  // Presentación pedagógica desde el JSON (teoría + objetivos + temas)
-  if(lessonData){
-    const t = lessonData.theory ? `Theory — ${lessonData.title}\n${lessonData.theory}` : `Lesson ${n}`;
-    addMsg(t, "bot");
-    if(Array.isArray(lessonData.objectives) && lessonData.objectives.length){
-      addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+    
+    // Actualizar etiqueta del combo con título si existe
+    const opt = [...lessonSel.options].find(o => +o.value === n);
+    if(opt && lessonData?.title){ 
+      opt.textContent = `Lesson ${n} — ${lessonData.title}`; 
     }
-    if(Array.isArray(lessonData.topics) && lessonData.topics.length){
-      addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+
+    // Línea de estado
+    const titleTxt = lessonData?.title ? `Lesson ${n} — ${lessonData.title}` : `Lesson ${n}`;
+    statusEl.textContent = (n <= 1)
+      ? `${titleTxt}. You can start now. Ask about any concept you want to reinforce.`
+      : `${titleTxt}. First, a short review of Lesson ${n-1} (need ≥ 90% to unlock).`;
+    
+    statusEl.className = 'status success';
+    
+    // Presentación pedagógica desde el JSON (teoría + objetivos + temas)
+    addMsg(`--- Lesson ${n} Loaded ---`, "bot", true);
+    
+    if(lessonData){
+      const t = lessonData.theory ? `Theory — ${lessonData.title}\n${lessonData.theory}` : `Lesson ${n}`;
+      addMsg(t, "bot");
+      
+      if(Array.isArray(lessonData.objectives) && lessonData.objectives.length){
+        addMsg("Objectives:\n" + lessonData.objectives.map((x,i) => `${i+1}. ${x}`).join('\n'), "bot");
+      }
+      
+      if(Array.isArray(lessonData.topics) && lessonData.topics.length){
+        addMsg("Topics:\n" + lessonData.topics.map((x,i) => `${i+1}. ${x}`).join('\n'), "bot");
+      }
+    } else {
+      addMsg(`Lesson ${n} selected. Ask what you would like to reinforce.`, "bot");
     }
-  }else{
-    addMsg(`Lesson ${n} selected. Ask what you would like to reinforce.`, "bot");
+    
+  } catch(e) {
+    console.error("Error loading lesson:", e);
+    statusEl.textContent = `Error loading lesson ${n}. Using minimal context.`;
+    statusEl.className = 'status error';
+    addMsg(`Lesson ${n} data could not be loaded. Proceeding with minimal context.`, "bot");
+  } finally {
+    lessonSel.disabled = false;
   }
 }
 
@@ -253,92 +790,155 @@ function buildPrompt(userText){
     : (Array.isArray(prevLessonData?.quizPrevious) ? prevLessonData.quizPrevious : []);
 
   const rules =
-`ROLE: You are the English leveling instructor for St. Mary’s College.
+`ROLE: You are the English leveling instructor for St. Mary's College.
 LANGUAGE: Reply in ENGLISH ONLY.
 FORMAT: Plain text. No markdown, no asterisks, no emojis, no decorative symbols.
 TONE: Clear, concise, encouraging. Natural phrasing. Use minimal IPA or simple syllable hints only when essential.
 SCOPE: Strictly about Lesson ${n} — ${title}. If the user asks off-topic, provide a SHORT helpful note and redirect to Lesson ${n}.
 TEACHING: First, briefly explain the what/why/how based on the lesson JSON; then answer. Correct grammar and suggest natural phrasing.
 PRONUNCIATION: Avoid characters that TTS reads awkwardly. No bullets or decorative marks.
-QUIZ-GATE: If Lesson ${n} > 1, start with a short 4-question diagnostic of Lesson ${n-1}. Use the provided 'quizPrevious' items if present; otherwise, derive from the previous lesson’s theory/topics. Require ≥ 90% to continue. If below, ask the student to review Lesson ${n-1} and politely end the session.`;
+QUIZ-GATE: If Lesson ${n} > 1, start with a short 4-question diagnostic of Lesson ${n-1}. Use the provided 'quizPrevious' items if present; otherwise, derive from the previous lesson's theory/topics. Require ≥ 90% to continue. If below, ask the student to review Lesson ${n-1} and politely end the session.`;
 
   const jsonContext =
 `JSON_TITLE: ${title}
 JSON_THEORY: ${theory}
 JSON_OBJECTIVES:
-${objectives.map((x,i)=>`${i+1}. ${x}`).join('\n')}
+${objectives.map((x,i) => `${i+1}. ${x}`).join('\n')}
 JSON_TOPICS:
-${topics.map((x,i)=>`${i+1}. ${x}`).join('\n')}
+${topics.map((x,i) => `${i+1}. ${x}`).join('\n')}
 JSON_QUIZ_PREVIOUS:
-${prevQuiz.map((q,i)=>`${i+1}. Q: ${q.question} | A: ${q.answer}`).join('\n')}`;
+${prevQuiz.map((q,i) => `${i+1}. Q: ${q.question} | A: ${q.answer}`).join('\n')}`;
 
   return `LESSON=${n}\n${rules}\n${jsonContext}\nUSER: ${userText}`;
 }
 
 /* ===== Backend ===== */
 async function askInstructor(text){
-  const r = await fetch(WORKER_URL, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ text: buildPrompt(text), lang:"en-US" })
-  });
-  if(!r.ok) throw new Error("HTTP "+r.status);
-  const data = await r.json().catch(()=>({ reply:"Connection error." }));
-  return String(data.reply||"");
+  showThinking();
+  send.disabled = true;
+  
+  try {
+    const r = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: buildPrompt(text), lang: "en-US" })
+    });
+    
+    if(!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    
+    const data = await r.json().catch(() => ({ reply: "Connection error." }));
+    return String(data.reply || "Sorry, I couldn't process that request.");
+    
+  } catch(e) {
+    console.error("Error asking instructor:", e);
+    throw e;
+  } finally {
+    hideThinking();
+    send.disabled = false;
+  }
 }
 
 /* ===== Envío ===== */
 async function sendMsg(){
-  const t=(input.value||"").trim();
+  const t = (input.value || "").trim();
   if(!t) return;
-  input.value="";
-  addMsg(t,"user");
-  try{
+  
+  input.value = "";
+  addMsg(t, "user");
+  
+  try {
     const reply = await askInstructor(t);
-    addMsg(reply,"bot"); speak(reply);
-  }catch(e){
-    addMsg("Connection error with the server.", "bot");
+    addMsg(reply, "bot"); 
+    speak(reply);
+  } catch(e) {
+    addMsg("Sorry, there was an error connecting to the server. Please try again.", "bot");
+    console.error("Send message error:", e);
   }
 }
 
 /* ===== Eventos UI ===== */
 send.addEventListener('click', sendMsg);
-input.addEventListener('keydown', e=>{
-  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+
+input.addEventListener('keydown', e => {
+  if(e.key === "Enter" && !e.shiftKey){ 
+    e.preventDefault(); 
+    sendMsg(); 
+  }
 });
+
+// Auto-resize textarea
+input.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = (this.scrollHeight) + 'px';
+});
+
 mic.addEventListener('click', sttStart);
 stopBtn.addEventListener('click', stopAll);
-lessonSel.addEventListener('change', ()=> loadLesson(+lessonSel.value));
+
+lessonSel.addEventListener('change', () => {
+  const newLesson = +lessonSel.value;
+  if (newLesson !== currentLesson) {
+    // Limpiar chat al cambiar de lección
+    chat.innerHTML = '';
+    loadLesson(newLesson);
+  }
+});
 
 /* ===== Construir combo (títulos de JSON 1–13) ===== */
 (async function buildLessons(){
   const saved = +localStorage.getItem('smc.lesson') || 1;
 
   // Prellenar 1–270
-  for(let i=1;i<=270;i++){
-    const o=document.createElement('option');
-    o.value=String(i); o.textContent = `Lesson ${i}`;
+  for(let i = 1; i <= 270; i++){
+    const o = document.createElement('option');
+    o.value = String(i); 
+    o.textContent = `Lesson ${i}`;
     lessonSel.appendChild(o);
   }
 
   // Enriquecer títulos 1–13 leyendo JSON
-  for(let i=1;i<=JSON_COUNT;i++){
-    try{
-      const j = await fetchJSON(`${JSON_BASE}lesson${i}.json`);
-      if(j?.title){
-        const opt = lessonSel.options[i-1];
-        if(opt) opt.textContent = `Lesson ${i} — ${j.title}`;
-      }
-    }catch(e){ /* si falla, queda "Lesson i" */}
+  const loadingPromises = [];
+  for(let i = 1; i <= JSON_COUNT; i++){
+    loadingPromises.push(
+      fetchJSON(`${JSON_BASE}lesson${i}.json`)
+        .then(j => {
+          if(j?.title){
+            const opt = lessonSel.options[i-1];
+            if(opt) opt.textContent = `Lesson ${i} — ${j.title}`;
+          }
+          return true;
+        })
+        .catch(e => {
+          console.warn(`Could not load title for lesson ${i}:`, e);
+          return false;
+        })
+    );
   }
 
+  // Esperar a que todas las promesas se resuelvan
+  await Promise.allSettled(loadingPromises);
+  
   // Selección y carga inicial
   lessonSel.value = String(saved);
   await loadLesson(+lessonSel.value);
 
   // Bienvenida
-  addMsg("Welcome! Select your lesson above. I will teach ONLY the selected lesson, using its official content. Ask what you need to reinforce.", "bot");
+  addMsg("Welcome to English Leveler! Select your lesson above. I will teach ONLY the selected lesson, using its official content. Ask what you need to reinforce.", "bot");
 })();
+
+// Mejorar accesibilidad
+document.addEventListener('keydown', (e) => {
+  // Atajo Ctrl+Enter para enviar
+  if (e.ctrlKey && e.key === 'Enter') {
+    sendMsg();
+  }
+  
+  // Atajo Ctrl+Space para grabar
+  if (e.ctrlKey && e.key === ' ') {
+    e.preventDefault();
+    sttStart();
+  }
+});
 </script>
 </body>
 </html>
