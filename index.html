@@ -275,7 +275,6 @@
         #send { background: #22c55e; } 
         #mic { background: #0ea5e9; } 
         #stop { background: #ef4444; }
-        #voiceSettings { background: #8b5cf6; }
 
         .quiz-container {
             background: #f8fafc;
@@ -340,31 +339,18 @@
             display: none;
         }
 
-        .voice-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: #64748b;
-            margin-top: 10px;
-        }
-
-        .indicator {
-            width: 12px;
-            height: 12px;
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
             border-radius: 50%;
-            background: #ddd;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
         }
 
-        .speaking .indicator {
-            background: #22c55e;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         footer {
@@ -393,6 +379,42 @@
             
             .msg {
                 max-width: 90%;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .badge {
+                margin-top: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 18px;
+            }
+            
+            .container {
+                gap: 12px;
+            }
+            
+            .chat-container {
+                padding: 16px;
+            }
+            
+            .composer {
+                padding: 10px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            #text {
+                font-size: 14px;
             }
         }
     </style>
@@ -461,10 +483,6 @@
                             Stop
                         </button>
                     </div>
-                    <div class="voice-status">
-                        <div class="indicator"></div>
-                        <span id="voiceStatusText">Ready</span>
-                    </div>
                 </div>
             </div>
         </div>
@@ -489,15 +507,13 @@
         const statusEl = document.getElementById('status');
         const voiceSpeed = document.getElementById('voiceSpeed');
         const speedValue = document.getElementById('speedValue');
-        const voiceStatusText = document.getElementById('voiceStatusText');
-        const voiceIndicator = document.querySelector('.indicator');
         
         // Estado de la aplicación
         let currentLesson = null;
         let quizState = null;
         let isSpeaking = false;
         let speechRate = parseFloat(voiceSpeed.value);
-        let currentUtterance = null;
+        let isListening = false;
         
         // Datos de ejemplo para lecciones y preguntas
         const lessonData = {
@@ -545,8 +561,142 @@
                     "Third person singular rules",
                     "Adverbs of frequency with Present Simple"
                 ]
+            },
+            4: {
+                title: "Past Simple Tense",
+                theory: "The Past Simple tense is used to talk about completed actions or events in the past.",
+                objectives: [
+                    "Understand when to use Past Simple",
+                    "Learn regular and irregular verb forms",
+                    "Practice forming questions and negatives"
+                ],
+                topics: [
+                    "Regular verbs: adding -ed",
+                    "Common irregular verbs",
+                    "Time expressions with past simple",
+                    "Forming questions and negatives"
+                ]
+            },
+            5: {
+                title: "Future Tenses",
+                theory: "English has several ways to talk about the future, each with different meanings and uses.",
+                objectives: [
+                    "Learn different future forms: will, going to, present continuous",
+                    "Understand when to use each future form",
+                    "Practice making predictions and plans"
+                ],
+                topics: [
+                    "Will for predictions and spontaneous decisions",
+                    "Going to for plans and intentions",
+                    "Present continuous for arrangements",
+                    "Future time expressions"
+                ]
+            },
+            6: {
+                title: "Adjectives and Adverbs",
+                theory: "Adjectives describe nouns, while adverbs describe verbs, adjectives, or other adverbs.",
+                objectives: [
+                    "Understand the difference between adjectives and adverbs",
+                    "Learn comparative and superlative forms",
+                    "Practice correct placement in sentences"
+                ],
+                topics: [
+                    "Adjective order in English",
+                    "Forming adverbs from adjectives",
+                    "Comparative and superlative forms",
+                    "Irregular comparatives and superlatives"
+                ]
+            },
+            7: {
+                title: "Prepositions of Place",
+                theory: "Prepositions of place describe the position or location of something.",
+                objectives: [
+                    "Learn common prepositions of place",
+                    "Understand subtle differences between similar prepositions",
+                    "Practice using prepositions in context"
+                ],
+                topics: [
+                    "Basic prepositions: in, on, at",
+                    "Directional prepositions: to, into, onto",
+                    "Position prepositions: under, over, between",
+                    "Prepositions with transportation"
+                ]
+            },
+            8: {
+                title: "Prepositions of Time",
+                theory: "Prepositions of time help indicate when something happens.",
+                objectives: [
+                    "Learn common prepositions of time",
+                    "Understand the differences between in, on, at for time",
+                    "Practice using time expressions correctly"
+                ],
+                topics: [
+                    "In for months, years, seasons",
+                    "On for days and dates",
+                    "At for specific times",
+                    "Time expressions: for, since, during, until"
+                ]
+            },
+            9: {
+                title: "Modal Verbs",
+                theory: "Modal verbs are auxiliary verbs that express ability, possibility, permission, or obligation.",
+                objectives: [
+                    "Learn the main modal verbs: can, could, may, might, must, should",
+                    "Understand different uses of modal verbs",
+                    "Practice using modals in different contexts"
+                ],
+                topics: [
+                    "Ability: can, could, be able to",
+                    "Permission: may, can, could",
+                    "Obligation: must, have to, should",
+                    "Possibility: might, may, could"
+                ]
+            },
+            10: {
+                title: "Conditionals",
+                theory: "Conditionals are sentences with 'if' clauses that describe hypothetical situations and their consequences.",
+                objectives: [
+                    "Learn the four main conditional types",
+                    "Understand when to use each conditional",
+                    "Practice forming conditional sentences correctly"
+                ],
+                topics: [
+                    "Zero conditional for general truths",
+                    "First conditional for real future possibilities",
+                    "Second conditional for unreal present or future",
+                    "Third conditional for unreal past situations"
+                ]
+            },
+            11: {
+                title: "Vocabulary Expansion",
+                theory: "Building a strong vocabulary is essential for effective communication in English.",
+                objectives: [
+                    "Learn strategies for vocabulary acquisition",
+                    "Expand topic-specific vocabulary",
+                    "Practice using new words in context"
+                ],
+                topics: [
+                    "Word families and word formation",
+                    "Collocations and common word pairs",
+                    "Idioms and phrasal verbs",
+                    "Topic vocabulary: work, travel, education"
+                ]
+            },
+            12: {
+                title: "Pronunciation Practice",
+                theory: "Good pronunciation helps ensure you're understood and improves your confidence when speaking English.",
+                objectives: [
+                    "Learn key aspects of English pronunciation",
+                    "Practice difficult sounds for your language background",
+                    "Improve stress and intonation patterns"
+                ],
+                topics: [
+                    "Vowel sounds and minimal pairs",
+                    "Consonant clusters and difficult sounds",
+                    "Word stress and sentence stress",
+                    "Intonation patterns for questions and statements"
+                ]
             }
-            // Más lecciones...
         };
         
         // Preguntas de evaluación por lección
@@ -566,6 +716,16 @@
                     question: "Which is a proper introduction?",
                     options: ["Me John", "This is John", "Him John", "John is here"],
                     answer: 1
+                },
+                {
+                    question: "What's an appropriate response to 'Nice to meet you'?",
+                    options: ["Me too", "Same here", "Nice to meet you too", "Also"],
+                    answer: 2
+                },
+                {
+                    question: "Which phrase would you use to say goodbye formally?",
+                    options: ["See ya!", "Bye", "Goodbye", "Catch you later"],
+                    answer: 2
                 }
             ],
             2: [
@@ -588,9 +748,195 @@
                         "Coffee now"
                     ],
                     answer: 2
+                },
+                {
+                    question: "How would you ask for the price of something in a shop?",
+                    options: [
+                        "How much cost?",
+                        "What is the price?",
+                        "How much is this?",
+                        "Money for this?"
+                    ],
+                    answer: 2
+                },
+                {
+                    question: "Which is the best way to ask for help in a store?",
+                    options: [
+                        "Help me!",
+                        "Excuse me, could you help me?",
+                        "I need help",
+                        "You, help"
+                    ],
+                    answer: 1
+                },
+                {
+                    question: "What would you say to decline an offer politely?",
+                    options: [
+                        "No",
+                        "No, thanks",
+                        "I don't want",
+                        "Not for me"
+                    ],
+                    answer: 1
+                }
+            ],
+            3: [
+                {
+                    question: "Which sentence is in the present simple tense?",
+                    options: [
+                        "I am going to school",
+                        "I go to school every day",
+                        "I went to school yesterday",
+                        "I will go to school tomorrow"
+                    ],
+                    answer: 1
+                },
+                {
+                    question: "How do you form the third person singular in present simple?",
+                    options: [
+                        "Always add -s",
+                        "Add -s to most verbs",
+                        "Add -es to all verbs",
+                        "No change needed"
+                    ],
+                    answer: 1
+                },
+                {
+                    question: "Which sentence is correct?",
+                    options: [
+                        "She don't like apples",
+                        "She doesn't like apples",
+                        "She doesn't likes apples",
+                        "She not like apples"
+                    ],
+                    answer: 1
+                },
+                {
+                    question: "Which time expression is typically used with present simple?",
+                    options: [
+                        "now",
+                        "at the moment",
+                        "every day",
+                        "yesterday"
+                    ],
+                    answer: 2
+                },
+                {
+                    question: "How do you form a question in present simple?",
+                    options: [
+                        "Do/Does + subject + base verb",
+                        "Subject + do/does + base verb",
+                        "Am/Is/Are + subject + verb",
+                        "Subject + verb + -ing"
+                    ],
+                    answer: 0
+                }
+            ],
+            4: [
+                {
+                    question: "Which sentence is in the past simple tense?",
+                    options: [
+                        "I have finished my homework",
+                        "I am finishing my homework",
+                        "I finished my homework",
+                        "I will finish my homework"
+                    ],
+                    answer: 2
+                },
+                {
+                    question: "What is the past simple form of 'go'?",
+                    options: [
+                        "goed",
+                        "went",
+                        "gone",
+                        "goes"
+                    ],
+                    answer: 1
+                },
+                {
+                    question: "How do you form the negative in past simple?",
+                    options: [
+                        "didn't + base verb",
+                        "wasn't/weren't + base verb",
+                        "haven't + base verb",
+                        "not + past verb"
+                    ],
+                    answer: 0
+                },
+                {
+                    question: "Which time expression is typically used with past simple?",
+                    options: [
+                        "now",
+                        "already",
+                        "yesterday",
+                        "for two years"
+                    ],
+                    answer: 2
+                },
+                {
+                    question: "What is the past simple form of 'study'?",
+                    options: [
+                        "studyed",
+                        "studied",
+                        "studying",
+                        "studieded"
+                    ],
+                    answer: 1
+                }
+            ],
+            5: [
+                {
+                    question: "Which sentence expresses a future plan?",
+                    options: [
+                        "I will probably go to the party",
+                        "I'm going to visit my parents next weekend",
+                        "The train leaves at 5 PM",
+                        "I think it will rain tomorrow"
+                    ],
+                    answer: 1
+                },
+                {
+                    question: "Which future form is used for predictions based on evidence?",
+                    options: [
+                        "will",
+                        "going to",
+                        "present continuous",
+                        "present simple"
+                    ],
+                    answer: 1
+                },
+                {
+                    question: "Which sentence uses the present continuous for future?",
+                    options: [
+                        "I'm meeting friends tonight",
+                        "I meet friends every week",
+                        "I'll meet you later",
+                        "I'm going to meet you later"
+                    ],
+                    answer: 0
+                },
+                {
+                    question: "Which future form is used for scheduled events?",
+                    options: [
+                        "will",
+                        "going to",
+                        "present continuous",
+                        "present simple"
+                    ],
+                    answer: 3
+                },
+                {
+                    question: "Which sentence offers to help?",
+                    options: [
+                        "I'll help you with that",
+                        "I'm helping you",
+                        "I help you",
+                        "I'm going to help you"
+                    ],
+                    answer: 0
                 }
             ]
-            // Más preguntas...
+            // Más preguntas para las lecciones restantes...
         };
         
         // Función para añadir mensaje al chat
@@ -606,6 +952,7 @@
                 const avatar = document.createElement('div');
                 avatar.className = 'bot-avatar';
                 avatar.textContent = 'SMC';
+                avatar.setAttribute('aria-label', 'St. Mary\'s College assistant');
                 
                 const content = document.createElement('div');
                 content.textContent = text;
@@ -617,14 +964,19 @@
                 // Controles de voz
                 const controls = document.createElement('div');
                 controls.className = 'msg-controls';
-                controls.innerHTML = `
-                    <button class="msg-control" onclick="speakMessage('${text.replace(/'/g, "\\'")}')">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3 9V15H7L12 20V4L7 9H3Z" fill="currentColor"/>
-                        </svg>
-                        Speak
-                    </button>
+                const speakButton = document.createElement('button');
+                speakButton.className = 'msg-control';
+                speakButton.setAttribute('aria-label', 'Read message aloud');
+                speakButton.innerHTML = `
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9V15H7L12 20V4L7 9H3Z" fill="currentColor"/>
+                    </svg>
+                    Speak
                 `;
+                speakButton.onclick = function() {
+                    speakMessage(text);
+                };
+                controls.appendChild(speakButton);
                 msgDiv.appendChild(controls);
             } else {
                 msgDiv.textContent = text;
@@ -638,46 +990,46 @@
         // Función para sintetizar voz
         function speak(text, rate = speechRate) {
             if ('speechSynthesis' in window) {
-                stopSpeech();
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = rate;
-                
-                // Buscar voz en inglés
-                const voices = window.speechSynthesis.getVoices();
-                const englishVoice = voices.find(voice => 
-                    voice.lang.startsWith('en-') || voice.lang.startsWith('en_')
-                );
-                
-                if (englishVoice) {
-                    utterance.voice = englishVoice;
+                try {
+                    window.speechSynthesis.cancel();
+                    
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = rate;
+                    
+                    // Buscar voz en inglés
+                    const voices = window.speechSynthesis.getVoices();
+                    const englishVoice = voices.find(voice => 
+                        voice.lang.startsWith('en-') || voice.lang.startsWith('en_')
+                    );
+                    
+                    if (englishVoice) {
+                        utterance.voice = englishVoice;
+                    }
+                    
+                    utterance.onstart = () => {
+                        isSpeaking = true;
+                        stopBtn.disabled = false;
+                    };
+                    
+                    utterance.onend = () => {
+                        isSpeaking = false;
+                        stopBtn.disabled = true;
+                    };
+                    
+                    utterance.onerror = (event) => {
+                        console.error('Speech synthesis error:', event);
+                        isSpeaking = false;
+                        stopBtn.disabled = true;
+                    };
+                    
+                    window.speechSynthesis.speak(utterance);
+                } catch (error) {
+                    console.error('Error with speech synthesis:', error);
                 }
-                
-                utterance.onstart = () => {
-                    isSpeaking = true;
-                    voiceStatusText.textContent = "Speaking...";
-                    voiceIndicator.parentElement.classList.add('speaking');
-                };
-                
-                utterance.onend = () => {
-                    isSpeaking = false;
-                    voiceStatusText.textContent = "Ready";
-                    voiceIndicator.parentElement.classList.remove('speaking');
-                };
-                
-                utterance.onerror = (event) => {
-                    isSpeaking = false;
-                    voiceStatusText.textContent = "Error: " + event.error;
-                    voiceIndicator.parentElement.classList.remove('speaking');
-                    console.error('Speech synthesis error:', event.error);
-                };
-                
-                currentUtterance = utterance;
-                window.speechSynthesis.speak(utterance);
             }
         }
         
-        // Función para hablar mensaje
+        // Función para hablar mensaje (corregida)
         function speakMessage(text) {
             speak(text);
         }
@@ -687,8 +1039,13 @@
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 isSpeaking = false;
-                voiceStatusText.textContent = "Ready";
-                voiceIndicator.parentElement.classList.remove('speaking');
+                stopBtn.disabled = true;
+            }
+            
+            if (isListening && recognition) {
+                recognition.stop();
+                isListening = false;
+                micBtn.textContent = 'Speak';
             }
         }
         
@@ -705,7 +1062,6 @@
                 statusEl.textContent = `Before starting Lesson ${lessonNum}, you need to pass a review of Lesson ${previousLesson}.`;
                 
                 addMsg(`Before we begin Lesson ${lessonNum}, you need to complete a short review of Lesson ${previousLesson}. You must score at least ${PASS_MARK}% to proceed.`, "bot");
-                speak(`Before we begin Lesson ${lessonNum}, you need to complete a short review of the previous lesson. You must score at least ${PASS_MARK} percent to proceed.`);
                 
                 // Mostrar botones para comenzar evaluación
                 const buttonsDiv = document.createElement('div');
@@ -721,7 +1077,6 @@
                 cancelBtn.textContent = 'Not Now';
                 cancelBtn.onclick = () => {
                     addMsg(`No problem. When you're ready, select Lesson ${lessonNum} again to start the review.`, "bot");
-                    speak("No problem. You can try again whenever you're ready.");
                 };
                 
                 buttonsDiv.appendChild(startBtn);
@@ -765,7 +1120,6 @@
             
             if (quizState.questions.length === 0) {
                 addMsg("No review questions available for this lesson. You can proceed to the next lesson.", "bot");
-                speak("No review questions are available for this lesson. You can proceed to the next lesson.");
                 loadLesson(currentLesson);
                 return;
             }
@@ -777,7 +1131,6 @@
             
             chat.innerHTML = '';
             addMsg(`Review of Lesson ${lessonNum} - Answer the following questions:`, "bot");
-            speak(`Review of Lesson ${lessonNum}. Answer the following questions.`);
             displayQuestion();
         }
         
@@ -799,7 +1152,14 @@
                 const optionBtn = document.createElement('div');
                 optionBtn.className = 'quiz-option';
                 optionBtn.textContent = option;
+                optionBtn.setAttribute('role', 'button');
+                optionBtn.setAttribute('tabindex', '0');
                 optionBtn.onclick = () => checkAnswer(index);
+                optionBtn.onkeypress = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        checkAnswer(index);
+                    }
+                };
                 optionsDiv.appendChild(optionBtn);
             });
             
@@ -818,7 +1178,9 @@
             // Deshabilitar opciones
             options.forEach(opt => {
                 opt.onclick = null;
+                opt.onkeypress = null;
                 opt.style.cursor = 'default';
+                opt.setAttribute('tabindex', '-1');
             });
             
             // Marcar respuesta correcta/incorrecta
@@ -884,9 +1246,23 @@
             input.value = '';
             addMsg(text, "user");
             
+            // Mostrar indicador de escritura
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'msg bot';
+            typingIndicator.innerHTML = `
+                <div style="display: flex; align-items: center;">
+                    <div class="bot-avatar">SMC</div>
+                    <div class="loading"></div>
+                </div>
+            `;
+            chat.appendChild(typingIndicator);
+            chat.scrollTop = chat.scrollHeight;
+            
             // Aquí se integraría con Groq API para obtener respuesta
             // Por ahora simulamos una respuesta después de un breve retraso
             setTimeout(() => {
+                chat.removeChild(typingIndicator);
+                
                 const responses = [
                     "That's a great question! In English, we usually say...",
                     "I understand what you're asking. The correct way to say that is...",
@@ -898,7 +1274,7 @@
                 const randomResponse = responses[Math.floor(Math.random() * responses.length)];
                 addMsg(randomResponse, "bot");
                 speak(randomResponse);
-            }, 1000);
+            }, 1500);
         }
         
         // Inicializar reconocimiento de voz (si está disponible)
@@ -908,27 +1284,27 @@
             recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.lang = 'en-US';
+            recognition.interimResults = false;
             
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
                 input.value = transcript;
-                voiceStatusText.textContent = "Ready";
-                micBtn.querySelector('svg').style.fill = 'currentColor';
-            };
-            
-            recognition.onstart = function() {
-                voiceStatusText.textContent = "Listening...";
-                micBtn.querySelector('svg').style.fill = '#ef4444';
-            };
-            
-            recognition.onend = function() {
-                voiceStatusText.textContent = "Ready";
-                micBtn.querySelector('svg').style.fill = 'currentColor';
+                isListening = false;
+                micBtn.textContent = 'Speak';
             };
             
             recognition.onerror = function(event) {
-                voiceStatusText.textContent = "Error: " + event.error;
-                micBtn.querySelector('svg').style.fill = 'currentColor';
+                console.error('Speech recognition error', event.error);
+                isListening = false;
+                micBtn.textContent = 'Speak';
+                addMsg("Sorry, I didn't catch that. Could you try again?", "bot");
+            };
+            
+            recognition.onend = function() {
+                if (isListening) {
+                    isListening = false;
+                    micBtn.textContent = 'Speak';
+                }
             };
         } else {
             micBtn.disabled = true;
@@ -945,22 +1321,29 @@
         });
         
         micBtn.addEventListener('click', () => {
-            if (recognition && !isSpeaking) {
+            if (recognition && !isListening) {
                 try {
                     recognition.start();
+                    isListening = true;
+                    micBtn.textContent = 'Listening...';
                 } catch (error) {
-                    console.error('Speech recognition error:', error);
-                    voiceStatusText.textContent = "Error: " + error.message;
+                    console.error('Speech recognition start error:', error);
+                    addMsg("Speech recognition is not available right now. Please type your message instead.", "bot");
                 }
             }
         });
         
         stopBtn.addEventListener('click', stopSpeech);
+        stopBtn.disabled = true;
         
         lessonSel.addEventListener('change', () => {
             const lessonNum = parseInt(lessonSel.value);
             if (lessonNum) {
                 loadLesson(lessonNum);
+            } else {
+                chat.innerHTML = '';
+                addMsg("Please select a lesson to begin.", "bot");
+                statusEl.textContent = "Please select a lesson to begin.";
             }
         });
         
@@ -971,10 +1354,21 @@
         
         // Inicializar voces
         if ('speechSynthesis' in window) {
+            // Forzar la carga de voces en algunos navegadores
+            window.speechSynthesis.getVoices();
+            
             window.speechSynthesis.onvoiceschanged = function() {
                 // Voces cargadas
+                console.log('Voices loaded');
             };
         }
+        
+        // Mejorar accesibilidad
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                stopSpeech();
+            }
+        });
     </script>
 </body>
 </html>
