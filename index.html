@@ -22,6 +22,7 @@ h1{margin:0;font-size:16px;font-weight:800}
 main{flex:1;display:flex;justify-content:center}
 .wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
 
+/* Top toolbar */
 .toolbar{
   background:#fff; border-radius:14px; padding:10px;
   display:flex; gap:12px; align-items:center; flex-wrap:wrap;
@@ -33,7 +34,12 @@ select,button{font:600 14px/1 system-ui}
   padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1;
   background:#f8fafc; min-width:280px;
 }
+.status{
+  font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130;
+  padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center;
+}
 
+/* Chat area */
 #chat{
   background:#fff; border-radius:16px; padding:12px 12px 4px;
   min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12)
@@ -43,4 +49,296 @@ select,button{font:600 14px/1 system-ui}
   margin:10px 0; line-height:1.45; white-space:pre-wrap
 }
 .msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
-.msg
+.msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+
+/* Composer: input arriba, botones debajo */
+.composer{
+  background:#fff; border-radius:14px; padding:10px;
+  box-shadow:0 12px 28px rgba(2,6,23,.08);
+  display:flex; flex-direction:column; gap:10px;
+}
+#text{
+  width:100%; border:0; outline:0; font-size:16px; padding:12px;
+  border-radius:10px; background:#f7f9fc
+}
+.btnrow{
+  display:flex; gap:10px; flex-wrap:wrap;
+}
+.btn{
+  border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer
+}
+#send{background:#22c55e} #mic{background:#0ea5e9} #stop{background:#ef4444}
+
+/* Mobile tweaks */
+@media (max-width:640px){
+  h1{font-size:14px}
+  .msg{max-width:96%}
+  #lesson{min-width:unset}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>St. Mary’s College — English Leveler v2.4</h1>
+  <span class="badge">Voice + Text • EN only • JSON-driven (1–13)</span>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="toolbar">
+      <span class="label">Select lesson:</span>
+      <select id="lesson" aria-label="Select lesson"></select>
+      <span id="status" class="status">Loading lessons…</span>
+    </div>
+
+    <div id="chat" aria-live="polite"></div>
+
+    <div class="composer">
+      <input id="text" placeholder="Type your message and press Enter…" autocomplete="off">
+      <div class="btnrow">
+        <button id="send" class="btn">Send</button>
+        <button id="mic"  class="btn">Speak</button>
+        <button id="stop" class="btn">Stop</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+/* ===== CONFIG ===== */
+const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/"; // tu Worker
+const JSON_BASE  = "https://www.leccion.datafast.pw/lessons/";             // carpeta de JSON
+const JSON_COUNT = 13;                                                      // tenemos 13 JSON
+
+/* ===== Estado ===== */
+const chat   = document.getElementById('chat');
+const input  = document.getElementById('text');
+const send   = document.getElementById('send');
+const mic    = document.getElementById('mic');
+const stopBtn= document.getElementById('stop');
+const lessonSel = document.getElementById('lesson');
+const statusEl  = document.getElementById('status');
+
+let currentLesson = 1;
+let lessonData = null;       // JSON de la lección actual
+let prevLessonData = null;   // JSON de la lección anterior (para quiz)
+
+/* ===== Utilidades visuales y TTS ===== */
+function addMsg(text, who="bot"){
+  const clean = cleanDisplay(String(text||''));
+  const d=document.createElement('div');
+  d.className = `msg ${who}`;
+  d.textContent = clean;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+function sanitizeSpeak(s){
+  return (s||"")
+    .replace(/https?:\/\/\S+/g,'')
+    .replace(/[`*_~#>\[\]\(\){}|\\]/g,' ')
+    .replace(/[•▪︎●◦\-\u2022]\s+/g,' ')
+    .replace(/[\u2190-\u21FF]/g,' ')
+    .replace(/[\u2460-\u24FF]/g,' ')
+    .replace(/[\u2500-\u25FF]/g,' ')
+    .replace(/[\u2600-\u27BF]/g,' ')
+    .replace(/[\u{1F000}-\u{1FAFF}]/gu,' ')
+    .replace(/\s{2,}/g,' ').trim();
+}
+function cleanDisplay(s){
+  return (s||"")
+    .replace(/[*_~`#>|]/g,'')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
+function pickEnglishVoice(){
+  const voices = window.speechSynthesis.getVoices() || [];
+  const en = voices.find(v=>/^en(-|_)/i.test(v.lang)) || voices[0];
+  return en || null;
+}
+function speak(text){
+  try{
+    const t = sanitizeSpeak(String(text||''));
+    if(!t) return;
+    const u = new SpeechSynthesisUtterance(t);
+    const v = pickEnglishVoice();
+    if(v) u.voice = v;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+window.speechSynthesis?.addEventListener('voiceschanged', ()=>{});
+
+/* ===== STT (inglés) ===== */
+let rec=null,isRec=false;
+function sttStart(){
+  if(isRec) return;
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ addMsg("Voice recognition is not supported. Please type your message.","bot"); return; }
+  rec = new SR();
+  rec.lang = 'en-US'; rec.continuous=false; rec.interimResults=false;
+  rec.onresult = (e)=>{
+    const t = e.results?.[0]?.[0]?.transcript||"";
+    if(t){ input.value=t; sendMsg(); }
+  };
+  rec.onstart = ()=>{ isRec=true; speak("Listening"); };
+  rec.onerror= ()=>{ isRec=false; };
+  rec.onend  = ()=>{ isRec=false; };
+  rec.start();
+}
+function stopAll(){ try{speechSynthesis.cancel()}catch(e){} try{rec&&rec.abort()}catch(e){} }
+
+/* ===== Carga de JSON ===== */
+async function fetchJSON(url){
+  const r = await fetch(url, { cache:'no-store' });
+  if(!r.ok) throw new Error(r.status+" "+r.statusText);
+  return await r.json();
+}
+async function loadLesson(n){
+  currentLesson = n;
+  localStorage.setItem('smc.lesson', String(n));
+  lessonData = null; prevLessonData = null;
+  statusEl.textContent = `Loading Lesson ${n}…`;
+
+  try{
+    if(n <= JSON_COUNT){
+      lessonData = await fetchJSON(`${JSON_BASE}lesson${n}.json`);
+    }
+  }catch(e){
+    addMsg(`Lesson ${n} data could not be loaded. Proceeding with minimal context.`, "bot");
+  }
+
+  try{
+    if(n > 1 && (n-1) <= JSON_COUNT){
+      prevLessonData = await fetchJSON(`${JSON_BASE}lesson${n-1}.json`);
+    }
+  }catch(e){ /* opcional */ }
+
+  // Actualiza etiqueta del combo con título si existe
+  const opt = [...lessonSel.options].find(o=>+o.value===n);
+  if(opt && lessonData?.title){ opt.textContent = `Lesson ${n} — ${lessonData.title}`; }
+
+  // Línea de estado
+  const titleTxt = lessonData?.title ? `Lesson ${n} — ${lessonData.title}` : `Lesson ${n}`;
+  statusEl.textContent = (n<=1)
+    ? `${titleTxt}. You can start now. Ask about any concept you want to reinforce.`
+    : `${titleTxt}. First, a short review of Lesson ${n-1} (need ≥ 90% to unlock).`;
+
+  // Presentación pedagógica desde el JSON (teoría + objetivos + temas)
+  if(lessonData){
+    const t = lessonData.theory ? `Theory — ${lessonData.title}\n${lessonData.theory}` : `Lesson ${n}`;
+    addMsg(t, "bot");
+    if(Array.isArray(lessonData.objectives) && lessonData.objectives.length){
+      addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+    }
+    if(Array.isArray(lessonData.topics) && lessonData.topics.length){
+      addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+    }
+  }else{
+    addMsg(`Lesson ${n} selected. Ask what you would like to reinforce.`, "bot");
+  }
+}
+
+/* ===== Prompt estricto basado en JSON ===== */
+function buildPrompt(userText){
+  const n = currentLesson;
+  const title = lessonData?.title || `Lesson ${n}`;
+  const theory = lessonData?.theory || "";
+  const objectives = Array.isArray(lessonData?.objectives) ? lessonData.objectives : [];
+  const topics = Array.isArray(lessonData?.topics) ? lessonData.topics : [];
+
+  const prevQuiz = Array.isArray(lessonData?.quizPrevious) && lessonData.quizPrevious.length
+    ? lessonData.quizPrevious
+    : (Array.isArray(prevLessonData?.quizPrevious) ? prevLessonData.quizPrevious : []);
+
+  const rules =
+`ROLE: You are the English leveling instructor for St. Mary’s College.
+LANGUAGE: Reply in ENGLISH ONLY.
+FORMAT: Plain text. No markdown, no asterisks, no emojis, no decorative symbols.
+TONE: Clear, concise, encouraging. Natural phrasing. Use minimal IPA or simple syllable hints only when essential.
+SCOPE: Strictly about Lesson ${n} — ${title}. If the user asks off-topic, provide a SHORT helpful note and redirect to Lesson ${n}.
+TEACHING: First, briefly explain the what/why/how based on the lesson JSON; then answer. Correct grammar and suggest natural phrasing.
+PRONUNCIATION: Avoid characters that TTS reads awkwardly. No bullets or decorative marks.
+QUIZ-GATE: If Lesson ${n} > 1, start with a short 4-question diagnostic of Lesson ${n-1}. Use the provided 'quizPrevious' items if present; otherwise, derive from the previous lesson’s theory/topics. Require ≥ 90% to continue. If below, ask the student to review Lesson ${n-1} and politely end the session.`;
+
+  const jsonContext =
+`JSON_TITLE: ${title}
+JSON_THEORY: ${theory}
+JSON_OBJECTIVES:
+${objectives.map((x,i)=>`${i+1}. ${x}`).join('\n')}
+JSON_TOPICS:
+${topics.map((x,i)=>`${i+1}. ${x}`).join('\n')}
+JSON_QUIZ_PREVIOUS:
+${prevQuiz.map((q,i)=>`${i+1}. Q: ${q.question} | A: ${q.answer}`).join('\n')}`;
+
+  return `LESSON=${n}\n${rules}\n${jsonContext}\nUSER: ${userText}`;
+}
+
+/* ===== Backend ===== */
+async function askInstructor(text){
+  const r = await fetch(WORKER_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ text: buildPrompt(text), lang:"en-US" })
+  });
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const data = await r.json().catch(()=>({ reply:"Connection error." }));
+  return String(data.reply||"");
+}
+
+/* ===== Envío ===== */
+async function sendMsg(){
+  const t=(input.value||"").trim();
+  if(!t) return;
+  input.value="";
+  addMsg(t,"user");
+  try{
+    const reply = await askInstructor(t);
+    addMsg(reply,"bot"); speak(reply);
+  }catch(e){
+    addMsg("Connection error with the server.", "bot");
+  }
+}
+
+/* ===== Eventos UI ===== */
+send.addEventListener('click', sendMsg);
+input.addEventListener('keydown', e=>{
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+});
+mic.addEventListener('click', sttStart);
+stopBtn.addEventListener('click', stopAll);
+lessonSel.addEventListener('change', ()=> loadLesson(+lessonSel.value));
+
+/* ===== Construir combo (títulos de JSON 1–13) ===== */
+(async function buildLessons(){
+  const saved = +localStorage.getItem('smc.lesson') || 1;
+
+  // Prellenar 1–270
+  for(let i=1;i<=270;i++){
+    const o=document.createElement('option');
+    o.value=String(i); o.textContent = `Lesson ${i}`;
+    lessonSel.appendChild(o);
+  }
+
+  // Enriquecer títulos 1–13 leyendo JSON
+  for(let i=1;i<=JSON_COUNT;i++){
+    try{
+      const j = await fetchJSON(`${JSON_BASE}lesson${i}.json`);
+      if(j?.title){
+        const opt = lessonSel.options[i-1];
+        if(opt) opt.textContent = `Lesson ${i} — ${j.title}`;
+      }
+    }catch(e){ /* si falla, queda "Lesson i" */}
+  }
+
+  // Selección y carga inicial
+  lessonSel.value = String(saved);
+  await loadLesson(+lessonSel.value);
+
+  // Bienvenida
+  addMsg("Welcome! Select your lesson above. I will teach ONLY the selected lesson, using its official content. Ask what you need to reinforce.", "bot");
+})();
+</script>
+</body>
+</html>
