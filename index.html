@@ -158,32 +158,65 @@
             color: #64748b;
         }
 
-        .lesson-selector {
+        .start-button {
+            background: var(--bot);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(11, 136, 230, 0.3);
+        }
+
+        .start-button:hover {
+            background: #0a76cc;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(11, 136, 230, 0.4);
+        }
+
+        .lesson-input-container {
+            display: none;
             background: #f8fafc;
             border-radius: 12px;
-            padding: 20px;
+            padding: 25px;
             margin: 20px 0;
             width: 100%;
             max-width: 600px;
             align-self: center;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
         }
 
-        .selector-title {
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-title {
             font-size: 20px;
             font-weight: 700;
             color: var(--brand);
             margin-bottom: 15px;
-            text-align: center;
         }
 
-        .selector-group {
+        .input-instruction {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
             justify-content: center;
+            align-items: center;
         }
 
-        select {
+        input {
             padding: 12px 16px;
             border-radius: 10px;
             border: 1px solid #cbd5e1;
@@ -193,7 +226,7 @@
             flex: 1;
         }
 
-        .select-button {
+        .action-button {
             background: var(--bot);
             color: white;
             border: none;
@@ -205,7 +238,7 @@
             transition: all 0.3s ease;
         }
 
-        .select-button:hover {
+        .action-button:hover {
             background: #0a76cc;
             transform: translateY(-2px);
         }
@@ -213,15 +246,10 @@
         .lesson-content {
             display: none;
             margin-top: 30px;
-            padding: 20px;
+            padding: 25px;
             border-radius: 12px;
             background: #f1f5f9;
             animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .lesson-header {
@@ -242,6 +270,7 @@
         .lesson-theory {
             margin-bottom: 25px;
             line-height: 1.6;
+            font-size: 16px;
         }
 
         .lesson-section {
@@ -311,11 +340,11 @@
                 font-size: 16px;
             }
             
-            .selector-group {
+            .input-group {
                 flex-direction: column;
             }
             
-            select {
+            input {
                 width: 100%;
             }
         }
@@ -353,33 +382,23 @@
                         </div>
                     </div>
                     
-                    <div class="lesson-selector">
-                        <h3 class="selector-title">Select a Lesson to Begin</h3>
-                        <div class="selector-group">
-                            <select id="lessonSelect">
-                                <option value="">-- Choose a lesson --</option>
-                                <option value="1">Lesson 1: Greetings and Introductions</option>
-                                <option value="2">Lesson 2: Everyday Conversations</option>
-                                <option value="3">Lesson 3: Present Simple Tense</option>
-                                <option value="4">Lesson 4: Past Simple Tense</option>
-                                <option value="5">Lesson 5: Future Tenses</option>
-                                <option value="6">Lesson 6: Adjectives and Adverbs</option>
-                                <option value="7">Lesson 7: Prepositions of Place</option>
-                                <option value="8">Lesson 8: Prepositions of Time</option>
-                                <option value="9">Lesson 9: Modal Verbs</option>
-                                <option value="10">Lesson 10: Conditionals</option>
-                                <option value="11">Lesson 11: Vocabulary Expansion</option>
-                                <option value="12">Lesson 12: Pronunciation Practice</option>
-                            </select>
-                            <button class="select-button" onclick="loadLesson()">Load Lesson</button>
-                        </div>
+                    <button class="start-button" onclick="showLessonInput()">Get Started</button>
+                </div>
+                
+                <div id="lessonInputContainer" class="lesson-input-container">
+                    <h3 class="input-title">Enter Lesson Number</h3>
+                    <p class="input-instruction">Please type the number of the lesson you want to review (1-12)</p>
+                    
+                    <div class="input-group">
+                        <input type="number" id="lessonInput" placeholder="Example: 3" min="1" max="12">
+                        <button class="action-button" onclick="loadLesson()">Load Lesson</button>
                     </div>
                 </div>
                 
                 <div id="lessonContent" class="lesson-content">
                     <div class="lesson-header">
                         <h2 id="lessonTitle" class="lesson-title"></h2>
-                        <button class="back-button" onclick="hideLesson()">Back to Selection</button>
+                        <button class="back-button" onclick="backToInput()">Back</button>
                     </div>
                     
                     <div id="lessonTheory" class="lesson-theory"></div>
@@ -392,6 +411,19 @@
                     <div class="lesson-section">
                         <h3 class="section-title">Topics Covered</h3>
                         <ul id="lessonTopics" class="section-content"></ul>
+                    </div>
+                    
+                    <div class="lesson-section">
+                        <h3 class="section-title">Practice Exercises</h3>
+                        <div id="lessonExercises" class="section-content">
+                            <p>Complete the following exercises to practice what you've learned:</p>
+                            <ol>
+                                <li>Write five sentences using the concepts from this lesson</li>
+                                <li>Record yourself reading the theory section aloud</li>
+                                <li>Create a short dialogue incorporating the key phrases</li>
+                            </ol>
+                            <button class="action-button" style="margin-top: 15px;">Submit Exercises</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -407,47 +439,70 @@
         const lessonData = {
             1: {
                 title: "Lesson 1: Greetings and Introductions",
-                theory: "In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English. Greetings are an essential part of daily communication and vary based on formality and context.",
+                theory: "In this lesson, you will learn how to greet people, introduce yourself, and ask basic questions in English. Greetings are an essential part of daily communication and vary based on formality and context. You'll practice both formal greetings for professional settings and informal greetings for casual situations with friends and acquaintances.",
                 objectives: [
                     "Learn formal and informal greetings",
                     "Practice introducing yourself and others",
-                    "Understand appropriate responses to greetings"
+                    "Understand appropriate responses to greetings",
+                    "Master basic question forms for getting to know someone"
                 ],
                 topics: [
-                    "Hello, Hi, Hey variations",
-                    "Formal vs informal greetings",
+                    "Hello, Hi, Hey variations and when to use them",
+                    "Formal vs informal greetings: Good morning/afternoon/evening",
                     "Asking 'How are you?' and responding appropriately",
-                    "Introducing yourself and others"
+                    "Introducing yourself: My name is.../I'm...",
+                    "Introducing others: This is.../I'd like you to meet..."
                 ]
             },
             2: {
                 title: "Lesson 2: Everyday Conversations",
-                theory: "This lesson focuses on common everyday conversations you might encounter in English-speaking environments. You'll learn phrases for shopping, ordering food, asking for directions, and making small talk.",
+                theory: "This lesson focuses on common everyday conversations you might encounter in English-speaking environments. You'll learn essential phrases for shopping, ordering food, asking for directions, and making small talk. Mastering these conversational patterns will help you navigate daily life in English with confidence.",
                 objectives: [
-                    "Master common conversational phrases",
-                    "Practice asking for information and assistance",
-                    "Develop confidence in everyday interactions"
+                    "Master common conversational phrases for daily situations",
+                    "Practice asking for information and assistance politely",
+                    "Develop confidence in everyday interactions",
+                    "Learn to understand and respond to common questions"
                 ],
                 topics: [
-                    "Asking for directions",
-                    "Ordering food and drinks",
-                    "Shopping vocabulary and phrases",
-                    "Making small talk about weather and hobbies"
+                    "Asking for directions: Excuse me, where is...?/How do I get to...?",
+                    "Ordering food and drinks: I'd like.../Could I have...?",
+                    "Shopping vocabulary and phrases: How much does this cost?",
+                    "Making small talk about weather, hobbies, and current events",
+                    "Expressing needs and preferences in various situations"
                 ]
             },
             3: {
                 title: "Lesson 3: Present Simple Tense",
-                theory: "The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements. It is one of the most common tenses in English and essential for basic communication.",
+                theory: "The Present Simple tense is used to describe habits, unchanging situations, general truths, and fixed arrangements. It is one of the most common tenses in English and essential for basic communication. This lesson will help you understand when and how to use this fundamental tense correctly.",
                 objectives: [
-                    "Understand when to use Present Simple",
+                    "Understand when to use the Present Simple tense",
                     "Learn the structure of affirmative, negative and interrogative forms",
-                    "Practice using third person singular correctly"
+                    "Practice using third person singular correctly (he/she/it + s)",
+                    "Master adverbs of frequency with Present Simple"
                 ],
                 topics: [
-                    "Forming Present Simple statements",
-                    "Creating questions and negatives",
-                    "Third person singular rules",
-                    "Adverbs of frequency with Present Simple"
+                    "Forming Present Simple statements: I work, You study, He plays",
+                    "Creating questions and negatives: Do you work?/I don't work",
+                    "Third person singular rules: adds -s, -es, or -ies",
+                    "Adverbs of frequency: always, usually, often, sometimes, never",
+                    "Using Present Simple for schedules and timetables"
+                ]
+            },
+            4: {
+                title: "Lesson 4: Past Simple Tense",
+                theory: "The Past Simple tense is used to talk about completed actions or events in the past. It's essential for storytelling, describing past experiences, and discussing historical events. This lesson will help you master regular and irregular past forms to talk about the past with confidence.",
+                objectives: [
+                    "Learn when to use the Past Simple tense",
+                    "Master regular and irregular verb forms in the past",
+                    "Practice forming questions and negatives in the past",
+                    "Develop ability to tell stories and describe past events"
+                ],
+                topics: [
+                    "Regular past simple verbs: worked, studied, played",
+                    "Common irregular verbs: went, saw, ate, came, did",
+                    "Forming questions: Did you go...?/What did you do?",
+                    "Forming negatives: I didn't go/I didn't see",
+                    "Time expressions: yesterday, last week, two years ago"
                 ]
             }
             // Más lecciones pueden añadirse aquí
@@ -469,19 +524,26 @@
         
         setTimeout(typeWriter, 1000);
 
-        // Función para cargar la lección seleccionada
+        // Función para mostrar el campo de entrada de lección
+        function showLessonInput() {
+            document.getElementById('lessonInputContainer').style.display = 'block';
+            document.getElementById('lessonInput').focus();
+            document.getElementById('lessonInputContainer').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Función para cargar la lección
         function loadLesson() {
-            const lessonSelect = document.getElementById('lessonSelect');
-            const lessonId = lessonSelect.value;
+            const lessonInput = document.getElementById('lessonInput');
+            const lessonId = parseInt(lessonInput.value);
             
-            if (!lessonId) {
-                alert('Please select a lesson first.');
+            if (!lessonId || lessonId < 1 || lessonId > 12) {
+                alert('Please enter a valid lesson number between 1 and 12.');
                 return;
             }
             
             const lesson = lessonData[lessonId];
             if (!lesson) {
-                alert('Lesson content not available yet. Please select another lesson.');
+                alert('Lesson content not available yet. Please try another lesson.');
                 return;
             }
             
@@ -507,17 +569,20 @@
                 topicsList.appendChild(li);
             });
             
-            // Mostrar el contenido de la lección
+            // Ocultar entrada y mostrar contenido
+            document.getElementById('lessonInputContainer').style.display = 'none';
             document.getElementById('lessonContent').style.display = 'block';
             
             // Desplazar hacia la lección
             document.getElementById('lessonContent').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Función para ocultar la lección y volver a la selección
-        function hideLesson() {
+        // Función para volver al campo de entrada
+        function backToInput() {
             document.getElementById('lessonContent').style.display = 'none';
-            document.getElementById('lessonSelect').value = '';
+            document.getElementById('lessonInputContainer').style.display = 'block';
+            document.getElementById('lessonInput').value = '';
+            document.getElementById('lessonInputContainer').scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>
