@@ -678,21 +678,51 @@ function cleanDisplay(s){
 
 function pickEnglishVoice(){
   const voices = window.speechSynthesis.getVoices() || [];
-  const en = voices.find(v => /^en(-|_)/i.test(v.lang)) || voices[0];
-  return en || null;
+  
+  // Priorizar voces nativas en inglés
+  const enVoices = voices.filter(v => /^en(-|_)/i.test(v.lang));
+  
+  // Buscar voces específicas de alta calidad
+  const preferredVoices = enVoices.filter(v => 
+    v.name.includes('Google') || 
+    v.name.includes('Samantha') || 
+    v.name.includes('Daniel') ||
+    v.name.includes('Karen') ||
+    v.name.includes('Microsoft') ||
+    v.name.includes('Alex') ||
+    v.name.includes('Moira')
+  );
+  
+  // Devolver la primera voz preferida o cualquier voz en inglés
+  return preferredVoices[0] || enVoices[0] || voices[0];
 }
 
 function speak(text){
   try{
     const t = sanitizeSpeak(String(text||''));
     if(!t) return;
+    
     const u = new SpeechSynthesisUtterance(t);
     const v = pickEnglishVoice();
-    if(v) u.voice = v;
-    u.rate = 0.9; // Velocidad ligeramente reducida para mejor comprensión
+    
+    if(v) {
+      u.voice = v;
+      u.lang = v.lang || 'en-US';
+    } else {
+      u.lang = 'en-US';
+    }
+    
+    // Configuración optimizada para claridad en inglés
+    u.rate = 0.95;     // Velocidad ligeramente más lenta para mejor comprensión
+    u.pitch = 1.0;     // Tono normal
+    u.volume = 1.0;    // Volumen máximo
+    
+    // Detener cualquier habla previa
     window.speechSynthesis.cancel();
+    
+    // Hablar el texto
     window.speechSynthesis.speak(u);
-  }catch(e){
+  } catch(e){
     console.error("Error with speech synthesis:", e);
   }
 }
@@ -707,7 +737,11 @@ function stopSpeech() {
 
 // Inicializar voces
 if (window.speechSynthesis) {
-  window.speechSynthesis.addEventListener('voiceschanged', () => {});
+  window.speechSynthesis.addEventListener('voiceschanged', () => {
+    // Precargar voces para mejor rendimiento
+    const voices = window.speechSynthesis.getVoices();
+    console.log('Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+  });
 }
 
 /* ===== STT (inglés) ===== */
@@ -793,8 +827,8 @@ function parseLessonInput(input) {
   
   // Verificar si es un número directo
   if (/^\d+$/.test(cleanInput)) {
-    const num = parseInt(cleanInput, 10);
-    return num >= 1 && num <= 270 ? num : null;
+  const num = parseInt(cleanInput, 10);
+  return num >= 1 && num <= 270 ? num : null;
   }
   
   // Verificar si es "lesson X" o "lección X"
