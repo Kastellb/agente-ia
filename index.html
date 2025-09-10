@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v2.6</title>
+<title>St. Mary’s College — English Leveler v2.7</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
 *{box-sizing:border-box}
@@ -39,6 +39,22 @@ select,button{font:600 14px/1 system-ui}
   padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center;
 }
 
+/* Voice settings panel */
+.voice-settings {
+  background:#f1f5f9; border-radius:10px; padding:12px;
+  margin-top:8px; display:none; flex-wrap:wrap; gap:12px;
+}
+.voice-settings.visible { display:flex; }
+.voice-control {
+  display:flex; flex-direction:column; gap:6px; min-width:180px;
+}
+.voice-control label {
+  font-size:12px; font-weight:600; color:#334155;
+}
+.voice-control select, .voice-control input {
+  padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1;
+}
+
 /* Chat area */
 #chat{
   background:#fff; border-radius:16px; padding:12px 12px 4px;
@@ -46,10 +62,22 @@ select,button{font:600 14px/1 system-ui}
 }
 .msg{
   max-width:min(720px,92%); padding:10px 12px; border-radius:12px;
-  margin:10px 0; line-height:1.45; white-space:pre-wrap
+  margin:10px 0; line-height:1.45; white-space:pre-wrap;
+  transition: background-color 0.2s ease;
 }
 .msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
 .msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+.msg.playing { box-shadow: 0 0 0 2px #f59e0b; }
+
+/* Message controls */
+.msg-controls {
+  display:flex; gap:6px; margin-top:6px;
+}
+.msg-control {
+  background:rgba(255,255,255,0.2); border:none; border-radius:6px;
+  padding:4px 8px; font-size:12px; color:#fff; cursor:pointer;
+}
+.msg-control:hover { background:rgba(255,255,255,0.3); }
 
 /* Inline buttons inside chat */
 .inline-btns{ display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 2px }
@@ -72,22 +100,44 @@ select,button{font:600 14px/1 system-ui}
   display:flex; gap:10px; flex-wrap:wrap;
 }
 .btn{
-  border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer
+  border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer;
+  display:flex; align-items:center; gap:6px;
 }
-#send{background:#22c55e} #mic{background:#0ea5e9} #stop{background:#ef4444}
+#send{background:#22c55e} 
+#mic{background:#0ea5e9} 
+#stop{background:#ef4444}
+#voiceSettings{background:#8b5cf6}
+
+/* Voice status indicator */
+.voice-status {
+  display:flex; align-items:center; gap:6px; font-size:13px; color:#64748b;
+}
+.voice-status .indicator {
+  width:12px; height:12px; border-radius:50%; background:#ddd;
+}
+.voice-status .speaking .indicator {
+  background:#22c55e; animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
 
 /* Mobile tweaks */
 @media (max-width:640px){
   h1{font-size:14px}
   .msg{max-width:96%}
   #lesson{min-width:unset}
+  .voice-settings { flex-direction: column; }
+  .voice-control { width: 100%; }
 }
 </style>
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v2.6</h1>
-  <span class="badge">Voice + Text • EN only • JSON-driven (1–13)</span>
+  <h1>St. Mary’s College — English Leveler v2.7</h1>
+  <span class="badge">Enhanced Voice + Text • EN only • JSON-driven (1–13)</span>
 </header>
 
 <main>
@@ -96,7 +146,31 @@ select,button{font:600 14px/1 system-ui}
     <div class="toolbar">
       <span class="label">Select lesson:</span>
       <select id="lesson" aria-label="Select lesson"></select>
+      <div class="voice-status">
+        <span class="indicator"></span>
+        <span id="voiceStatusText">Voice: Ready</span>
+      </div>
       <span id="status" class="status">Please select a lesson to begin.</span>
+    </div>
+
+    <div class="voice-settings" id="voiceSettingsPanel">
+      <div class="voice-control">
+        <label for="voiceSelect">Voice:</label>
+        <select id="voiceSelect"></select>
+      </div>
+      <div class="voice-control">
+        <label for="rateSelect">Speed:</label>
+        <input type="range" id="rateSelect" min="0.5" max="2" step="0.1" value="1">
+        <span id="rateValue">1.0</span>
+      </div>
+      <div class="voice-control">
+        <label for="pitchSelect">Pitch:</label>
+        <input type="range" id="pitchSelect" min="0.5" max="2" step="0.1" value="1">
+        <span id="pitchValue">1.0</span>
+      </div>
+      <div class="voice-control">
+        <button id="testVoice" class="btn" style="background:#6366f1; margin-top:18px">Test Voice</button>
+      </div>
     </div>
 
     <div id="chat" aria-live="polite"></div>
@@ -105,8 +179,9 @@ select,button{font:600 14px/1 system-ui}
       <input id="text" placeholder="Type your message and press Enter…" autocomplete="off">
       <div class="btnrow">
         <button id="send" class="btn">Send</button>
-        <button id="mic"  class="btn">Speak</button>
+        <button id="mic" class="btn">Speak</button>
         <button id="stop" class="btn">Stop</button>
+        <button id="voiceSettings" class="btn">Voice Settings</button>
       </div>
     </div>
 
@@ -127,8 +202,18 @@ const input  = document.getElementById('text');
 const send   = document.getElementById('send');
 const mic    = document.getElementById('mic');
 const stopBtn= document.getElementById('stop');
+const voiceSettingsBtn = document.getElementById('voiceSettings');
+const voiceSettingsPanel = document.getElementById('voiceSettingsPanel');
 const lessonSel = document.getElementById('lesson');
 const statusEl  = document.getElementById('status');
+const voiceSelect = document.getElementById('voiceSelect');
+const rateSelect = document.getElementById('rateSelect');
+const pitchSelect = document.getElementById('pitchSelect');
+const rateValue = document.getElementById('rateValue');
+const pitchValue = document.getElementById('pitchValue');
+const testVoiceBtn = document.getElementById('testVoice');
+const voiceStatusText = document.getElementById('voiceStatusText');
+const voiceStatusIndicator = document.querySelector('.voice-status .indicator');
 
 let currentLesson = null;
 let lessonData = null;       // JSON lección actual
@@ -136,16 +221,39 @@ let prevLessonData = null;   // JSON lección anterior
 let quizState = null;        // {active, items, i, correct, total, forLesson}
 let lockedUntilPass = null;  // número de lección bloqueada hasta pasar quiz
 
+// Estado de voz
+let currentUtterance = null;
+let isSpeaking = false;
+let voices = [];
+let voiceSettings = {
+  voice: null,
+  rate: 1,
+  pitch: 1
+};
+
 /* ===== Utilidades visuales y TTS ===== */
 function addMsg(text, who="bot"){
   const clean = cleanDisplay(String(text||''));
   const d=document.createElement('div');
   d.className = `msg ${who}`;
   d.textContent = clean;
+  
+  // Añadir controles de voz para mensajes del bot
+  if (who === "bot") {
+    const controls = document.createElement('div');
+    controls.className = 'msg-controls';
+    controls.innerHTML = `
+      <button class="msg-control" onclick="speakMessage(this.parentNode.parentNode)">Speak</button>
+      <button class="msg-control" onclick="stopSpeech()">Stop</button>
+    `;
+    d.appendChild(controls);
+  }
+  
   chat.appendChild(d);
   chat.scrollTop = chat.scrollHeight;
   return d;
 }
+
 function addInlineButtons(buttons){
   const wrap = document.createElement('div');
   wrap.className = 'inline-btns';
@@ -160,6 +268,7 @@ function addInlineButtons(buttons){
   chat.scrollTop = chat.scrollHeight;
   return wrap;
 }
+
 function sanitizeSpeak(s){
   return (s||"")
     .replace(/https?:\/\/\S+/g,'')
@@ -172,29 +281,155 @@ function sanitizeSpeak(s){
     .replace(/[\u{1F000}-\u{1FAFF}]/gu,' ')
     .replace(/\s{2,}/g,' ').trim();
 }
+
 function cleanDisplay(s){
   return (s||"")
     .replace(/[*_~`#>|]/g,'')
     .replace(/\s{2,}/g,' ')
     .trim();
 }
-function pickEnglishVoice(){
-  const voices = window.speechSynthesis.getVoices() || [];
-  const en = voices.find(v=>/^en(-|_)/i.test(v.lang)) || voices[0];
-  return en || null;
+
+// Sistema de voz mejorado
+function initVoices() {
+  // Cargar configuraciones guardadas
+  const savedSettings = localStorage.getItem('smc.voiceSettings');
+  if (savedSettings) {
+    voiceSettings = {...voiceSettings, ...JSON.parse(savedSettings)};
+  }
+  
+  // Actualizar controles con valores guardados
+  rateSelect.value = voiceSettings.rate;
+  pitchSelect.value = voiceSettings.pitch;
+  rateValue.textContent = voiceSettings.rate.toFixed(1);
+  pitchValue.textContent = voiceSettings.pitch.toFixed(1);
+  
+  // Cargar voces disponibles
+  voices = window.speechSynthesis.getVoices();
+  
+  // Limpiar y poblar selector de voces
+  voiceSelect.innerHTML = '';
+  voices.forEach((voice, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = `${voice.name} (${voice.lang})`;
+    voiceSelect.appendChild(option);
+    
+    // Seleccionar voz guardada o primera voz en inglés por defecto
+    if (voiceSettings.voice === voice.name || 
+        (!voiceSettings.voice && /^en(-|_)/i.test(voice.lang) && voiceSelect.selectedIndex === -1)) {
+      voiceSelect.value = index;
+      voiceSettings.voice = voice.name;
+    }
+  });
+  
+  // Si no hay voces, intentar cargarlas de nuevo cuando estén disponibles
+  if (voices.length === 0) {
+    window.speechSynthesis.onvoiceschanged = initVoices;
+  }
 }
-function speak(text){
-  try{
+
+function speak(text, elementToHighlight = null) {
+  try {
+    stopSpeech();
+    
     const t = sanitizeSpeak(String(text||''));
     if(!t) return;
-    const u = new SpeechSynthesisUtterance(t);
-    const v = pickEnglishVoice();
-    if(v) u.voice = v;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }catch(e){}
+    
+    currentUtterance = new SpeechSynthesisUtterance(t);
+    
+    // Aplicar configuraciones de voz
+    if (voiceSelect.value) {
+      currentUtterance.voice = voices[voiceSelect.value];
+    }
+    currentUtterance.rate = parseFloat(rateSelect.value);
+    currentUtterance.pitch = parseFloat(pitchSelect.value);
+    
+    // Resaltar elemento mientras se habla
+    if (elementToHighlight) {
+      elementToHighlight.classList.add('playing');
+    }
+    
+    // Eventos para gestionar el estado
+    currentUtterance.onstart = () => {
+      isSpeaking = true;
+      updateVoiceStatus('Speaking...', true);
+      if (elementToHighlight) {
+        elementToHighlight.classList.add('playing');
+      }
+    };
+    
+    currentUtterance.onend = () => {
+      isSpeaking = false;
+      updateVoiceStatus('Voice: Ready', false);
+      if (elementToHighlight) {
+        elementToHighlight.classList.remove('playing');
+      }
+      currentUtterance = null;
+    };
+    
+    currentUtterance.onerror = (event) => {
+      isSpeaking = false;
+      updateVoiceStatus('Voice Error: ' + event.error, false);
+      if (elementToHighlight) {
+        elementToHighlight.classList.remove('playing');
+      }
+      console.error('SpeechSynthesis error:', event.error);
+      currentUtterance = null;
+    };
+    
+    window.speechSynthesis.speak(currentUtterance);
+  } catch(e) {
+    console.error('Speech error:', e);
+    updateVoiceStatus('Voice Error', false);
+  }
 }
-window.speechSynthesis?.addEventListener('voiceschanged', ()=>{});
+
+function speakMessage(element) {
+  const text = element.textContent || element.innerText;
+  speak(text, element);
+}
+
+function stopSpeech() {
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    isSpeaking = false;
+    updateVoiceStatus('Voice: Stopped', false);
+    
+    // Quitar resaltado de todos los mensajes
+    document.querySelectorAll('.msg.playing').forEach(msg => {
+      msg.classList.remove('playing');
+    });
+  }
+}
+
+function updateVoiceStatus(text, speaking) {
+  voiceStatusText.textContent = text;
+  if (speaking) {
+    voiceStatusIndicator.classList.add('speaking');
+  } else {
+    voiceStatusIndicator.classList.remove('speaking');
+  }
+}
+
+function toggleVoiceSettings() {
+  voiceSettingsPanel.classList.toggle('visible');
+}
+
+function saveVoiceSettings() {
+  voiceSettings.voice = voices[voiceSelect.value]?.name || null;
+  voiceSettings.rate = parseFloat(rateSelect.value);
+  voiceSettings.pitch = parseFloat(pitchSelect.value);
+  localStorage.setItem('smc.voiceSettings', JSON.stringify(voiceSettings));
+}
+
+function testVoiceSettings() {
+  speak("This is a test of the current voice settings. You can adjust the speed and pitch to your preference.");
+}
+
+// Inicializar sistema de voz cuando las voces estén disponibles
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = initVoices;
+}
 
 /* ===== STT (inglés) ===== */
 let rec=null,isRec=false;
@@ -213,7 +448,11 @@ function sttStart(){
   rec.onend  = ()=>{ isRec=false; };
   rec.start();
 }
-function stopAll(){ try{speechSynthesis.cancel()}catch(e){} try{rec&&rec.abort()}catch(e){} }
+function stopAll(){ 
+  stopSpeech();
+  try{rec&&rec.abort()}catch(e){}
+  isRec = false;
+}
 
 /* ===== Carga de JSON ===== */
 async function fetchJSON(url){
@@ -248,12 +487,16 @@ async function loadLesson(n){
   if(n === 1){
     statusEl.textContent = `${titleTxt}. You can start now.`;
     if(lessonData){
-      addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot");
+      const theoryMsg = addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot");
+      speak(`Theory: ${lessonData.title}. ${lessonData.theory||""}`, theoryMsg);
+      
       if(Array.isArray(lessonData.objectives)&&lessonData.objectives.length){
-        addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+        const objectivesMsg = addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+        speak("Objectives: " + lessonData.objectives.join('. '), objectivesMsg);
       }
       if(Array.isArray(lessonData.topics)&&lessonData.topics.length){
-        addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+        const topicsMsg = addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+        speak("Topics: " + lessonData.topics.join('. '), topicsMsg);
       }
     }else{
       addMsg("Lesson 1 ready. Ask what you would like to reinforce.", "bot");
@@ -310,8 +553,8 @@ function startQuiz(forLesson, items){
 }
 function askNextQuestion(){
   const q = quizState.items[quizState.i];
-  addMsg(`Q${quizState.i+1}/${quizState.total}: ${q.question}`, "bot");
-  speak(`Question ${quizState.i+1}. ${q.question}`);
+  const questionMsg = addMsg(`Q${quizState.i+1}/${quizState.total}: ${q.question}`, "bot");
+  speak(`Question ${quizState.i+1}. ${q.question}`, questionMsg);
 }
 function handleQuizAnswer(userText){
   const q = quizState.items[quizState.i];
@@ -338,12 +581,16 @@ function finishQuiz(){
     lockedUntilPass=null;
     // Mostrar Lesson actual (AHORA sí)
     if(lessonData){
-      addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot");
+      const theoryMsg = addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot");
+      speak(`Theory: ${lessonData.title}. ${lessonData.theory||""}`, theoryMsg);
+      
       if(Array.isArray(lessonData.objectives)&&lessonData.objectives.length){
-        addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+        const objectivesMsg = addMsg("Objectives:\n" + lessonData.objectives.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+        speak("Objectives: " + lessonData.objectives.join('. '), objectivesMsg);
       }
       if(Array.isArray(lessonData.topics)&&lessonData.topics.length){
-        addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+        const topicsMsg = addMsg("Topics:\n" + lessonData.topics.map((x,i)=>`${i+1}. ${x}`).join('\n'), "bot");
+        speak("Topics: " + lessonData.topics.join('. '), topicsMsg);
       }
     }else{
       addMsg(`Lesson ${quizState.forLesson} unlocked. Ask what you want to reinforce.`, "bot");
@@ -420,7 +667,8 @@ async function sendMsg(){
 
   try{
     const reply = await askInstructor(t);
-    addMsg(reply,"bot"); speak(reply);
+    const replyMsg = addMsg(reply,"bot"); 
+    speak(reply, replyMsg);
   }catch(e){
     addMsg("Connection error with the server.", "bot");
   }
@@ -433,10 +681,32 @@ input.addEventListener('keydown', e=>{
 });
 mic.addEventListener('click', sttStart);
 stopBtn.addEventListener('click', stopAll);
+voiceSettingsBtn.addEventListener('click', toggleVoiceSettings);
 lessonSel.addEventListener('change', ()=>{
   const v = lessonSel.value;
   if(!v){ statusEl.textContent="Please select a lesson to begin."; return; }
   loadLesson(+v);
+});
+
+// Eventos para controles de voz
+voiceSelect.addEventListener('change', saveVoiceSettings);
+rateSelect.addEventListener('input', function() {
+  rateValue.textContent = this.value;
+  saveVoiceSettings();
+});
+pitchSelect.addEventListener('input', function() {
+  pitchValue.textContent = this.value;
+  saveVoiceSettings();
+});
+testVoiceBtn.addEventListener('click', testVoiceSettings);
+
+// Pausar voz cuando la página no es visible
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden && isSpeaking) {
+    window.speechSynthesis.pause();
+  } else if (!document.hidden && window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+  }
 });
 
 /* ===== Construir combo (placeholder + 1–270; títulos de JSON 1–13) ===== */
@@ -468,6 +738,9 @@ lessonSel.addEventListener('change', ()=>{
   lessonSel.value = "";
   statusEl.textContent = "Please select a lesson to begin.";
   addMsg("Welcome! Select your lesson above. If you choose Lesson 2 or higher, you must pass a short review from the previous lesson (≥ 90%) to unlock it.", "bot");
+  
+  // Inicializar sistema de voz
+  initVoices();
 })();
 </script>
 </body>
