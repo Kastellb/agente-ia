@@ -275,6 +275,7 @@
         #send { background: #22c55e; } 
         #mic { background: #0ea5e9; } 
         #stop { background: #ef4444; }
+        #voiceSettings { background: #8b5cf6; }
 
         .quiz-container {
             background: #f8fafc;
@@ -337,6 +338,33 @@
 
         .hidden {
             display: none;
+        }
+
+        .voice-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 10px;
+        }
+
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+
+        .speaking .indicator {
+            background: #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
 
         footer {
@@ -433,6 +461,10 @@
                             Stop
                         </button>
                     </div>
+                    <div class="voice-status">
+                        <div class="indicator"></div>
+                        <span id="voiceStatusText">Ready</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -457,12 +489,15 @@
         const statusEl = document.getElementById('status');
         const voiceSpeed = document.getElementById('voiceSpeed');
         const speedValue = document.getElementById('speedValue');
+        const voiceStatusText = document.getElementById('voiceStatusText');
+        const voiceIndicator = document.querySelector('.indicator');
         
         // Estado de la aplicación
         let currentLesson = null;
         let quizState = null;
         let isSpeaking = false;
         let speechRate = parseFloat(voiceSpeed.value);
+        let currentUtterance = null;
         
         // Datos de ejemplo para lecciones y preguntas
         const lessonData = {
@@ -603,7 +638,7 @@
         // Función para sintetizar voz
         function speak(text, rate = speechRate) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
+                stopSpeech();
                 
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.rate = rate;
@@ -620,12 +655,24 @@
                 
                 utterance.onstart = () => {
                     isSpeaking = true;
+                    voiceStatusText.textContent = "Speaking...";
+                    voiceIndicator.parentElement.classList.add('speaking');
                 };
                 
                 utterance.onend = () => {
                     isSpeaking = false;
+                    voiceStatusText.textContent = "Ready";
+                    voiceIndicator.parentElement.classList.remove('speaking');
                 };
                 
+                utterance.onerror = (event) => {
+                    isSpeaking = false;
+                    voiceStatusText.textContent = "Error: " + event.error;
+                    voiceIndicator.parentElement.classList.remove('speaking');
+                    console.error('Speech synthesis error:', event.error);
+                };
+                
+                currentUtterance = utterance;
                 window.speechSynthesis.speak(utterance);
             }
         }
@@ -640,6 +687,8 @@
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 isSpeaking = false;
+                voiceStatusText.textContent = "Ready";
+                voiceIndicator.parentElement.classList.remove('speaking');
             }
         }
         
@@ -656,6 +705,7 @@
                 statusEl.textContent = `Before starting Lesson ${lessonNum}, you need to pass a review of Lesson ${previousLesson}.`;
                 
                 addMsg(`Before we begin Lesson ${lessonNum}, you need to complete a short review of Lesson ${previousLesson}. You must score at least ${PASS_MARK}% to proceed.`, "bot");
+                speak(`Before we begin Lesson ${lessonNum}, you need to complete a short review of the previous lesson. You must score at least ${PASS_MARK} percent to proceed.`);
                 
                 // Mostrar botones para comenzar evaluación
                 const buttonsDiv = document.createElement('div');
@@ -671,6 +721,7 @@
                 cancelBtn.textContent = 'Not Now';
                 cancelBtn.onclick = () => {
                     addMsg(`No problem. When you're ready, select Lesson ${lessonNum} again to start the review.`, "bot");
+                    speak("No problem. You can try again whenever you're ready.");
                 };
                 
                 buttonsDiv.appendChild(startBtn);
@@ -714,6 +765,7 @@
             
             if (quizState.questions.length === 0) {
                 addMsg("No review questions available for this lesson. You can proceed to the next lesson.", "bot");
+                speak("No review questions are available for this lesson. You can proceed to the next lesson.");
                 loadLesson(currentLesson);
                 return;
             }
@@ -725,6 +777,7 @@
             
             chat.innerHTML = '';
             addMsg(`Review of Lesson ${lessonNum} - Answer the following questions:`, "bot");
+            speak(`Review of Lesson ${lessonNum}. Answer the following questions.`);
             displayQuestion();
         }
         
@@ -859,10 +912,23 @@
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
                 input.value = transcript;
+                voiceStatusText.textContent = "Ready";
+                micBtn.querySelector('svg').style.fill = 'currentColor';
+            };
+            
+            recognition.onstart = function() {
+                voiceStatusText.textContent = "Listening...";
+                micBtn.querySelector('svg').style.fill = '#ef4444';
             };
             
             recognition.onend = function() {
-                micBtn.textContent = 'Speak';
+                voiceStatusText.textContent = "Ready";
+                micBtn.querySelector('svg').style.fill = 'currentColor';
+            };
+            
+            recognition.onerror = function(event) {
+                voiceStatusText.textContent = "Error: " + event.error;
+                micBtn.querySelector('svg').style.fill = 'currentColor';
             };
         } else {
             micBtn.disabled = true;
@@ -879,9 +945,13 @@
         });
         
         micBtn.addEventListener('click', () => {
-            if (recognition) {
-                recognition.start();
-                micBtn.textContent = 'Listening...';
+            if (recognition && !isSpeaking) {
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('Speech recognition error:', error);
+                    voiceStatusText.textContent = "Error: " + error.message;
+                }
             }
         });
         
