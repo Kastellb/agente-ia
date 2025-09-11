@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.0</title>
+<title>St. Mary’s College — English Leveler v4.1</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
 *{box-sizing:border-box}
@@ -15,9 +15,11 @@ h1{margin:0;font-size:16px;font-weight:800}
 main{flex:1;display:flex;justify-content:center}
 .wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
 #chat{ background:#fff; border-radius:16px; padding:12px 12px 4px; min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12) }
-.msg{ max-width:min(720px,92%); padding:10px 12px; border-radius:12px; margin:10px 0; line-height:1.45; white-space:pre-wrap }
+.msg{ max-width:min(720px,92%); padding:10px 12px; border-radius:12px; margin:10px 0; line-height:1.45; white-space:pre-wrap; position:relative; }
 .msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
 .msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+.msg .controls{ position:absolute; top:4px; right:6px; display:flex; gap:4px; }
+.msg .controls button{ background:rgba(255,255,255,0.3); border:0; border-radius:6px; font-size:12px; cursor:pointer; color:#fff; padding:2px 6px; }
 .toolbar,.composer{ background:#fff; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(2,6,23,.08) }
 #lesson{ padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; min-width:180px; }
 .status{ font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130; padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center; }
@@ -29,7 +31,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.0</h1>
+  <h1>St. Mary’s College — English Leveler v4.1</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
 </header>
 
@@ -58,29 +60,40 @@ main{flex:1;display:flex;justify-content:center}
 const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
 const JSON_BASE  = "https://leccion.datafast.pw/lessons/";
 const JSON_COUNT = 270;
-const PASS_MARK  = 90;
-const MAX_QUEST  = 10;
 
 /* ===== Estado ===== */
 const chat   = document.getElementById('chat');
 const input  = document.getElementById('text');
 const send   = document.getElementById('send');
 const stopBtn= document.getElementById('stop');
+const micBtn = document.getElementById('mic');
 const lessonSel = document.getElementById('lesson');
 const statusEl  = document.getElementById('status');
 const voiceSelect = document.getElementById('voiceSelect');
 let currentLesson = null;
 let lessonData = null;
-let lockedUntilPass = null;
 let selectedVoice = null;
-let quizState = null;
+let rec = null, isRec = false;
 
 /* ===== UI helpers ===== */
-function addMsg(text, who="bot"){
-  const clean = (String(text||'')).trim();
+function addMsg(text, who="bot", withControls=false){
+  const clean = (String(text||''))
+    .replace(/[*_~`#>|]/g,'')
+    .replace(/\s{2,}/g,' ')
+    .trim();
   const d=document.createElement('div');
   d.className = `msg ${who}`;
   d.textContent = clean;
+  if(withControls){
+    const ctr=document.createElement('div');
+    ctr.className="controls";
+    const playBtn=document.createElement('button'); playBtn.textContent="▶";
+    playBtn.onclick=()=>speak(clean);
+    const stopBtn=document.createElement('button'); stopBtn.textContent="⏹";
+    stopBtn.onclick=()=>stopAll();
+    ctr.appendChild(playBtn); ctr.appendChild(stopBtn);
+    d.appendChild(ctr);
+  }
   chat.appendChild(d);
   chat.scrollTop = chat.scrollHeight;
   return d;
@@ -104,14 +117,9 @@ voiceSelect.addEventListener("change", ()=>{
   const voices = window.speechSynthesis.getVoices();
   selectedVoice = voices.find(v=>v.name===voiceSelect.value);
 });
-function cleanForSpeech(s){
-  return (s||"").replace(/[*_~`#>|]/g,' ').replace(/\s{2,}/g,' ').trim();
-}
 function speak(text){
   try{
-    const t = cleanForSpeech(text);
-    if(!t) return;
-    const u = new SpeechSynthesisUtterance(t);
+    const u = new SpeechSynthesisUtterance(text);
     if(selectedVoice) u.voice = selectedVoice;
     u.rate=1; u.pitch=1;
     window.speechSynthesis.cancel();
@@ -121,134 +129,61 @@ function speak(text){
 function stopAll(){ try{speechSynthesis.cancel()}catch(e){} }
 window.speechSynthesis.onvoiceschanged = loadVoices;
 
+/* ===== STT ===== */
+function sttStart(){
+  if(isRec) return;
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ addMsg("Voice recognition not supported.","bot"); return; }
+  rec=new SR(); rec.lang='en-US'; rec.continuous=false; rec.interimResults=false;
+  rec.onresult=(e)=>{ const t=e.results?.[0]?.[0]?.transcript||""; if(t){ input.value=t; sendMsg(); } };
+  rec.onstart=()=>{ isRec=true; addMsg("🎤 Listening...","bot"); };
+  rec.onerror=()=>{ isRec=false; };
+  rec.onend=()=>{ isRec=false; };
+  rec.start();
+}
+
 /* ===== JSON Loader ===== */
-async function fetchJSON(url){
-  const r = await fetch(url, { cache:'no-store' });
-  if(!r.ok) throw new Error(r.status+" "+r.statusText);
-  return await r.json();
-}
-
-/* ===== Lesson control with quiz lock ===== */
+async function fetchJSON(url){ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status+" "+r.statusText); return await r.json(); }
 async function loadLesson(n){
-  if(currentLesson){ 
-    addMsg(`⚠️ Lesson change not allowed. Please exit and restart the session.`, "bot");
-    lessonSel.value="";
-    return;
-  }
-  currentLesson = n;
-  lessonData = null;
-  addMsg(`Lesson ${n} selected. Preparing materials…`, "bot");
-
-  try{ if(n <= JSON_COUNT){ lessonData = await fetchJSON(`${JSON_BASE}lesson${n}.json`); } } catch(e){}
-
-  // Lock if lesson > 1
-  if(n > 1){
-    lockedUntilPass = n;
-    statusEl.textContent = `Lesson ${n} is locked until you pass a review.`;
-    addMsg(`Before Lesson ${n}, you must pass a review from Lessons ${n-1}, ${n-2}, ${n-3}. Minimum ${PASS_MARK}%.`, "bot");
-    startQuiz(n);
-    return;
-  }
-
-  statusEl.textContent = `Lesson ${n}. You can start now.`;
-  if(lessonData){ addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot"); }
+  currentLesson=n; lessonData=null;
+  addMsg(`Lesson ${n} selected. Preparing materials…`,"bot");
+  try{ if(n<=JSON_COUNT){ lessonData=await fetchJSON(`${JSON_BASE}lesson${n}.json`);} }catch(e){}
+  if(lessonData){ addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true); }
 }
 
-/* ===== Quiz ===== */
-function normalize(s){ return String(s||'').toLowerCase().trim(); }
-function checkAnswer(user, expected){
-  const u=normalize(user), e=normalize(expected);
-  return u===e || u.includes(e);
-}
-async function startQuiz(forLesson){
-  const items=[];
-  for(let k=1;k<=3;k++){
-    const n=forLesson-k;
-    if(n>0){
-      try{
-        const d=await fetchJSON(`${JSON_BASE}lesson${n}.json`);
-        if(Array.isArray(d.quizPrevious)){
-          const shuffled=[...d.quizPrevious].sort(()=>0.5-Math.random());
-          items.push(...shuffled.slice(0,3));
-        }
-      }catch(e){}
-    }
-  }
-  quizState={ active:true, items:items.sort(()=>0.5-Math.random()).slice(0,MAX_QUEST), i:0, correct:0, total:Math.min(items.length,MAX_QUEST), forLesson };
-  addMsg(`Review started (${quizState.total} questions). Answer in English.`, "bot");
-  askNextQuestion();
-}
-function askNextQuestion(){
-  const q=quizState.items[quizState.i];
-  addMsg(`Q${quizState.i+1}/${quizState.total}: ${q.question}`,"bot");
-  speak(`Question ${quizState.i+1}. ${q.question}`);
-}
-function handleQuizAnswer(userText){
-  const q=quizState.items[quizState.i];
-  const ok=checkAnswer(userText,q.answer);
-  addMsg(ok?"✅ Correct.":"❌ Expected: "+q.answer,"bot");
-  if(ok) quizState.correct++;
-  quizState.i++;
-  if(quizState.i>=quizState.total){ finishQuiz(); } else { askNextQuestion(); }
-}
-function finishQuiz(){
-  const pct=Math.round((quizState.correct/quizState.total)*100);
-  addMsg(`Review finished. Score: ${quizState.correct}/${quizState.total} — ${pct}%`,"bot");
-  if(pct>=PASS_MARK){
-    addMsg(`🎉 Great! You unlocked Lesson ${quizState.forLesson}.`,"bot");
-    lockedUntilPass=null;
-    if(lessonData){ addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`, "bot"); }
-  }else{
-    addMsg(`⚠️ You need at least ${PASS_MARK}%. Restart session and try again.`,"bot");
-    lockedUntilPass=quizState.forLesson;
-  }
-  quizState=null;
-}
-
-/* ===== Prompt educativo ===== */
+/* ===== Prompt ===== */
 function buildPrompt(userText){
   const n=currentLesson;
   const title=lessonData?.title||`Lesson ${n}`;
   const theory=lessonData?.theory||"";
   const objectives=Array.isArray(lessonData?.objectives)?lessonData.objectives:[];
   const topics=Array.isArray(lessonData?.topics)?lessonData.topics:[];
-
   return `
 ROLE: You are an English instructor for St. Mary’s College.
 LANGUAGE: Reply in ENGLISH ONLY.
-TONE: Clear, motivating, professional teacher.
-TASK: Based on the lesson JSON, create a complete academic learning unit.
-Always keep answers focused on Lesson ${n} — ${title}.
-If the user asks off-topic, redirect politely back to this lesson.
-
-JSON CONTEXT:
-Title: ${title}
-Theory: ${theory}
-Objectives:
-${objectives.map((x,i)=>`${i+1}. ${x}`).join('\n')}
-Topics:
-${topics.map((x,i)=>`${i+1}. ${x}`).join('\n')}
-
-OUTPUT FORMAT (always respect this structure):
+OUTPUT FORMAT:
 1. 🎯 Learning Objective
 2. 🧩 Key Content
 3. 💬 Examples
 4. 🎭 Suggested Activities
 5. 🧪 Practice Evaluation
 
+JSON CONTEXT:
+Title: ${title}
+Theory: ${theory}
+Objectives:${objectives.join(", ")}
+Topics:${topics.join(", ")}
+
 USER REQUEST: ${userText}
-  `.trim();
+`.trim();
 }
 
 /* ===== Backend ===== */
 async function askInstructor(text){
   const prompt=buildPrompt(text);
-  const r=await fetch(WORKER_URL,{
-    method:"POST",headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ text:prompt, lang:"en-US" })
-  });
+  const r=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:prompt,lang:"en-US"})});
   if(!r.ok) throw new Error("HTTP "+r.status);
-  const data=await r.json().catch(()=>({ reply:"Connection error." }));
+  const data=await r.json().catch(()=>({reply:"Connection error."}));
   return String(data.reply||"");
 }
 
@@ -258,20 +193,19 @@ async function sendMsg(){
   if(!t) return;
   input.value="";
   addMsg(t,"user");
-  if(quizState?.active){ handleQuizAnswer(t); return; }
-  if(lockedUntilPass){ addMsg(`Lesson ${lockedUntilPass} is locked. Restart session.`,"bot"); return; }
   if(!currentLesson){ addMsg("Please select a lesson first.","bot"); return; }
-  try{ const reply=await askInstructor(t); addMsg(reply,"bot"); speak(reply); }
+  try{ const reply=await askInstructor(t); addMsg(reply,"bot",true); speak(reply); }
   catch(e){ addMsg("Connection error with the server.","bot"); }
 }
 
-/* ===== Eventos UI ===== */
+/* ===== Eventos ===== */
 send.addEventListener('click',sendMsg);
 input.addEventListener('keydown',e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}});
 stopBtn.addEventListener('click',stopAll);
+micBtn.addEventListener('click',sttStart);
 lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl.textContent="Please select a lesson to begin.";return;}loadLesson(+v);});
 
-/* ===== Combo builder ===== */
+/* ===== Combo build ===== */
 (function buildLessons(){
   const ph=document.createElement('option');ph.value="";ph.textContent="— Select a lesson —";lessonSel.appendChild(ph);
   for(let i=1;i<=JSON_COUNT;i++){const o=document.createElement('option');o.value=String(i);o.textContent=`Lesson ${i}`;lessonSel.appendChild(o);}
