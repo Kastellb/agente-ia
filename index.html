@@ -222,6 +222,21 @@
             display: none;
         }
         
+        .mobile-audio-note {
+            font-size: 12px;
+            color: var(--warning);
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            margin-top: 8px;
+            display: none;
+        }
+        
+        .audio-unlock-btn {
+            background: var(--warning) !important;
+        }
+        
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
@@ -261,6 +276,10 @@
             .btn {
                 flex: 1;
             }
+            
+            .mobile-audio-note {
+                display: block;
+            }
         }
     </style>
 </head>
@@ -278,8 +297,12 @@
                 <span id="status" class="status">Please select a lesson to begin.</span>
                 <select id="voiceSelect"></select>
                 <button id="testVoice" class="btn">Test Voice</button>
+                <button id="unlockAudio" class="btn audio-unlock-btn">Enable Audio</button>
                 <div id="permissionNote" class="permission-note">
                     Note: Voice features may require microphone permissions. Please allow if prompted.
+                </div>
+                <div id="mobileAudioNote" class="mobile-audio-note">
+                    On mobile devices, you need to enable audio first by tapping the "Enable Audio" button.
                 </div>
             </div>
             <div id="chat" aria-live="polite"></div>
@@ -309,10 +332,12 @@
         const stopBtn = document.getElementById('stop');
         const micBtn = document.getElementById('mic');
         const testBtn = document.getElementById('testVoice');
+        const unlockBtn = document.getElementById('unlockAudio');
         const lessonSel = document.getElementById('lesson');
         const statusEl = document.getElementById('status');
         const voiceSelect = document.getElementById('voiceSelect');
         const permissionNote = document.getElementById('permissionNote');
+        const mobileAudioNote = document.getElementById('mobileAudioNote');
         
         let currentLesson = null;
         let lessonData = null;
@@ -323,6 +348,8 @@
         let lockedUntilPass = null;
         let theoryShown = false;
         let ttsUnlocked = false;
+        let audioEnabled = false;
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         /* ===== Clean text ===== */
         function cleanAIText(s) {
@@ -341,7 +368,7 @@
             d.className = `msg ${who}`;
             d.innerHTML = html;
             
-            if (withControls) {
+            if (withControls && audioEnabled) {
                 const ctr = document.createElement('div');
                 ctr.className = "controls";
                 
@@ -406,6 +433,15 @@
         }
 
         function speak(text) {
+            if (!audioEnabled) {
+                if (isMobile) {
+                    addMsg("Please enable audio first by tapping the 'Enable Audio' button.", "bot");
+                } else {
+                    addMsg("Audio is not enabled. Please interact with the page first.", "bot");
+                }
+                return;
+            }
+            
             try {
                 unlockTTS();
                 let clean = cleanAIText(text);
@@ -466,6 +502,15 @@
         }
 
         function sttStart() {
+            if (!audioEnabled) {
+                if (isMobile) {
+                    addMsg("Please enable audio first by tapping the 'Enable Audio' button.", "bot");
+                } else {
+                    addMsg("Please interact with the page first to enable microphone access.", "bot");
+                }
+                return;
+            }
+            
             if (isRecognizing) {
                 recognition.stop();
                 return;
@@ -624,11 +669,28 @@ USER REQUEST: ${userText}
 
             try {
                 const reply = await askInstructor(t);
-                addMsg(reply, "bot", true);
-                speak(reply);
+                const msgElement = addMsg(reply, "bot", true);
+                
+                // Only speak if audio is enabled
+                if (audioEnabled) {
+                    speak(reply);
+                }
             } catch (e) {
                 addMsg("Connection error with the server. Please try again.", "bot");
             }
+        }
+
+        // Enable audio function
+        function enableAudio() {
+            audioEnabled = true;
+            unlockTTS();
+            addMsg("Audio enabled. You can now use voice features.", "bot");
+            unlockBtn.textContent = "Audio Enabled";
+            unlockBtn.disabled = true;
+            unlockBtn.style.opacity = "0.7";
+            
+            // Try to load voices again
+            loadVoices();
         }
 
         /* ===== Eventos ===== */
@@ -649,6 +711,14 @@ USER REQUEST: ${userText}
         });
         
         testBtn.addEventListener('click', () => {
+            if (!audioEnabled) {
+                if (isMobile) {
+                    addMsg("Please enable audio first by tapping the 'Enable Audio' button.", "bot");
+                } else {
+                    addMsg("Please interact with the page first to enable audio.", "bot");
+                }
+                return;
+            }
             speak("This is a voice test. If you hear me, the text to speech system is working properly.");
         });
         
@@ -660,10 +730,17 @@ USER REQUEST: ${userText}
             }
             loadLesson(+v);
         });
+        
+        unlockBtn.addEventListener('click', enableAudio);
 
         // Initialize voices when they are loaded
         if (window.speechSynthesis) {
             window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        // Show mobile-specific note
+        if (isMobile) {
+            mobileAudioNote.style.display = 'block';
         }
 
         /* ===== Init ===== */
@@ -695,6 +772,21 @@ USER REQUEST: ${userText}
             if (!window.speechSynthesis) {
                 addMsg("Text-to-speech is not supported in your browser.", "bot");
                 testBtn.disabled = true;
+            }
+            
+            // Enable audio automatically on desktop after user interaction
+            if (!isMobile) {
+                const enableOnInteraction = () => {
+                    if (!audioEnabled) {
+                        audioEnabled = true;
+                        unlockTTS();
+                        document.removeEventListener('click', enableOnInteraction);
+                        document.removeEventListener('keydown', enableOnInteraction);
+                    }
+                };
+                
+                document.addEventListener('click', enableOnInteraction);
+                document.addEventListener('keydown', enableOnInteraction);
             }
         }
 
