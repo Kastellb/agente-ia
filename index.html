@@ -1,147 +1,822 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v5.4</title>
-<style>
-:root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#f9fafb; --user:#12b886; }
-*{box-sizing:border-box}
-html,body{height:100%}
-body{ margin:0; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#0f172a; display:flex; flex-direction:column; }
-header{ background:var(--brand); color:#fff; padding:12px 16px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
-h1{margin:0;font-size:16px;font-weight:800}
-.badge{font-size:12px;opacity:.9}
-main{flex:1;display:flex;justify-content:center}
-.wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
-#chat{ background:#fff; border-radius:16px; padding:12px 12px 4px; min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12) }
-.msg{ max-width:min(720px,92%); padding:14px 16px; border-radius:12px; margin:10px 0; line-height:1.6; white-space:pre-wrap; position:relative; }
-.msg.bot{background:var(--bot);color:#111;border:1px solid #cbd5e1;border-bottom-left-radius:4px}
-.msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
-.msg .controls{ position:absolute; top:4px; right:6px; display:flex; gap:4px; }
-.msg .controls button{ background:#0b3b71; border:0; border-radius:6px; font-size:12px; cursor:pointer; color:#fff; padding:2px 6px; }
-.toolbar,.composer{ background:#fff; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(2,6,23,.08) }
-#lesson,#voiceSelect{ padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; min-width:180px; }
-.status{ font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130; padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center; flex:1; }
-#text{ width:100%; border:0; outline:0; font-size:16px; padding:12px; border-radius:10px; background:#f7f9fc }
-.btnrow{ display:flex; gap:10px; justify-content:space-between }
-.btn{ flex:1; min-width:80px; border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer; text-align:center }
-#send{background:#22c55e} #mic{background:#0ea5e9} #stop{background:#ef4444} #testVoice{background:#0b3b71}
-/* Mobile tweaks */
-@media (max-width:640px){
-  h1{font-size:14px}
-  .msg{max-width:96%}
-  #lesson,#voiceSelect{width:100%;min-width:unset;margin:6px 0}
-  .status{width:100%;margin-top:6px}
-  .btnrow{flex-direction:row;gap:6px}
-  .btn{flex:1}
-}
-</style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>St. Mary’s College — English Leveler v5.4</title>
+    <style>
+        :root {
+            --brand: #0b3b71;
+            --bg: #eef2f7;
+            --bot: #f9fafb;
+            --user: #12b886;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow: 0 4px 12px rgba(2, 6, 23, 0.08);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            margin: 0;
+            background: var(--bg);
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            color: #0f172a;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: var(--brand);
+            color: #fff;
+            padding: 12px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 800;
+        }
+        
+        .badge {
+            font-size: 12px;
+            opacity: .9;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 10px;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .wrap {
+            width: min(1000px, 100%);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        #chat {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 12px 12px 4px;
+            min-height: 58vh;
+            overflow: auto;
+            box-shadow: var(--shadow);
+        }
+        
+        .msg {
+            max-width: min(720px, 92%);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            margin: 10px 0;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        
+        .msg.bot {
+            background: var(--bot);
+            color: #111;
+            border: 1px solid #cbd5e1;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .msg.user {
+            background: var(--user);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+            margin-left: auto;
+        }
+        
+        .msg .controls {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .msg .controls button {
+            background: #0b3b71;
+            border: 0;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #fff;
+            padding: 2px 6px;
+        }
+        
+        .toolbar, .composer {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            box-shadow: var(--shadow);
+        }
+        
+        #lesson, #voiceSelect {
+            padding: 8px 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            min-width: 180px;
+        }
+        
+        .status {
+            font-size: 13px;
+            color: #334155;
+            background: #0b3b7112;
+            border: 1px dashed #0b3b7130;
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            min-height: 34px;
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        
+        #text {
+            width: 100%;
+            border: 0;
+            outline: 0;
+            font-size: 16px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            background: #f7f9fc;
+        }
+        
+        .btnrow {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            min-width: 80px;
+            border: 0;
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            font-weight: 800;
+            color: #fff;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        #send {
+            background: var(--success);
+        }
+        
+        #mic {
+            background: #0ea5e9;
+        }
+        
+        #mic.listening {
+            background: var(--error);
+            animation: pulse 1.5s infinite;
+        }
+        
+        #stop {
+            background: var(--error);
+        }
+        
+        .voice-info {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 8px;
+            padding: 8px;
+            background: #f1f5f9;
+            border-radius: var(--radius-md);
+        }
+        
+        .voice-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #cbd5e1;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        /* Mobile tweaks */
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 14px;
+            }
+            
+            .msg {
+                max-width: 96%;
+            }
+            
+            #lesson, #voiceSelect {
+                width: 100%;
+                min-width: unset;
+                margin: 6px 0;
+            }
+            
+            .status {
+                width: 100%;
+                margin-top: 6px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .btnrow {
+                flex-direction: row;
+                gap: 6px;
+            }
+            
+            .btn {
+                flex: 1;
+            }
+        }
+    </style>
 </head>
 <body>
-<header>
-  <h1>St. Mary’s College — English Leveler v5.4</h1>
-  <span class="badge">Voice + Text • Strict English • Lesson-only</span>
-</header>
+    <header>
+        <h1>St. Mary’s College — English Leveler v5.4</h1>
+        <span class="badge">Voice + Text • Strict English • Lesson-only</span>
+    </header>
 
-<main>
-  <div class="wrap">
-    <div class="toolbar">
-      <span class="label">Select lesson:</span>
-      <select id="lesson"></select>
-      <span id="status" class="status">Please select a lesson to begin.</span>
-      <select id="voiceSelect"></select>
-      <button id="testVoice" class="btn">Test Voice</button>
-    </div>
-    <div id="chat" aria-live="polite"></div>
-    <div class="composer">
-      <input id="text" placeholder="Type your message in ENGLISH only…" autocomplete="off">
-      <div class="btnrow">
-        <button id="send" class="btn">Send</button>
-        <button id="mic"  class="btn">Speak</button>
-        <button id="stop" class="btn">Stop</button>
-      </div>
-    </div>
-  </div>
-</main>
+    <main>
+        <div class="wrap">
+            <div class="toolbar">
+                <span class="label">Select lesson:</span>
+                <select id="lesson"></select>
+                <span id="status" class="status">Please select a lesson to begin.</span>
+                
+                <div class="voice-section">
+                    <span class="label">Select voice:</span>
+                    <select id="voiceSelect"></select>
+                    <div id="voiceInfo" class="voice-info">No voice selected</div>
+                </div>
+            </div>
+            <div id="chat" aria-live="polite"></div>
+            <div class="composer">
+                <input id="text" placeholder="Type your message in ENGLISH only…" autocomplete="off">
+                <div class="btnrow">
+                    <button id="send" class="btn">Send</button>
+                    <button id="mic" class="btn">Speak</button>
+                    <button id="stop" class="btn">Stop</button>
+                </div>
+            </div>
+        </div>
+    </main>
 
-<script>
-const voiceSelect=document.getElementById('voiceSelect');
-let selectedVoice=null;
-let ttsUnlocked=false;
+    <script>
+        /* ===== CONFIG ===== */
+        const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
+        const JSON_BASE  = "https://leccion.datafast.pw/lessons/";
+        const JSON_COUNT = 270;
+        const PASS_MARK  = 85;
+        const MAX_QUEST  = 10;
 
-/* ===== Clean text ===== */
-function cleanAIText(s){
-  return (s||"")
-    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'')
-    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'')
-    .replace(/\s{2,}/g,' ')
-    .trim();
-}
+        /* ===== Estado ===== */
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('text');
+        const sendBtn = document.getElementById('send');
+        const stopBtn = document.getElementById('stop');
+        const micBtn = document.getElementById('mic');
+        const lessonSel = document.getElementById('lesson');
+        const statusEl = document.getElementById('status');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const voiceInfo = document.getElementById('voiceInfo');
+        
+        let currentLesson = null;
+        let lessonData = null;
+        let selectedVoice = null;
+        let recognition = null;
+        let isRecognizing = false;
+        let quizState = null;
+        let lockedUntilPass = null;
+        let theoryShown = false;
+        let audioEnabled = false;
 
-/* ===== TTS ===== */
-function unlockTTS(){
-  if(!ttsUnlocked){
-    const dummy=new SpeechSynthesisUtterance("Voice ready");
-    window.speechSynthesis.speak(dummy);
-    ttsUnlocked=true;
-  }
-}
-function loadVoices(){
-  const voices=window.speechSynthesis.getVoices();
-  voiceSelect.innerHTML="";
-  // 🔹 Filtrar solo voces en_US y en_GB
-  voices
-    .filter(v=>v.lang==="en-US"||v.lang==="en-GB")
-    .forEach(v=>{
-      const opt=document.createElement("option");
-      opt.value=v.name;
-      opt.textContent=`${v.name} (${v.lang})`;
-      voiceSelect.appendChild(opt);
-    });
-  if(voiceSelect.options.length>0){
-    if(!selectedVoice){
-      voiceSelect.selectedIndex=0;
-      selectedVoice=voices.find(v=>v.name===voiceSelect.value);
-    }
-  }
-}
-voiceSelect.addEventListener("change",()=>{
-  const voices=window.speechSynthesis.getVoices();
-  selectedVoice=voices.find(v=>v.name===voiceSelect.value);
-});
-function speak(text){
-  try{
-    unlockTTS();
-    let clean=cleanAIText(text);
-    if(!clean) return;
-    if(!selectedVoice){
-      const voices=window.speechSynthesis.getVoices();
-      selectedVoice=voices.find(v=>v.name===voiceSelect.value)||voices[0];
-    }
-    const u=new SpeechSynthesisUtterance(clean);
-    if(selectedVoice) u.voice=selectedVoice;
-    u.rate=1; u.pitch=1;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }catch(e){console.error("TTS error:",e);}
-}
-function stopAll(){ try{speechSynthesis.cancel()}catch(e){} }
-window.speechSynthesis.onvoiceschanged=()=>{
-  loadVoices();
-  selectedVoice=window.speechSynthesis.getVoices().find(v=>v.name===voiceSelect.value);
-};
+        /* ===== Clean text ===== */
+        function cleanAIText(s) {
+            return (s || "")
+                .replace(/[\u{1F600}-\u{1FAFF}]/gu, '')   // emojis
+                .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g, '')   // símbolos
+                .replace(/\s{2,}/g, ' ')
+                .trim();
+        }
 
-/* ===== Test button ===== */
-document.getElementById('testVoice').addEventListener('click',()=>{
-  unlockTTS();
-  speak("This is a test. If you can hear me, the voice system is working.");
-});
+        /* ===== UI ===== */
+        function addMsg(text, who = "bot", withControls = false) {
+            const clean = cleanAIText(text).replace(/\n{2,}/g, "\n\n");
+            const html = clean.replace(/\n/g, "<br>");
+            const d = document.createElement('div');
+            d.className = `msg ${who}`;
+            d.innerHTML = html;
+            
+            if (withControls && audioEnabled) {
+                const ctr = document.createElement('div');
+                ctr.className = "controls";
+                
+                const playBtn = document.createElement('button');
+                playBtn.textContent = "▶";
+                playBtn.onclick = () => speak(clean);
+                
+                const stopBtn = document.createElement('button');
+                stopBtn.textContent = "⏹";
+                stopBtn.onclick = () => stopAll();
+                
+                ctr.appendChild(playBtn);
+                ctr.appendChild(stopBtn);
+                d.appendChild(ctr);
+            }
+            
+            chat.appendChild(d);
+            chat.scrollTop = chat.scrollHeight;
+            return d;
+        }
 
-/* ===== Dummy chat to probar solo voz ===== */
-const chat=document.getElementById('chat');
-function addMsg(text){ const d=document.createElement('div');d.className="msg bot";d.textContent=text;chat.appendChild(d);}
-addMsg("Welcome! Use 'Test Voice' to confirm audio works.");
-</script>
+        /* ===== TTS ===== */
+        function unlockTTS() {
+            try {
+                const dummy = new SpeechSynthesisUtterance(" ");
+                window.speechSynthesis.speak(dummy);
+                window.speechSynthesis.cancel();
+                return true;
+            } catch (e) {
+                console.error("TTS unlock error:", e);
+                return false;
+            }
+        }
+
+        function loadVoices() {
+            try {
+                // Clear previous options
+                voiceSelect.innerHTML = '';
+                
+                const ph = document.createElement('option');
+                ph.value = "";
+                ph.textContent = "— Select a voice —";
+                voiceSelect.appendChild(ph);
+                
+                const voices = window.speechSynthesis.getVoices();
+                
+                if (voices.length === 0) {
+                    const opt = document.createElement("option");
+                    opt.value = "";
+                    opt.textContent = "Loading voices...";
+                    voiceSelect.appendChild(opt);
+                    voiceInfo.textContent = "Voices still loading. Please try again in a moment.";
+                    return;
+                }
+                
+                // Filter voices to only include US and UK English
+                const usUkVoices = voices.filter(v => 
+                    v.lang.startsWith('en-US') || v.lang.startsWith('en-GB')
+                );
+                
+                if (usUkVoices.length === 0) {
+                    const opt = document.createElement("option");
+                    opt.value = "";
+                    opt.textContent = "No US/UK voices found";
+                    voiceSelect.appendChild(opt);
+                    voiceInfo.textContent = "No US or UK English voices available on this device.";
+                    return;
+                }
+                
+                // Add US voices first
+                const usVoices = usUkVoices.filter(v => v.lang.startsWith('en-US'));
+                if (usVoices.length > 0) {
+                    const groupOption = document.createElement("option");
+                    groupOption.disabled = true;
+                    groupOption.className = "voice-option-group";
+                    groupOption.textContent = "--- US ENGLISH VOICES ---";
+                    voiceSelect.appendChild(groupOption);
+                    
+                    usVoices.forEach(v => {
+                        const opt = document.createElement("option");
+                        opt.value = v.name;
+                        opt.textContent = `${v.name} (${v.lang})`;
+                        voiceSelect.appendChild(opt);
+                    });
+                }
+                
+                // Add UK voices
+                const ukVoices = usUkVoices.filter(v => v.lang.startsWith('en-GB'));
+                if (ukVoices.length > 0) {
+                    const groupOption = document.createElement("option");
+                    groupOption.disabled = true;
+                    groupOption.className = "voice-option-group";
+                    groupOption.textContent = "--- UK ENGLISH VOICES ---";
+                    voiceSelect.appendChild(groupOption);
+                    
+                    ukVoices.forEach(v => {
+                        const opt = document.createElement("option");
+                        opt.value = v.name;
+                        opt.textContent = `${v.name} (${v.lang})`;
+                        voiceSelect.appendChild(opt);
+                    });
+                }
+                
+                // Update voice info
+                if (selectedVoice) {
+                    const voice = usUkVoices.find(v => v.name === selectedVoice.name);
+                    if (voice) {
+                        voiceSelect.value = voice.name;
+                        voiceInfo.textContent = `Selected: ${voice.name} (${voice.lang})`;
+                    }
+                }
+            } catch (e) {
+                console.error("Voice loading error:", e);
+                voiceSelect.innerHTML = '<option value="">Voice loading failed</option>';
+                voiceInfo.textContent = "Error loading voices. Please refresh.";
+            }
+        }
+
+        function speak(text) {
+            if (!audioEnabled) {
+                addMsg("Please interact with the page first to enable audio.", "bot");
+                return;
+            }
+            
+            if (!unlockTTS()) {
+                addMsg("Text-to-speech is not available. Please check your browser settings.", "bot");
+                return;
+            }
+            
+            try {
+                let clean = cleanAIText(text);
+                if (!clean) return;
+                
+                // Get the selected voice by name
+                const selectedVoiceName = voiceSelect.value;
+                if (!selectedVoiceName) {
+                    addMsg("Please select a voice first.", "bot");
+                    return;
+                }
+                
+                const voices = window.speechSynthesis.getVoices();
+                const voice = voices.find(v => v.name === selectedVoiceName);
+                
+                if (!voice) {
+                    addMsg("Selected voice not found. Please choose another voice.", "bot");
+                    return;
+                }
+                
+                // Update selected voice
+                selectedVoice = voice;
+                voiceInfo.textContent = `Speaking with: ${selectedVoice.name} (${selectedVoice.lang})`;
+                
+                clean = clean.replace(/\b\d+\b/g, n => new Intl.NumberFormat("en-US", {style: "decimal"}).format(n));
+                const u = new SpeechSynthesisUtterance(clean);
+                
+                u.voice = voice;
+                u.rate = 0.9;
+                u.pitch = 1;
+                u.volume = 1;
+                
+                u.onend = function() {
+                    console.log("Finished speaking");
+                };
+                
+                u.onerror = function(e) {
+                    console.error("Speech synthesis error", e);
+                    addMsg("Text-to-speech error. Please try another voice.", "bot");
+                };
+                
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(u);
+            } catch (e) {
+                console.error("TTS error:", e);
+                addMsg("Text-to-speech failed. Please check your device settings.", "bot");
+            }
+        }
+
+        function stopAll() {
+            try {
+                window.speechSynthesis.cancel();
+                if (recognition && isRecognizing) {
+                    recognition.stop();
+                    isRecognizing = false;
+                    micBtn.classList.remove('listening');
+                }
+            } catch (e) {
+                console.error("Stop error:", e);
+            }
+        }
+
+        /* ===== STT ===== */
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                addMsg("Speech recognition is not supported in your browser.", "bot");
+                micBtn.disabled = true;
+                return null;
+            }
+            
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+            
+            return recognition;
+        }
+
+        function sttStart() {
+            if (!audioEnabled) {
+                addMsg("Please interact with the page first to enable microphone access.", "bot");
+                return;
+            }
+            
+            if (isRecognizing) {
+                recognition.stop();
+                return;
+            }
+            
+            if (!recognition) {
+                recognition = initSpeechRecognition();
+                if (!recognition) return;
+            }
+            
+            // Set up event handlers
+            recognition.onstart = () => {
+                isRecognizing = true;
+                micBtn.classList.add('listening');
+                addMsg("Listening... Speak now", "bot");
+            };
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript || "";
+                if (transcript) {
+                    input.value = transcript;
+                    micBtn.classList.remove('listening');
+                    isRecognizing = false;
+                    sendMsg();
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error', event.error);
+                addMsg(`Speech recognition error: ${event.error}`, "bot");
+                micBtn.classList.remove('listening');
+                isRecognizing = false;
+            };
+            
+            recognition.onend = () => {
+                micBtn.classList.remove('listening');
+                isRecognizing = false;
+            };
+            
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error("Recognition start error:", e);
+                addMsg("Cannot start voice recognition. Please ensure microphone permissions are granted.", "bot");
+            }
+        }
+
+        /* ===== JSON Loader ===== */
+        async function fetchJSON(url) {
+            const r = await fetch(url, {cache: 'no-store'});
+            if (!r.ok) throw new Error(r.status + " " + r.statusText);
+            return await r.json();
+        }
+
+        /* ===== Lesson control ===== */
+        async function loadLesson(n) {
+            currentLesson = n;
+            lessonData = null;
+            theoryShown = false;
+            addMsg(`Lesson ${n} selected.`, "bot");
+            
+            try {
+                if (n <= JSON_COUNT) {
+                    lessonData = await fetchJSON(`${JSON_BASE}lesson${n}.json`);
+                }
+            } catch (e) {
+                console.error("Lesson loading error:", e);
+            }
+            
+            if (lessonData) {
+                addMsg(`THEORY — ${lessonData.title}\n${lessonData.theory || ""}`, "bot", true);
+                theoryShown = true;
+            }
+        }
+
+        /* ===== Prompt + Backend + Send ===== */
+        function buildPrompt(userText) {
+            const n = currentLesson;
+            const title = lessonData?.title || `Lesson ${n}`;
+            const theory = lessonData?.theory || "";
+            const objectives = Array.isArray(lessonData?.objectives) ? lessonData.objectives : [];
+            const topics = Array.isArray(lessonData?.topics) ? lessonData.topics : [];
+
+            return `
+ROLE: You are an English instructor for St. Mary's College.
+LANGUAGE: Reply in ENGLISH ONLY.
+TONE: Clear, motivating, professional teacher.
+TASK: Based on the lesson JSON, create a complete academic learning unit.
+Always keep answers focused on Lesson ${n} — ${title}.
+If the user asks off-topic, redirect politely back to this lesson.
+
+JSON CONTEXT:
+Title: ${title}
+Theory: ${theory}
+Objectives:
+${objectives.map((x, i) => `${i+1}. ${x}`).join('\n')}
+Topics:
+${topics.map((x, i) => `${i+1}. ${x}`).join('\n')}
+
+OUTPUT FORMAT:
+1. 🎯 Learning Objective
+   - Clear statement of what the student will achieve.
+
+2. 🧩 Key Content
+   - Explanation of the main theory.
+   - Formal vs informal expressions (if relevant).
+   - Cultural notes when possible.
+
+3. 💬 Examples
+   - At least 3 short sample dialogues or sentences.
+
+4. 🎭 Suggested Activities
+   - Interactive tasks (role-play, matching, games).
+
+5. 🧪 Practice Evaluation
+   - 2-3 short questions or tasks the student can try.
+
+USER REQUEST: ${userText}
+            `.trim();
+        }
+
+        async function askInstructor(text) {
+            try {
+                const r = await fetch(WORKER_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: buildPrompt(text), lang: "en-US" })
+                });
+                
+                if (!r.ok) throw new Error("HTTP " + r.status);
+                const data = await r.json().catch(() => ({ reply: "Connection error." }));
+                return String(data.reply || "");
+            } catch (e) {
+                console.error("API error:", e);
+                throw e;
+            }
+        }
+
+        async function sendMsg() {
+            const t = (input.value || "").trim();
+            if (!t) return;
+            
+            input.value = "";
+            addMsg(t, "user");
+
+            if (!currentLesson) {
+                addMsg("Please select a lesson first.", "bot");
+                return;
+            }
+
+            try {
+                const reply = await askInstructor(t);
+                const msgElement = addMsg(reply, "bot", true);
+                
+                // Only speak if audio is enabled
+                if (audioEnabled) {
+                    speak(reply);
+                }
+            } catch (e) {
+                addMsg("Connection error with the server. Please try again.", "bot");
+            }
+        }
+
+        /* ===== Eventos ===== */
+        sendBtn.addEventListener('click', sendMsg);
+        
+        input.addEventListener('keydown', e => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                sendMsg();
+            }
+        });
+        
+        micBtn.addEventListener('click', sttStart);
+        
+        stopBtn.addEventListener('click', () => {
+            stopAll();
+            addMsg("Stopped", "bot");
+        });
+        
+        voiceSelect.addEventListener('change', () => {
+            const voiceName = voiceSelect.value;
+            if (!voiceName) return;
+            
+            const voices = window.speechSynthesis.getVoices();
+            selectedVoice = voices.find(v => v.name === voiceName);
+            
+            if (selectedVoice) {
+                voiceInfo.textContent = `Selected: ${selectedVoice.name} (${selectedVoice.lang})`;
+                addMsg(`Voice changed to: ${selectedVoice.name}`, "bot");
+            }
+        });
+        
+        lessonSel.addEventListener('change', () => {
+            const v = lessonSel.value;
+            if (!v) {
+                statusEl.textContent = "Please select a lesson to begin.";
+                return;
+            }
+            loadLesson(+v);
+        });
+
+        // Initialize voices when they are loaded
+        if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            
+            // Also try to load voices immediately
+            setTimeout(loadVoices, 500);
+        }
+
+        /* ===== Init ===== */
+        function initApp() {
+            // Build lesson selector
+            const ph = document.createElement('option');
+            ph.value = "";
+            ph.textContent = "— Select a lesson —";
+            lessonSel.appendChild(ph);
+            
+            for (let i = 1; i <= JSON_COUNT; i++) {
+                const o = document.createElement('option');
+                o.value = String(i);
+                o.textContent = `Lesson ${i}`;
+                lessonSel.appendChild(o);
+            }
+            
+            lessonSel.value = "";
+            statusEl.textContent = "Please select a lesson to begin.";
+            addMsg("Welcome! Select your lesson above.", "bot");
+            
+            // Initialize speech recognition
+            recognition = initSpeechRecognition();
+            
+            // Load voices
+            loadVoices();
+            
+            // Check if speech synthesis is available
+            if (!window.speechSynthesis) {
+                addMsg("Text-to-speech is not supported in your browser.", "bot");
+            }
+            
+            // Enable audio automatically after user interaction
+            const enableOnInteraction = () => {
+                if (!audioEnabled) {
+                    audioEnabled = true;
+                    unlockTTS();
+                    document.removeEventListener('click', enableOnInteraction);
+                    document.removeEventListener('keydown', enableOnInteraction);
+                }
+            };
+            
+            document.addEventListener('click', enableOnInteraction);
+            document.addEventListener('keydown', enableOnInteraction);
+        }
+
+        // Initialize the app
+        initApp();
+    </script>
 </body>
 </html>
