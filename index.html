@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.2</title>
+<title>St. Mary’s College — English Leveler v4.3</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
 *{box-sizing:border-box}
@@ -31,7 +31,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.2</h1>
+  <h1>St. Mary’s College — English Leveler v4.3</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
 </header>
 
@@ -60,6 +60,8 @@ main{flex:1;display:flex;justify-content:center}
 const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
 const JSON_BASE  = "https://leccion.datafast.pw/lessons/";
 const JSON_COUNT = 270;
+const PASS_MARK  = 85;
+const MAX_QUEST  = 10;
 
 /* ===== Estado ===== */
 const chat   = document.getElementById('chat');
@@ -74,6 +76,8 @@ let currentLesson = null;
 let lessonData = null;
 let selectedVoice = null;
 let rec = null, isRec = false;
+let quizState = null;
+let lockedUntilPass = null;
 
 /* ===== UI helpers ===== */
 function addMsg(text, who="bot", withControls=false){
@@ -81,13 +85,12 @@ function addMsg(text, who="bot", withControls=false){
     .replace(/[*_~`#>|]/g,'')
     .replace(/\s{2,}/g,' ')
     .trim()
-    .replace(/\n/g,"<br>");  // ✅ enumeraciones en renglones
+    .replace(/\n/g,"<br>");
   const d=document.createElement('div');
   d.className = `msg ${who}`;
-  d.innerHTML = clean; // ✅ permitir saltos de línea
+  d.innerHTML = clean;
   if(withControls){
-    const ctr=document.createElement('div');
-    ctr.className="controls";
+    const ctr=document.createElement('div'); ctr.className="controls";
     const playBtn=document.createElement('button'); playBtn.textContent="▶";
     playBtn.onclick=()=>speak(clean.replace(/<br>/g," "));
     const stopBtn=document.createElement('button'); stopBtn.textContent="⏹";
@@ -145,10 +148,61 @@ function sttStart(){
 
 /* ===== JSON Loader ===== */
 async function fetchJSON(url){ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status+" "+r.statusText); return await r.json(); }
+
+/* ===== Quiz ===== */
+function normalize(s){ return String(s||'').toLowerCase().trim(); }
+function checkAnswer(user, expected){ const u=normalize(user), e=normalize(expected); return u===e || u.includes(e); }
+function askNextQuestion(){
+  const q=quizState.items[quizState.i];
+  addMsg(`Q${quizState.i+1}/${quizState.total}: ${q.question}`,"bot");
+  speak(`Question ${quizState.i+1}. ${q.question}`);
+}
+function handleQuizAnswer(userText){
+  const q=quizState.items[quizState.i];
+  const ok=checkAnswer(userText,q.answer);
+  addMsg(ok?"✅ Correct.":"❌ Expected: "+q.answer,"bot");
+  if(ok) quizState.correct++;
+  quizState.i++;
+  if(quizState.i>=quizState.total){ finishQuiz(); } else { askNextQuestion(); }
+}
+function finishQuiz(){
+  const pct=Math.round((quizState.correct/quizState.total)*100);
+  addMsg(`Review finished. Score: ${quizState.correct}/${quizState.total} — ${pct}%`,"bot");
+  if(pct>=PASS_MARK){
+    addMsg(`🎉 Great! You unlocked Lesson ${quizState.forLesson}.`,"bot");
+    lockedUntilPass=null;
+    if(lessonData){ addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true); }
+  }else{
+    addMsg(`⚠️ You need at least ${PASS_MARK}%. Please review and try again.`,"bot");
+    lockedUntilPass=quizState.forLesson;
+  }
+  quizState=null;
+}
+async function startQuiz(forLesson){
+  const items=[];
+  for(let k=1;k<=3;k++){
+    const n=forLesson-k;
+    if(n>0){
+      try{
+        const d=await fetchJSON(`${JSON_BASE}lesson${n}.json`);
+        if(Array.isArray(d.quizPrevious)){
+          const shuffled=[...d.quizPrevious].sort(()=>0.5-Math.random());
+          items.push(...shuffled.slice(0,3));
+        }
+      }catch(e){}
+    }
+  }
+  quizState={ active:true, items:items.sort(()=>0.5-Math.random()).slice(0,MAX_QUEST), i:0, correct:0, total:Math.min(items.length,MAX_QUEST), forLesson };
+  addMsg(`Before Lesson ${forLesson}, you must pass this review from previous lessons. Minimum ${PASS_MARK}%.`,"bot");
+  askNextQuestion();
+}
+
+/* ===== Lesson control ===== */
 async function loadLesson(n){
   currentLesson=n; lessonData=null;
-  addMsg(`Lesson ${n} selected. Preparing materials…`,"bot");
+  addMsg(`Lesson ${n} selected.`,"bot");
   try{ if(n<=JSON_COUNT){ lessonData=await fetchJSON(`${JSON_BASE}lesson${n}.json`);} }catch(e){}
+  if(n>1){ lockedUntilPass=n; startQuiz(n); return; }
   if(lessonData){ addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true); }
 }
 
@@ -194,6 +248,8 @@ async function sendMsg(){
   if(!t) return;
   input.value="";
   addMsg(t,"user");
+  if(quizState?.active){ handleQuizAnswer(t); return; }
+  if(lockedUntilPass){ addMsg(`Lesson ${lockedUntilPass} is locked. Complete the review first.`,"bot"); return; }
   if(!currentLesson){ addMsg("Please select a lesson first.","bot"); return; }
   try{ const reply=await askInstructor(t); addMsg(reply,"bot",true); speak(reply); }
   catch(e){ addMsg("Connection error with the server.","bot"); }
