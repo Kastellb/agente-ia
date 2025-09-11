@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v5.1</title>
+<title>St. Mary’s College — English Leveler v5.2</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#f9fafb; --user:#12b886; }
 *{box-sizing:border-box}
@@ -40,7 +40,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v5.1</h1>
+  <h1>St. Mary’s College — English Leveler v5.2</h1>
   <span class="badge">Voice + Text • Strict English • Lesson-only</span>
 </header>
 
@@ -88,6 +88,7 @@ let rec = null, isRec = false;
 let quizState = null;
 let lockedUntilPass = null;
 let theoryShown = false;
+let ttsUnlocked = false;
 
 /* ===== Clean text ===== */
 function cleanAIText(s){
@@ -120,11 +121,18 @@ function addMsg(text, who="bot", withControls=false){
 }
 
 /* ===== TTS ===== */
+function unlockTTS(){
+  if(!ttsUnlocked){
+    const dummy = new SpeechSynthesisUtterance(" ");
+    window.speechSynthesis.speak(dummy);
+    ttsUnlocked = true;
+  }
+}
 function loadVoices(){
   const voices = window.speechSynthesis.getVoices();
   voiceSelect.innerHTML = "";
   voices
-    .filter(v => /^en(-|_)/i.test(v.lang)) // solo voces en inglés
+    .filter(v => /^en(-|_)/i.test(v.lang))
     .forEach(v=>{
       const opt=document.createElement("option");
       opt.value=v.name; 
@@ -132,7 +140,7 @@ function loadVoices(){
       voiceSelect.appendChild(opt);
     });
   if(voiceSelect.options.length>0){
-    if(!selectedVoice){ // si no hay voz elegida aún
+    if(!selectedVoice){
       voiceSelect.selectedIndex=0;
       selectedVoice = voices.find(v=>v.name===voiceSelect.value);
     }
@@ -144,25 +152,20 @@ voiceSelect.addEventListener("change", ()=>{
 });
 function speak(text){
   try{
+    unlockTTS(); // 🔹 habilita TTS en móvil
     let clean = cleanAIText(text);
     if(!clean) return;
-
-    // Si aún no hay voces cargadas, volver a cargar
     if(!selectedVoice){
       const voices = window.speechSynthesis.getVoices();
       if(voices.length>0){
         selectedVoice = voices.find(v=>v.name===voiceSelect.value) || voices[0];
       }
     }
-
-    // Leer números correctamente en inglés
     clean = clean.replace(/\b\d+\b/g, n => new Intl.NumberFormat("en-US",{style:"decimal"}).format(n));
-
     const u = new SpeechSynthesisUtterance(clean);
     if(selectedVoice) u.voice = selectedVoice;
     u.rate = 1; 
     u.pitch = 1;
-
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
   }catch(e){
@@ -317,10 +320,10 @@ async function sendMsg(){
 }
 
 /* ===== Eventos ===== */
-send.addEventListener('click',sendMsg);
-input.addEventListener('keydown',e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}});
-stopBtn.addEventListener('click',stopAll);
-micBtn.addEventListener('click',sttStart);
+send.addEventListener('click',()=>{unlockTTS();sendMsg();});
+input.addEventListener('keydown',e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();unlockTTS();sendMsg();}});
+stopBtn.addEventListener('click',()=>{unlockTTS();stopAll();});
+micBtn.addEventListener('click',()=>{unlockTTS();sttStart();});
 lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl.textContent="Please select a lesson to begin.";return;}loadLesson(+v);});
 
 /* ===== Init ===== */
@@ -330,8 +333,6 @@ lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl
   lessonSel.value="";statusEl.textContent="Please select a lesson to begin.";
   addMsg("Welcome! Select your lesson above.","bot");
 })();
-
-/* 🔹 Cargar voces desde el inicio */
 loadVoices();
 </script>
 </body>
