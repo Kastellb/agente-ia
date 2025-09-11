@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.1</title>
+<title>St. Mary’s College — English Leveler v4.2</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
 *{box-sizing:border-box}
@@ -31,7 +31,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.1</h1>
+  <h1>St. Mary’s College — English Leveler v4.2</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
 </header>
 
@@ -80,15 +80,16 @@ function addMsg(text, who="bot", withControls=false){
   const clean = (String(text||''))
     .replace(/[*_~`#>|]/g,'')
     .replace(/\s{2,}/g,' ')
-    .trim();
+    .trim()
+    .replace(/\n/g,"<br>");  // ✅ enumeraciones en renglones
   const d=document.createElement('div');
   d.className = `msg ${who}`;
-  d.textContent = clean;
+  d.innerHTML = clean; // ✅ permitir saltos de línea
   if(withControls){
     const ctr=document.createElement('div');
     ctr.className="controls";
     const playBtn=document.createElement('button'); playBtn.textContent="▶";
-    playBtn.onclick=()=>speak(clean);
+    playBtn.onclick=()=>speak(clean.replace(/<br>/g," "));
     const stopBtn=document.createElement('button'); stopBtn.textContent="⏹";
     stopBtn.onclick=()=>stopAll();
     ctr.appendChild(playBtn); ctr.appendChild(stopBtn);
@@ -215,3 +216,4 @@ lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl
 </script>
 </body>
 </html>
+
