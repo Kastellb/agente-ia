@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v5.0</title>
+<title>St. Mary’s College — English Leveler v5.1</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#f9fafb; --user:#12b886; }
 *{box-sizing:border-box}
@@ -40,7 +40,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v5.0</h1>
+  <h1>St. Mary’s College — English Leveler v5.1</h1>
   <span class="badge">Voice + Text • Strict English • Lesson-only</span>
 </header>
 
@@ -145,17 +145,35 @@ voiceSelect.addEventListener("change", ()=>{
 function speak(text){
   try{
     let clean = cleanAIText(text);
-    // Leer números como corresponde en inglés (ejemplo: 2025 -> "two thousand twenty-five")
+    if(!clean) return;
+
+    // Si aún no hay voces cargadas, volver a cargar
+    if(!selectedVoice){
+      const voices = window.speechSynthesis.getVoices();
+      if(voices.length>0){
+        selectedVoice = voices.find(v=>v.name===voiceSelect.value) || voices[0];
+      }
+    }
+
+    // Leer números correctamente en inglés
     clean = clean.replace(/\b\d+\b/g, n => new Intl.NumberFormat("en-US",{style:"decimal"}).format(n));
+
     const u = new SpeechSynthesisUtterance(clean);
     if(selectedVoice) u.voice = selectedVoice;
-    u.rate=1; u.pitch=1;
+    u.rate = 1; 
+    u.pitch = 1;
+
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
-  }catch(e){}
+  }catch(e){
+    console.error("TTS error:", e);
+  }
 }
 function stopAll(){ try{speechSynthesis.cancel()}catch(e){} }
-window.speechSynthesis.onvoiceschanged = loadVoices;
+window.speechSynthesis.onvoiceschanged = ()=>{
+  loadVoices();
+  selectedVoice = window.speechSynthesis.getVoices().find(v=>v.name===voiceSelect.value);
+};
 
 /* ===== STT ===== */
 function sttStart(){
