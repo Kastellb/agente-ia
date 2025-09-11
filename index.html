@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.9</title>
+<title>St. Mary’s College — English Leveler v5.0</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#f9fafb; --user:#12b886; }
 *{box-sizing:border-box}
@@ -21,8 +21,8 @@ main{flex:1;display:flex;justify-content:center}
 .msg .controls{ position:absolute; top:4px; right:6px; display:flex; gap:4px; }
 .msg .controls button{ background:#0b3b71; border:0; border-radius:6px; font-size:12px; cursor:pointer; color:#fff; padding:2px 6px; }
 .toolbar,.composer{ background:#fff; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(2,6,23,.08) }
-#lesson{ padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; min-width:180px; }
-.status{ font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130; padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center; }
+#lesson,#voiceSelect{ padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; min-width:180px; }
+.status{ font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130; padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center; flex:1; }
 #text{ width:100%; border:0; outline:0; font-size:16px; padding:12px; border-radius:10px; background:#f7f9fc }
 .btnrow{ display:flex; gap:10px; justify-content:space-between }
 .btn{ flex:1; min-width:80px; border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer; text-align:center }
@@ -31,8 +31,7 @@ main{flex:1;display:flex;justify-content:center}
 @media (max-width:640px){
   h1{font-size:14px}
   .msg{max-width:96%}
-  #lesson{min-width:unset;width:100%}
-  #voiceSelect{width:100%;margin-top:6px}
+  #lesson,#voiceSelect{width:100%;min-width:unset;margin:6px 0}
   .status{width:100%;margin-top:6px}
   .btnrow{flex-direction:row;gap:6px}
   .btn{flex:1}
@@ -41,7 +40,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.9</h1>
+  <h1>St. Mary’s College — English Leveler v5.0</h1>
   <span class="badge">Voice + Text • Strict English • Lesson-only</span>
 </header>
 
@@ -93,8 +92,8 @@ let theoryShown = false;
 /* ===== Clean text ===== */
 function cleanAIText(s){
   return (s||"")
-    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'')
-    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'')
+    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'')   // emojis
+    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'')   // símbolos
     .replace(/\s{2,}/g,' ')
     .trim();
 }
@@ -124,14 +123,19 @@ function addMsg(text, who="bot", withControls=false){
 function loadVoices(){
   const voices = window.speechSynthesis.getVoices();
   voiceSelect.innerHTML = "";
-  voices.filter(v=>/^en(-|_)/i.test(v.lang)).forEach(v=>{
-    const opt=document.createElement("option");
-    opt.value=v.name; opt.textContent=`${v.name} (${v.lang})`;
-    voiceSelect.appendChild(opt);
-  });
+  voices
+    .filter(v => /^en(-|_)/i.test(v.lang)) // solo voces en inglés
+    .forEach(v=>{
+      const opt=document.createElement("option");
+      opt.value=v.name; 
+      opt.textContent=`${v.name} (${v.lang})`;
+      voiceSelect.appendChild(opt);
+    });
   if(voiceSelect.options.length>0){
-    voiceSelect.selectedIndex=0;
-    selectedVoice = voices.find(v=>v.name===voiceSelect.value);
+    if(!selectedVoice){ // si no hay voz elegida aún
+      voiceSelect.selectedIndex=0;
+      selectedVoice = voices.find(v=>v.name===voiceSelect.value);
+    }
   }
 }
 voiceSelect.addEventListener("change", ()=>{
@@ -140,7 +144,9 @@ voiceSelect.addEventListener("change", ()=>{
 });
 function speak(text){
   try{
-    const clean = cleanAIText(text);
+    let clean = cleanAIText(text);
+    // Leer números como corresponde en inglés (ejemplo: 2025 -> "two thousand twenty-five")
+    clean = clean.replace(/\b\d+\b/g, n => new Intl.NumberFormat("en-US",{style:"decimal"}).format(n));
     const u = new SpeechSynthesisUtterance(clean);
     if(selectedVoice) u.voice = selectedVoice;
     u.rate=1; u.pitch=1;
@@ -299,13 +305,16 @@ stopBtn.addEventListener('click',stopAll);
 micBtn.addEventListener('click',sttStart);
 lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl.textContent="Please select a lesson to begin.";return;}loadLesson(+v);});
 
-/* ===== Combo build ===== */
+/* ===== Init ===== */
 (function buildLessons(){
   const ph=document.createElement('option');ph.value="";ph.textContent="— Select a lesson —";lessonSel.appendChild(ph);
   for(let i=1;i<=JSON_COUNT;i++){const o=document.createElement('option');o.value=String(i);o.textContent=`Lesson ${i}`;lessonSel.appendChild(o);}
   lessonSel.value="";statusEl.textContent="Please select a lesson to begin.";
   addMsg("Welcome! Select your lesson above.","bot");
 })();
+
+/* 🔹 Cargar voces desde el inicio */
+loadVoices();
 </script>
 </body>
 </html>
