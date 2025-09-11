@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.7</title>
+<title>St. Mary’s College — English Leveler v4.8</title>
 <style>
-:root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
+:root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#f9fafb; --user:#12b886; }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{ margin:0; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#0f172a; display:flex; flex-direction:column; }
@@ -16,7 +16,7 @@ main{flex:1;display:flex;justify-content:center}
 .wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
 #chat{ background:#fff; border-radius:16px; padding:12px 12px 4px; min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12) }
 .msg{ max-width:min(720px,92%); padding:14px 16px; border-radius:12px; margin:10px 0; line-height:1.6; white-space:pre-wrap; position:relative; }
-.msg.bot{background:#f9fafb;color:#111;border:1px solid #cbd5e1;border-bottom-left-radius:4px}
+.msg.bot{background:var(--bot);color:#111;border:1px solid #cbd5e1;border-bottom-left-radius:4px}
 .msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
 .msg .controls{ position:absolute; top:4px; right:6px; display:flex; gap:4px; }
 .msg .controls button{ background:#0b3b71; border:0; border-radius:6px; font-size:12px; cursor:pointer; color:#fff; padding:2px 6px; }
@@ -31,7 +31,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.7</h1>
+  <h1>St. Mary’s College — English Leveler v4.8</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
 </header>
 
@@ -80,20 +80,26 @@ let quizState = null;
 let lockedUntilPass = null;
 let theoryShown = false;
 
+/* ===== CLEAN TEXT ===== */
+function cleanAIText(s){
+  return (s||"")
+    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'') // eliminar emojis
+    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'') // quitar símbolos
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
+
 /* ===== UI helpers ===== */
 function addMsg(text, who="bot", withControls=false){
-  const clean = (String(text||''))
-    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'') // quitar caracteres que leen mal
-    .replace(/\s{2,}/g,' ')
-    .trim()
-    .replace(/\n/g,"<br>");
+  const clean = cleanAIText(text).replace(/\n{2,}/g,"\n\n"); // dobles saltos = párrafos
+  const html = clean.replace(/\n/g,"<br><br>"); // espacio entre párrafos
   const d=document.createElement('div');
   d.className = `msg ${who}`;
-  d.innerHTML = clean;
+  d.innerHTML = html;
   if(withControls){
     const ctr=document.createElement('div'); ctr.className="controls";
     const playBtn=document.createElement('button'); playBtn.textContent="▶";
-    playBtn.onclick=()=>speak(clean.replace(/<br>/g," "));
+    playBtn.onclick=()=>speak(clean);
     const stopBtn=document.createElement('button'); stopBtn.textContent="⏹";
     stopBtn.onclick=()=>stopAll();
     ctr.appendChild(playBtn); ctr.appendChild(stopBtn);
@@ -124,7 +130,7 @@ voiceSelect.addEventListener("change", ()=>{
 });
 function speak(text){
   try{
-    const clean = text.replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,''); // limpiar símbolos
+    const clean = cleanAIText(text);
     const u = new SpeechSynthesisUtterance(clean);
     if(selectedVoice) u.voice = selectedVoice;
     u.rate=1; u.pitch=1;
@@ -151,7 +157,7 @@ function sttStart(){
 /* ===== JSON Loader ===== */
 async function fetchJSON(url){ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status+" "+r.statusText); return await r.json(); }
 
-/* ===== Quiz (igual que antes, sin emojis) ===== */
+/* ===== Quiz (igual que antes, limpio) ===== */
 function normalize(s){ return String(s||'').toLowerCase().trim(); }
 function checkAnswer(user, expected){ const u=normalize(user), e=normalize(expected); return u===e || u.includes(e); }
 function askNextQuestion(){
@@ -230,7 +236,7 @@ function buildPrompt(userText){
 ROLE: You are an English instructor for St. Mary’s College.
 LANGUAGE: Always respond ONLY in ENGLISH. Translate automatically if needed.
 BEHAVIOR: Only show the theory once when a lesson is unlocked. Afterwards, act as a tutor: correct errors, explain why, and provide examples. Do not repeat the theory.
-OUTPUT STRUCTURE:
+OUTPUT STRUCTURE (no emojis, clear formatting, professional tone):
 LEARNING OBJECTIVES
 KEY CONTENT
 EXAMPLES
@@ -286,4 +292,3 @@ lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl
 </script>
 </body>
 </html>
-
