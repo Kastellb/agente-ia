@@ -27,14 +27,6 @@ main{flex:1;display:flex;justify-content:center}
 .btnrow{ display:flex; gap:10px; flex-wrap:wrap; }
 .btn{ border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer }
 #send{background:#22c55e} #mic{background:#0ea5e9} #stop{background:#ef4444}
-/* Mobile tweaks */
-@media (max-width:640px){
-  h1{font-size:14px}
-  .msg{max-width:96%}
-  #lesson{min-width:unset;width:100%}
-  .btnrow{flex-direction:row}
-  .btn{flex:1}
-}
 </style>
 </head>
 <body>
@@ -63,6 +55,247 @@ main{flex:1;display:flex;justify-content:center}
   </div>
 </main>
 
-<script src="app.js"></script>
+<script>
+/* ===== CONFIG ===== */
+const WORKER_URL = "https://bot-maestro-proxy.kast-mercadeo.workers.dev/";
+const JSON_BASE  = "https://leccion.datafast.pw/lessons/";
+const JSON_COUNT = 270;
+const PASS_MARK  = 85;
+const MAX_QUEST  = 10;
+
+/* ===== Estado ===== */
+const chat   = document.getElementById('chat');
+const input  = document.getElementById('text');
+const send   = document.getElementById('send');
+const stopBtn= document.getElementById('stop');
+const micBtn = document.getElementById('mic');
+const lessonSel = document.getElementById('lesson');
+const statusEl  = document.getElementById('status');
+const voiceSelect = document.getElementById('voiceSelect');
+let currentLesson = null;
+let lessonData = null;
+let selectedVoice = null;
+let rec = null, isRec = false;
+let quizState = null;
+let lockedUntilPass = null;
+let theoryShown = false;
+
+/* ===== CLEAN TEXT ===== */
+function cleanAIText(s){
+  return (s||"")
+    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'') // remove emojis
+    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'') // remove symbols
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
+
+/* ===== UI helpers ===== */
+function addMsg(text, who="bot", withControls=false){
+  const clean = cleanAIText(text).replace(/\n{2,}/g,"\n\n");
+  const html = clean.replace(/\n/g,"<br><br>");
+  const d=document.createElement('div');
+  d.className = `msg ${who}`;
+  d.innerHTML = html;
+  if(withControls){
+    const ctr=document.createElement('div'); ctr.className="controls";
+    const playBtn=document.createElement('button'); playBtn.textContent="▶";
+    playBtn.onclick=()=>speak(clean);
+    const stopBtn=document.createElement('button'); stopBtn.textContent="⏹";
+    stopBtn.onclick=()=>stopAll();
+    ctr.appendChild(playBtn); ctr.appendChild(stopBtn);
+    d.appendChild(ctr);
+  }
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+
+/* ===== TTS ===== */
+function loadVoices(){
+  const voices = window.speechSynthesis.getVoices();
+  voiceSelect.innerHTML = "";
+  voices.filter(v=>/^en(-|_)/i.test(v.lang)).forEach(v=>{
+    const opt=document.createElement("option");
+    opt.value=v.name; opt.textContent=`${v.name} (${v.lang})`;
+    voiceSelect.appendChild(opt);
+  });
+  if(voiceSelect.options.length>0){
+    voiceSelect.selectedIndex=0;
+    selectedVoice = voices.find(v=>v.name===voiceSelect.value);
+  }
+}
+voiceSelect.addEventListener("change", ()=>{
+  const voices = window.speechSynthesis.getVoices();
+  selectedVoice = voices.find(v=>v.name===voiceSelect.value);
+});
+function speak(text){
+  try{
+    const clean = cleanAIText(text);
+    const u = new SpeechSynthesisUtterance(clean);
+    if(selectedVoice) u.voice = selectedVoice;
+    u.rate=1; u.pitch=1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function stopAll(){ try{speechSynthesis.cancel()}catch(e){} }
+window.speechSynthesis.onvoiceschanged = loadVoices;
+
+/* ===== STT ===== */
+function sttStart(){
+  if(isRec) return;
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ addMsg("Voice recognition not supported.","bot"); return; }
+  rec=new SR(); rec.lang='en-US'; rec.continuous=false; rec.interimResults=false;
+  rec.onresult=(e)=>{ const t=e.results?.[0]?.[0]?.transcript||""; if(t){ input.value=t; sendMsg(); } };
+  rec.onstart=()=>{ isRec=true; addMsg("Listening...","bot"); };
+  rec.onerror=()=>{ isRec=false; };
+  rec.onend=()=>{ isRec=false; };
+  rec.start();
+}
+
+/* ===== JSON Loader ===== */
+async function fetchJSON(url){ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status+" "+r.statusText); return await r.json(); }
+
+/* ===== Quiz ===== */
+function normalize(s){ return String(s||'').toLowerCase().trim(); }
+function checkAnswer(user, expected){ const u=normalize(user), e=normalize(expected); return u===e || u.includes(e); }
+function askNextQuestion(){
+  const q=quizState.items[quizState.i];
+  addMsg(`Q${quizState.i+1}/${quizState.total}: ${q.question}`,"bot");
+  speak(`Question ${quizState.i+1}. ${q.question}`);
+}
+function handleQuizAnswer(userText){
+  const q=quizState.items[quizState.i];
+  const ok=checkAnswer(userText,q.answer);
+  addMsg(ok?"Correct.":"Incorrect. Expected: "+q.answer,"bot");
+  if(ok) quizState.correct++;
+  quizState.i++;
+  if(quizState.i>=quizState.total){ finishQuiz(); } else { askNextQuestion(); }
+}
+function finishQuiz(){
+  const pct=Math.round((quizState.correct/quizState.total)*100);
+  addMsg(`Review finished. Score: ${quizState.correct}/${quizState.total} — ${pct}%`,"bot");
+  if(pct>=PASS_MARK){
+    addMsg(`Great! You unlocked Lesson ${quizState.forLesson}.`,"bot");
+    lockedUntilPass=null;
+    if(lessonData){ 
+      addMsg(`THEORY — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true);
+      theoryShown = true;
+    }
+  }else{
+    addMsg(`You need at least ${PASS_MARK}%. Please review and try again.`,"bot");
+    lockedUntilPass=quizState.forLesson;
+  }
+  quizState=null;
+}
+async function startQuiz(forLesson){
+  const items=[];
+  for(let k=1;k<=3;k++){
+    const n=forLesson-k;
+    if(n>0){
+      try{
+        const d=await fetchJSON(`${JSON_BASE}lesson${n}.json`);
+        if(Array.isArray(d.quizPrevious)){
+          const shuffled=[...d.quizPrevious].sort(()=>0.5-Math.random());
+          items.push(...shuffled.slice(0,3));
+        }
+      }catch(e){}
+    }
+  }
+  quizState={ active:true, items:items.sort(()=>0.5-Math.random()).slice(0,MAX_QUEST), i:0, correct:0, total:Math.min(items.length,MAX_QUEST), forLesson };
+  addMsg(`Before Lesson ${forLesson}, you must pass this review from previous lessons. Minimum ${PASS_MARK}%.`,"bot");
+  askNextQuestion();
+}
+
+/* ===== Lesson control ===== */
+async function loadLesson(n){
+  if(currentLesson !== null && n !== currentLesson){
+    addMsg(`You are already in Lesson ${currentLesson}. To change, please exit and restart the session.`,"bot");
+    lessonSel.value=currentLesson;
+    return;
+  }
+  currentLesson=n; lessonData=null; theoryShown=false;
+  addMsg(`Lesson ${n} selected.`,"bot");
+  try{ if(n<=JSON_COUNT){ lessonData=await fetchJSON(`${JSON_BASE}lesson${n}.json`);} }catch(e){}
+  if(n>1){ lockedUntilPass=n; startQuiz(n); return; }
+  if(lessonData){ 
+    addMsg(`THEORY — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true);
+    theoryShown = true;
+  }
+}
+
+/* ===== Prompt ===== */
+function buildPrompt(userText){
+  const n=currentLesson;
+  const title=lessonData?.title||`Lesson ${n}`;
+  const theory=(theoryShown? "" : (lessonData?.theory||""));
+  const objectives=Array.isArray(lessonData?.objectives)?lessonData.objectives:[];
+  const topics=Array.isArray(lessonData?.topics)?lessonData.topics:[];
+  return `
+ROLE: You are an English instructor for St. Mary’s College.
+LANGUAGE POLICY: Respond ONLY in ENGLISH. If the user writes in Spanish or another language, refuse politely and ask them to use English.
+TOPIC POLICY: Stay STRICTLY within Lesson ${n} — ${title}. 
+If the user asks something unrelated to this lesson, reply briefly that it is out of scope and redirect them to the lesson.
+BEHAVIOR: 
+- Show the theory once when the lesson is unlocked. 
+- Afterwards, act as a tutor: correct errors, explain why, and provide examples and exercises. 
+- Do not repeat the entire theory in every answer. 
+- Do not add content outside the lesson context.
+
+OUTPUT STRUCTURE (no emojis, professional tone, clear paragraphs):
+LEARNING OBJECTIVES
+KEY CONTENT
+EXAMPLES
+SUGGESTED ACTIVITIES
+PRACTICE EVALUATION
+
+JSON CONTEXT:
+Title: ${title}
+${theory ? `Theory: ${theory}` : ""}
+Objectives:${objectives.join(", ")}
+Topics:${topics.join(", ")}
+
+USER INPUT: ${userText}
+`.trim();
+}
+
+/* ===== Backend ===== */
+async function askInstructor(text){
+  const prompt=buildPrompt(text);
+  const r=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:prompt,lang:"en-US"})});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const data=await r.json().catch(()=>({reply:"Connection error."}));
+  return String(data.reply||"");
+}
+
+/* ===== Send ===== */
+async function sendMsg(){
+  const t=(input.value||"").trim();
+  if(!t) return;
+  input.value="";
+  addMsg(t,"user");
+  if(quizState?.active){ handleQuizAnswer(t); return; }
+  if(lockedUntilPass){ addMsg(`Lesson ${lockedUntilPass} is locked. Complete the review first.`,"bot"); return; }
+  if(!currentLesson){ addMsg("Please select a lesson first.","bot"); return; }
+  try{ const reply=await askInstructor(t); addMsg(reply,"bot",true); speak(reply); }
+  catch(e){ addMsg("Connection error with the server.","bot"); }
+}
+
+/* ===== Eventos ===== */
+send.addEventListener('click',sendMsg);
+input.addEventListener('keydown',e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}});
+stopBtn.addEventListener('click',stopAll);
+micBtn.addEventListener('click',sttStart);
+lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl.textContent="Please select a lesson to begin.";return;}loadLesson(+v);});
+
+/* ===== Combo build ===== */
+(function buildLessons(){
+  const ph=document.createElement('option');ph.value="";ph.textContent="— Select a lesson —";lessonSel.appendChild(ph);
+  for(let i=1;i<=JSON_COUNT;i++){const o=document.createElement('option');o.value=String(i);o.textContent=`Lesson ${i}`;lessonSel.appendChild(o);}
+  lessonSel.value="";statusEl.textContent="Please select a lesson to begin.";
+  addMsg("Welcome! Select your lesson above.","bot");
+})();
+</script>
 </body>
 </html>
