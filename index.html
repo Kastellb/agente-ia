@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.4</title>
+<title>St. Mary’s College — English Leveler v4.5</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
 *{box-sizing:border-box}
@@ -31,7 +31,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.4</h1>
+  <h1>St. Mary’s College — English Leveler v4.5</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
 </header>
 
@@ -199,13 +199,11 @@ async function startQuiz(forLesson){
 
 /* ===== Lesson control ===== */
 async function loadLesson(n){
-  // 🚫 Bloquear cambio de lección si ya hay una en curso
   if(currentLesson !== null && n !== currentLesson){
     addMsg(`⚠️ You are already in Lesson ${currentLesson}. To change, please exit and restart the session.`,"bot");
-    lessonSel.value=currentLesson; // volver selector a la actual
+    lessonSel.value=currentLesson;
     return;
   }
-
   currentLesson=n; lessonData=null;
   addMsg(`Lesson ${n} selected.`,"bot");
   try{ if(n<=JSON_COUNT){ lessonData=await fetchJSON(`${JSON_BASE}lesson${n}.json`);} }catch(e){}
@@ -222,7 +220,7 @@ function buildPrompt(userText){
   const topics=Array.isArray(lessonData?.topics)?lessonData.topics:[];
   return `
 ROLE: You are an English instructor for St. Mary’s College.
-LANGUAGE: Reply in ENGLISH ONLY.
+LANGUAGE: Always respond ONLY in ENGLISH, even if JSON contains Spanish. Translate automatically if needed.
 OUTPUT FORMAT:
 1. 🎯 Learning Objective
 2. 🧩 Key Content
@@ -279,3 +277,4 @@ lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl
 </script>
 </body>
 </html>
+
