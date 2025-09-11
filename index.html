@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>St. Mary’s College — English Leveler v5.3</title>
+    <title>St. Mary’s College — English Leveler v5.4</title>
     <style>
         :root {
             --brand: #0b3b71;
@@ -215,6 +215,22 @@
             background: var(--brand);
         }
         
+        .voice-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .voice-info {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 8px;
+            padding: 8px;
+            background: #f1f5f9;
+            border-radius: var(--radius-md);
+        }
+        
         .permission-note {
             font-size: 12px;
             color: var(--error);
@@ -235,6 +251,12 @@
         
         .audio-unlock-btn {
             background: var(--warning) !important;
+        }
+        
+        .voice-option-group {
+            font-weight: bold;
+            background-color: #e2e8f0;
+            color: var(--brand);
         }
         
         @keyframes pulse {
@@ -277,6 +299,10 @@
                 flex: 1;
             }
             
+            .voice-controls {
+                flex-direction: column;
+            }
+            
             .mobile-audio-note {
                 display: block;
             }
@@ -285,7 +311,7 @@
 </head>
 <body>
     <header>
-        <h1>St. Mary’s College — English Leveler v5.3</h1>
+        <h1>St. Mary’s College — English Leveler v5.4</h1>
         <span class="badge">Voice + Text • Strict English • Lesson-only</span>
     </header>
 
@@ -295,9 +321,18 @@
                 <span class="label">Select lesson:</span>
                 <select id="lesson"></select>
                 <span id="status" class="status">Please select a lesson to begin.</span>
-                <select id="voiceSelect"></select>
-                <button id="testVoice" class="btn">Test Voice</button>
-                <button id="unlockAudio" class="btn audio-unlock-btn">Enable Audio</button>
+                
+                <div class="voice-section">
+                    <span class="label">Select voice:</span>
+                    <select id="voiceSelect"></select>
+                    <div class="voice-controls">
+                        <button id="testVoice" class="btn">Test Voice</button>
+                        <button id="refreshVoices" class="btn">Refresh Voices</button>
+                        <button id="unlockAudio" class="btn audio-unlock-btn">Enable Audio</button>
+                    </div>
+                    <div id="voiceInfo" class="voice-info">No voice selected</div>
+                </div>
+                
                 <div id="permissionNote" class="permission-note">
                     Note: Voice features may require microphone permissions. Please allow if prompted.
                 </div>
@@ -332,10 +367,12 @@
         const stopBtn = document.getElementById('stop');
         const micBtn = document.getElementById('mic');
         const testBtn = document.getElementById('testVoice');
+        const refreshBtn = document.getElementById('refreshVoices');
         const unlockBtn = document.getElementById('unlockAudio');
         const lessonSel = document.getElementById('lesson');
         const statusEl = document.getElementById('status');
         const voiceSelect = document.getElementById('voiceSelect');
+        const voiceInfo = document.getElementById('voiceInfo');
         const permissionNote = document.getElementById('permissionNote');
         const mobileAudioNote = document.getElementById('mobileAudioNote');
         
@@ -398,37 +435,116 @@
                     window.speechSynthesis.speak(dummy);
                     window.speechSynthesis.cancel();
                     ttsUnlocked = true;
+                    return true;
                 } catch (e) {
                     console.error("TTS unlock error:", e);
+                    return false;
                 }
             }
+            return true;
         }
 
         function loadVoices() {
             try {
-                const voices = window.speechSynthesis.getVoices();
-                voiceSelect.innerHTML = "";
+                // Clear previous options but keep the default
+                const defaultOption = voiceSelect.querySelector('option[value=""]');
+                voiceSelect.innerHTML = '';
+                if (defaultOption) {
+                    voiceSelect.appendChild(defaultOption);
+                } else {
+                    const ph = document.createElement('option');
+                    ph.value = "";
+                    ph.textContent = "— Select a voice —";
+                    voiceSelect.appendChild(ph);
+                }
                 
-                voices
-                    .filter(v => v.lang.includes('en'))
-                    .forEach(v => {
+                const voices = window.speechSynthesis.getVoices();
+                
+                if (voices.length === 0) {
+                    const opt = document.createElement("option");
+                    opt.value = "";
+                    opt.textContent = "Loading voices...";
+                    voiceSelect.appendChild(opt);
+                    voiceInfo.textContent = "Voices still loading. Please try again in a moment.";
+                    return;
+                }
+                
+                // Group voices by language
+                const voiceGroups = {};
+                
+                voices.forEach(v => {
+                    const lang = v.lang.substring(0, 2);
+                    if (!voiceGroups[lang]) {
+                        voiceGroups[lang] = [];
+                    }
+                    voiceGroups[lang].push(v);
+                });
+                
+                // Add English voices first
+                if (voiceGroups['en']) {
+                    const groupOption = document.createElement("option");
+                    groupOption.disabled = true;
+                    groupOption.className = "voice-option-group";
+                    groupOption.textContent = "--- ENGLISH VOICES ---";
+                    voiceSelect.appendChild(groupOption);
+                    
+                    voiceGroups['en'].forEach(v => {
                         const opt = document.createElement("option");
                         opt.value = v.name;
                         opt.textContent = `${v.name} (${v.lang})`;
                         voiceSelect.appendChild(opt);
+                        
+                        // Set as selected if previously selected
+                        if (selectedVoice && selectedVoice.name === v.name) {
+                            opt.selected = true;
+                        }
                     });
+                }
                 
-                if (voiceSelect.options.length > 0) {
-                    if (!selectedVoice) {
-                        voiceSelect.selectedIndex = 0;
-                        selectedVoice = voices.find(v => v.name === voiceSelect.value);
+                // Add other languages
+                Object.keys(voiceGroups).forEach(lang => {
+                    if (lang !== 'en') {
+                        const groupOption = document.createElement("option");
+                        groupOption.disabled = true;
+                        groupOption.className = "voice-option-group";
+                        groupOption.textContent = `--- ${lang.toUpperCase()} VOICES ---`;
+                        voiceSelect.appendChild(groupOption);
+                        
+                        voiceGroups[lang].forEach(v => {
+                            const opt = document.createElement("option");
+                            opt.value = v.name;
+                            opt.textContent = `${v.name} (${v.lang})`;
+                            voiceSelect.appendChild(opt);
+                            
+                            // Set as selected if previously selected
+                            if (selectedVoice && selectedVoice.name === v.name) {
+                                opt.selected = true;
+                            }
+                        });
+                    }
+                });
+                
+                // Update voice info
+                if (selectedVoice) {
+                    voiceInfo.textContent = `Selected: ${selectedVoice.name} (${selectedVoice.lang})`;
+                } else if (voiceSelect.options.length > 1) {
+                    // Auto-select first English voice if none selected
+                    for (let i = 0; i < voiceSelect.options.length; i++) {
+                        const opt = voiceSelect.options[i];
+                        if (!opt.disabled && opt.value !== "") {
+                            opt.selected = true;
+                            selectedVoice = voices.find(v => v.name === opt.value);
+                            voiceInfo.textContent = `Selected: ${selectedVoice.name} (${selectedVoice.lang})`;
+                            break;
+                        }
                     }
                 } else {
-                    voiceSelect.innerHTML = '<option value="">No English voices found</option>';
+                    voiceInfo.textContent = "No voices available";
                 }
             } catch (e) {
                 console.error("Voice loading error:", e);
                 voiceSelect.innerHTML = '<option value="">Voice loading failed</option>';
+                voiceInfo.textContent = "Error loading voices. Please refresh.";
             }
         }
 
@@ -437,29 +553,55 @@
                 if (isMobile) {
                     addMsg("Please enable audio first by tapping the 'Enable Audio' button.", "bot");
                 } else {
-                    addMsg("Audio is not enabled. Please interact with the page first.", "bot");
+                    addMsg("Please interact with the page first to enable audio.", "bot");
                 }
                 return;
             }
             
+            if (!unlockTTS()) {
+                addMsg("Text-to-speech is not available. Please check your browser settings.", "bot");
+                return;
+            }
+            
             try {
-                unlockTTS();
                 let clean = cleanAIText(text);
                 if (!clean) return;
                 
-                if (!selectedVoice) {
-                    const voices = window.speechSynthesis.getVoices();
-                    if (voices.length > 0) {
-                        selectedVoice = voices.find(v => v.name === voiceSelect.value) || voices[0];
-                    }
+                // Get the selected voice by name
+                const selectedVoiceName = voiceSelect.value;
+                if (!selectedVoiceName) {
+                    addMsg("Please select a voice first.", "bot");
+                    return;
                 }
+                
+                const voices = window.speechSynthesis.getVoices();
+                const voice = voices.find(v => v.name === selectedVoiceName);
+                
+                if (!voice) {
+                    addMsg("Selected voice not found. Please choose another voice.", "bot");
+                    return;
+                }
+                
+                // Update selected voice
+                selectedVoice = voice;
+                voiceInfo.textContent = `Speaking with: ${selectedVoice.name} (${selectedVoice.lang})`;
                 
                 clean = clean.replace(/\b\d+\b/g, n => new Intl.NumberFormat("en-US", {style: "decimal"}).format(n));
                 const u = new SpeechSynthesisUtterance(clean);
                 
-                if (selectedVoice) u.voice = selectedVoice;
+                u.voice = voice;
                 u.rate = 0.9;
                 u.pitch = 1;
+                u.volume = 1;
+                
+                u.onend = function() {
+                    console.log("Finished speaking");
+                };
+                
+                u.onerror = function(e) {
+                    console.error("Speech synthesis error", e);
+                    addMsg("Text-to-speech error. Please try another voice.", "bot");
+                };
                 
                 window.speechSynthesis.cancel();
                 window.speechSynthesis.speak(u);
@@ -683,14 +825,17 @@ USER REQUEST: ${userText}
         // Enable audio function
         function enableAudio() {
             audioEnabled = true;
-            unlockTTS();
-            addMsg("Audio enabled. You can now use voice features.", "bot");
-            unlockBtn.textContent = "Audio Enabled";
-            unlockBtn.disabled = true;
-            unlockBtn.style.opacity = "0.7";
-            
-            // Try to load voices again
-            loadVoices();
+            if (unlockTTS()) {
+                addMsg("Audio enabled. You can now use voice features.", "bot");
+                unlockBtn.textContent = "Audio Enabled";
+                unlockBtn.disabled = true;
+                unlockBtn.style.opacity = "0.7";
+                
+                // Try to load voices again
+                loadVoices();
+            } else {
+                addMsg("Failed to enable audio. Please check your browser settings.", "bot");
+            }
         }
 
         /* ===== Eventos ===== */
@@ -719,7 +864,31 @@ USER REQUEST: ${userText}
                 }
                 return;
             }
+            
+            if (!voiceSelect.value) {
+                addMsg("Please select a voice first.", "bot");
+                return;
+            }
+            
             speak("This is a voice test. If you hear me, the text to speech system is working properly.");
+        });
+        
+        refreshBtn.addEventListener('click', () => {
+            loadVoices();
+            addMsg("Voices refreshed. Please select your preferred voice.", "bot");
+        });
+        
+        voiceSelect.addEventListener('change', () => {
+            const voiceName = voiceSelect.value;
+            if (!voiceName) return;
+            
+            const voices = window.speechSynthesis.getVoices();
+            selectedVoice = voices.find(v => v.name === voiceName);
+            
+            if (selectedVoice) {
+                voiceInfo.textContent = `Selected: ${selectedVoice.name} (${selectedVoice.lang})`;
+                addMsg(`Voice changed to: ${selectedVoice.name}`, "bot");
+            }
         });
         
         lessonSel.addEventListener('change', () => {
@@ -736,6 +905,9 @@ USER REQUEST: ${userText}
         // Initialize voices when they are loaded
         if (window.speechSynthesis) {
             window.speechSynthesis.onvoiceschanged = loadVoices;
+            
+            // Also try to load voices immediately
+            setTimeout(loadVoices, 500);
         }
 
         // Show mobile-specific note
@@ -772,6 +944,7 @@ USER REQUEST: ${userText}
             if (!window.speechSynthesis) {
                 addMsg("Text-to-speech is not supported in your browser.", "bot");
                 testBtn.disabled = true;
+                refreshBtn.disabled = true;
             }
             
             // Enable audio automatically on desktop after user interaction
