@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.8</title>
+<title>St. Mary’s College — English Leveler v4.9</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#f9fafb; --user:#12b886; }
 *{box-sizing:border-box}
@@ -31,8 +31,8 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.8</h1>
-  <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
+  <h1>St. Mary’s College — English Leveler v4.9</h1>
+  <span class="badge">Voice + Text • Strict English • Lesson-only</span>
 </header>
 
 <main>
@@ -45,7 +45,7 @@ main{flex:1;display:flex;justify-content:center}
     </div>
     <div id="chat" aria-live="polite"></div>
     <div class="composer">
-      <input id="text" placeholder="Type your message and press Enter…" autocomplete="off">
+      <input id="text" placeholder="Type your message in ENGLISH only…" autocomplete="off">
       <div class="btnrow">
         <button id="send" class="btn">Send</button>
         <button id="mic"  class="btn">Speak</button>
@@ -83,16 +83,16 @@ let theoryShown = false;
 /* ===== CLEAN TEXT ===== */
 function cleanAIText(s){
   return (s||"")
-    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'') // eliminar emojis
-    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'') // quitar símbolos
+    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'') // remove emojis
+    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'') // remove symbols
     .replace(/\s{2,}/g,' ')
     .trim();
 }
 
 /* ===== UI helpers ===== */
 function addMsg(text, who="bot", withControls=false){
-  const clean = cleanAIText(text).replace(/\n{2,}/g,"\n\n"); // dobles saltos = párrafos
-  const html = clean.replace(/\n/g,"<br><br>"); // espacio entre párrafos
+  const clean = cleanAIText(text).replace(/\n{2,}/g,"\n\n");
+  const html = clean.replace(/\n/g,"<br><br>");
   const d=document.createElement('div');
   d.className = `msg ${who}`;
   d.innerHTML = html;
@@ -157,7 +157,7 @@ function sttStart(){
 /* ===== JSON Loader ===== */
 async function fetchJSON(url){ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status+" "+r.statusText); return await r.json(); }
 
-/* ===== Quiz (igual que antes, limpio) ===== */
+/* ===== Quiz ===== */
 function normalize(s){ return String(s||'').toLowerCase().trim(); }
 function checkAnswer(user, expected){ const u=normalize(user), e=normalize(expected); return u===e || u.includes(e); }
 function askNextQuestion(){
@@ -234,9 +234,16 @@ function buildPrompt(userText){
   const topics=Array.isArray(lessonData?.topics)?lessonData.topics:[];
   return `
 ROLE: You are an English instructor for St. Mary’s College.
-LANGUAGE: Always respond ONLY in ENGLISH. Translate automatically if needed.
-BEHAVIOR: Only show the theory once when a lesson is unlocked. Afterwards, act as a tutor: correct errors, explain why, and provide examples. Do not repeat the theory.
-OUTPUT STRUCTURE (no emojis, clear formatting, professional tone):
+LANGUAGE POLICY: Respond ONLY in ENGLISH. If the user writes in Spanish or another language, refuse politely and ask them to use English.
+TOPIC POLICY: Stay STRICTLY within Lesson ${n} — ${title}. 
+If the user asks something unrelated to this lesson, reply briefly that it is out of scope and redirect them to the lesson.
+BEHAVIOR: 
+- Show the theory once when the lesson is unlocked. 
+- Afterwards, act as a tutor: correct errors, explain why, and provide examples and exercises. 
+- Do not repeat the entire theory in every answer. 
+- Do not add content outside the lesson context.
+
+OUTPUT STRUCTURE (no emojis, professional tone, clear paragraphs):
 LEARNING OBJECTIVES
 KEY CONTENT
 EXAMPLES
@@ -249,7 +256,7 @@ ${theory ? `Theory: ${theory}` : ""}
 Objectives:${objectives.join(", ")}
 Topics:${topics.join(", ")}
 
-USER REQUEST: ${userText}
+USER INPUT: ${userText}
 `.trim();
 }
 
