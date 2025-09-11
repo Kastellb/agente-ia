@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.6</title>
+<title>St. Mary’s College — English Leveler v4.7</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
 *{box-sizing:border-box}
@@ -15,11 +15,11 @@ h1{margin:0;font-size:16px;font-weight:800}
 main{flex:1;display:flex;justify-content:center}
 .wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
 #chat{ background:#fff; border-radius:16px; padding:12px 12px 4px; min-height:58vh; overflow:auto; box-shadow:0 12px 28px rgba(2,6,23,.12) }
-.msg{ max-width:min(720px,92%); padding:10px 12px; border-radius:12px; margin:10px 0; line-height:1.45; white-space:pre-wrap; position:relative; }
-.msg.bot{background:var(--bot);color:#fff;border-bottom-left-radius:4px}
+.msg{ max-width:min(720px,92%); padding:14px 16px; border-radius:12px; margin:10px 0; line-height:1.6; white-space:pre-wrap; position:relative; }
+.msg.bot{background:#f9fafb;color:#111;border:1px solid #cbd5e1;border-bottom-left-radius:4px}
 .msg.user{background:var(--user);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
 .msg .controls{ position:absolute; top:4px; right:6px; display:flex; gap:4px; }
-.msg .controls button{ background:rgba(255,255,255,0.3); border:0; border-radius:6px; font-size:12px; cursor:pointer; color:#fff; padding:2px 6px; }
+.msg .controls button{ background:#0b3b71; border:0; border-radius:6px; font-size:12px; cursor:pointer; color:#fff; padding:2px 6px; }
 .toolbar,.composer{ background:#fff; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(2,6,23,.08) }
 #lesson{ padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; min-width:180px; }
 .status{ font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130; padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center; }
@@ -31,7 +31,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.6</h1>
+  <h1>St. Mary’s College — English Leveler v4.7</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
 </header>
 
@@ -83,7 +83,7 @@ let theoryShown = false;
 /* ===== UI helpers ===== */
 function addMsg(text, who="bot", withControls=false){
   const clean = (String(text||''))
-    .replace(/[*_~`#>|]/g,'')
+    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'') // quitar caracteres que leen mal
     .replace(/\s{2,}/g,' ')
     .trim()
     .replace(/\n/g,"<br>");
@@ -124,7 +124,8 @@ voiceSelect.addEventListener("change", ()=>{
 });
 function speak(text){
   try{
-    const u = new SpeechSynthesisUtterance(text);
+    const clean = text.replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,''); // limpiar símbolos
+    const u = new SpeechSynthesisUtterance(clean);
     if(selectedVoice) u.voice = selectedVoice;
     u.rate=1; u.pitch=1;
     window.speechSynthesis.cancel();
@@ -141,7 +142,7 @@ function sttStart(){
   if(!SR){ addMsg("Voice recognition not supported.","bot"); return; }
   rec=new SR(); rec.lang='en-US'; rec.continuous=false; rec.interimResults=false;
   rec.onresult=(e)=>{ const t=e.results?.[0]?.[0]?.transcript||""; if(t){ input.value=t; sendMsg(); } };
-  rec.onstart=()=>{ isRec=true; addMsg("🎤 Listening...","bot"); };
+  rec.onstart=()=>{ isRec=true; addMsg("Listening...","bot"); };
   rec.onerror=()=>{ isRec=false; };
   rec.onend=()=>{ isRec=false; };
   rec.start();
@@ -150,7 +151,7 @@ function sttStart(){
 /* ===== JSON Loader ===== */
 async function fetchJSON(url){ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(r.status+" "+r.statusText); return await r.json(); }
 
-/* ===== Quiz ===== */
+/* ===== Quiz (igual que antes, sin emojis) ===== */
 function normalize(s){ return String(s||'').toLowerCase().trim(); }
 function checkAnswer(user, expected){ const u=normalize(user), e=normalize(expected); return u===e || u.includes(e); }
 function askNextQuestion(){
@@ -161,7 +162,7 @@ function askNextQuestion(){
 function handleQuizAnswer(userText){
   const q=quizState.items[quizState.i];
   const ok=checkAnswer(userText,q.answer);
-  addMsg(ok?"✅ Correct.":"❌ Expected: "+q.answer,"bot");
+  addMsg(ok?"Correct.":"Incorrect. Expected: "+q.answer,"bot");
   if(ok) quizState.correct++;
   quizState.i++;
   if(quizState.i>=quizState.total){ finishQuiz(); } else { askNextQuestion(); }
@@ -170,14 +171,14 @@ function finishQuiz(){
   const pct=Math.round((quizState.correct/quizState.total)*100);
   addMsg(`Review finished. Score: ${quizState.correct}/${quizState.total} — ${pct}%`,"bot");
   if(pct>=PASS_MARK){
-    addMsg(`🎉 Great! You unlocked Lesson ${quizState.forLesson}.`,"bot");
+    addMsg(`Great! You unlocked Lesson ${quizState.forLesson}.`,"bot");
     lockedUntilPass=null;
     if(lessonData){ 
-      addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true);
+      addMsg(`THEORY — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true);
       theoryShown = true;
     }
   }else{
-    addMsg(`⚠️ You need at least ${PASS_MARK}%. Please review and try again.`,"bot");
+    addMsg(`You need at least ${PASS_MARK}%. Please review and try again.`,"bot");
     lockedUntilPass=quizState.forLesson;
   }
   quizState=null;
@@ -204,7 +205,7 @@ async function startQuiz(forLesson){
 /* ===== Lesson control ===== */
 async function loadLesson(n){
   if(currentLesson !== null && n !== currentLesson){
-    addMsg(`⚠️ You are already in Lesson ${currentLesson}. To change, please exit and restart the session.`,"bot");
+    addMsg(`You are already in Lesson ${currentLesson}. To change, please exit and restart the session.`,"bot");
     lessonSel.value=currentLesson;
     return;
   }
@@ -213,7 +214,7 @@ async function loadLesson(n){
   try{ if(n<=JSON_COUNT){ lessonData=await fetchJSON(`${JSON_BASE}lesson${n}.json`);} }catch(e){}
   if(n>1){ lockedUntilPass=n; startQuiz(n); return; }
   if(lessonData){ 
-    addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true);
+    addMsg(`THEORY — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true);
     theoryShown = true;
   }
 }
@@ -227,14 +228,14 @@ function buildPrompt(userText){
   const topics=Array.isArray(lessonData?.topics)?lessonData.topics:[];
   return `
 ROLE: You are an English instructor for St. Mary’s College.
-LANGUAGE: Always respond ONLY in ENGLISH, even if JSON contains Spanish. Translate automatically if needed.
-BEHAVIOR: Only show the theory once when a lesson is unlocked. Afterwards, act like a tutor: correct errors, explain why, and provide examples, but do not repeat the entire theory.
-OUTPUT FORMAT:
-1. 🎯 Learning Objective
-2. 🧩 Key Content
-3. 💬 Examples
-4. 🎭 Suggested Activities
-5. 🧪 Practice Evaluation
+LANGUAGE: Always respond ONLY in ENGLISH. Translate automatically if needed.
+BEHAVIOR: Only show the theory once when a lesson is unlocked. Afterwards, act as a tutor: correct errors, explain why, and provide examples. Do not repeat the theory.
+OUTPUT STRUCTURE:
+LEARNING OBJECTIVES
+KEY CONTENT
+EXAMPLES
+SUGGESTED ACTIVITIES
+PRACTICE EVALUATION
 
 JSON CONTEXT:
 Title: ${title}
@@ -285,3 +286,4 @@ lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl
 </script>
 </body>
 </html>
+
