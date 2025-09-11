@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v5.0</title>
+<title>St. Mary’s College — English Leveler v5.3</title>
 <style>
 :root{
   --brand:#0b3b71;
@@ -37,24 +37,18 @@ header{
 h1{margin:0;font-size:16px;font-weight:800}
 .badge{font-size:12px;opacity:.9}
 main{flex:1;display:flex;justify-content:center}
-.wrap{
-  width:min(1000px,100%);
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-  gap:12px
-}
+.wrap{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:12px}
 #chat{
   background:#fff;
   border-radius:16px;
-  padding:12px 12px 4px;
+  padding:12px;
   min-height:58vh;
   overflow:auto;
   box-shadow:4px 4px 8px var(--shadow-dark),
              -4px -4px 8px var(--shadow-light);
 }
 .msg{
-  max-width:min(720px,92%);
+  max-width:92%;
   padding:14px 16px;
   border-radius:12px;
   margin:10px 0;
@@ -122,6 +116,7 @@ main{flex:1;display:flex;justify-content:center}
   min-height:34px;
   display:flex;
   align-items:center;
+  flex:1;
 }
 #text{
   width:100%;
@@ -137,10 +132,11 @@ main{flex:1;display:flex;justify-content:center}
 .btnrow{
   display:flex;
   gap:10px;
-  flex-wrap:wrap;
+  justify-content:space-between;
 }
 .btn{
   flex:1;
+  min-width:80px;
   border:0;
   border-radius:12px;
   padding:12px 14px;
@@ -152,25 +148,25 @@ main{flex:1;display:flex;justify-content:center}
              -4px -4px 8px var(--shadow-light);
   transition:all 0.2s ease;
 }
-.btn:hover{
-  transform:translateY(-2px);
-}
+.btn:hover{transform:translateY(-2px)}
 #send{background:#22c55e}
 #mic{background:#0ea5e9}
 #stop{background:#ef4444}
 
-/* ===== Responsive ===== */
+/* Responsive fix */
 @media (max-width:768px){
   h1{font-size:14px}
-  .btnrow{flex-direction:column}
-  .btn{width:100%}
-  #lesson,#voiceSelect{min-width:100%}
+  .toolbar{flex-direction:column;align-items:stretch}
+  #lesson,#voiceSelect{width:100%;min-width:unset;margin:6px 0}
+  .status{width:100%;margin-top:6px}
+  .btnrow{flex-direction:row;gap:6px}
+  .btn{flex:1}
 }
 </style>
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v5.0</h1>
+  <h1>St. Mary’s College — English Leveler v5.3</h1>
   <span class="badge">Voice + Text • Strict English • Lesson-only</span>
 </header>
 
@@ -178,7 +174,7 @@ main{flex:1;display:flex;justify-content:center}
   <div class="wrap">
     <div class="toolbar">
       <span class="label">Select lesson:</span>
-      <select id="lesson" aria-label="Select lesson"></select>
+      <select id="lesson"></select>
       <span id="status" class="status">Please select a lesson to begin.</span>
       <select id="voiceSelect"></select>
     </div>
@@ -194,7 +190,6 @@ main{flex:1;display:flex;justify-content:center}
   </div>
 </main>
 
-<!-- ⚡ Mantengo la lógica v4.9 intacta, solo cambié el CSS -->
 <script src="app.js"></script>
 </body>
 </html>
