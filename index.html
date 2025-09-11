@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>St. Mary’s College — English Leveler v4.5</title>
+<title>St. Mary’s College — English Leveler v4.6</title>
 <style>
 :root{ --brand:#0b3b71; --bg:#eef2f7; --bot:#0b88e6; --user:#12b886; }
 *{box-sizing:border-box}
@@ -31,7 +31,7 @@ main{flex:1;display:flex;justify-content:center}
 </head>
 <body>
 <header>
-  <h1>St. Mary’s College — English Leveler v4.5</h1>
+  <h1>St. Mary’s College — English Leveler v4.6</h1>
   <span class="badge">Voice + Text • EN only • JSON-driven (1–270)</span>
 </header>
 
@@ -78,6 +78,7 @@ let selectedVoice = null;
 let rec = null, isRec = false;
 let quizState = null;
 let lockedUntilPass = null;
+let theoryShown = false;
 
 /* ===== UI helpers ===== */
 function addMsg(text, who="bot", withControls=false){
@@ -171,7 +172,10 @@ function finishQuiz(){
   if(pct>=PASS_MARK){
     addMsg(`🎉 Great! You unlocked Lesson ${quizState.forLesson}.`,"bot");
     lockedUntilPass=null;
-    if(lessonData){ addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true); }
+    if(lessonData){ 
+      addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true);
+      theoryShown = true;
+    }
   }else{
     addMsg(`⚠️ You need at least ${PASS_MARK}%. Please review and try again.`,"bot");
     lockedUntilPass=quizState.forLesson;
@@ -204,23 +208,27 @@ async function loadLesson(n){
     lessonSel.value=currentLesson;
     return;
   }
-  currentLesson=n; lessonData=null;
+  currentLesson=n; lessonData=null; theoryShown=false;
   addMsg(`Lesson ${n} selected.`,"bot");
   try{ if(n<=JSON_COUNT){ lessonData=await fetchJSON(`${JSON_BASE}lesson${n}.json`);} }catch(e){}
   if(n>1){ lockedUntilPass=n; startQuiz(n); return; }
-  if(lessonData){ addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true); }
+  if(lessonData){ 
+    addMsg(`Theory — ${lessonData.title}\n${lessonData.theory||""}`,"bot",true);
+    theoryShown = true;
+  }
 }
 
 /* ===== Prompt ===== */
 function buildPrompt(userText){
   const n=currentLesson;
   const title=lessonData?.title||`Lesson ${n}`;
-  const theory=lessonData?.theory||"";
+  const theory=(theoryShown? "" : (lessonData?.theory||""));
   const objectives=Array.isArray(lessonData?.objectives)?lessonData.objectives:[];
   const topics=Array.isArray(lessonData?.topics)?lessonData.topics:[];
   return `
 ROLE: You are an English instructor for St. Mary’s College.
 LANGUAGE: Always respond ONLY in ENGLISH, even if JSON contains Spanish. Translate automatically if needed.
+BEHAVIOR: Only show the theory once when a lesson is unlocked. Afterwards, act like a tutor: correct errors, explain why, and provide examples, but do not repeat the entire theory.
 OUTPUT FORMAT:
 1. 🎯 Learning Objective
 2. 🧩 Key Content
@@ -230,7 +238,7 @@ OUTPUT FORMAT:
 
 JSON CONTEXT:
 Title: ${title}
-Theory: ${theory}
+${theory ? `Theory: ${theory}` : ""}
 Objectives:${objectives.join(", ")}
 Topics:${topics.join(", ")}
 
@@ -277,4 +285,3 @@ lessonSel.addEventListener('change',()=>{const v=lessonSel.value;if(!v){statusEl
 </script>
 </body>
 </html>
-
