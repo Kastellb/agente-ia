@@ -24,9 +24,19 @@ main{flex:1;display:flex;justify-content:center}
 #lesson{ padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; background:#f8fafc; min-width:180px; }
 .status{ font-size:13px; color:#334155; background:#0b3b7112; border:1px dashed #0b3b7130; padding:6px 10px; border-radius:10px; min-height:34px; display:flex; align-items:center; }
 #text{ width:100%; border:0; outline:0; font-size:16px; padding:12px; border-radius:10px; background:#f7f9fc }
-.btnrow{ display:flex; gap:10px; flex-wrap:wrap; }
-.btn{ border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer }
+.btnrow{ display:flex; gap:10px; justify-content:space-between }
+.btn{ flex:1; min-width:80px; border:0; border-radius:12px; padding:10px 14px; font-weight:800; color:#fff; cursor:pointer; text-align:center }
 #send{background:#22c55e} #mic{background:#0ea5e9} #stop{background:#ef4444}
+/* Mobile tweaks */
+@media (max-width:640px){
+  h1{font-size:14px}
+  .msg{max-width:96%}
+  #lesson{min-width:unset;width:100%}
+  #voiceSelect{width:100%;margin-top:6px}
+  .status{width:100%;margin-top:6px}
+  .btnrow{flex-direction:row;gap:6px}
+  .btn{flex:1}
+}
 </style>
 </head>
 <body>
@@ -39,7 +49,7 @@ main{flex:1;display:flex;justify-content:center}
   <div class="wrap">
     <div class="toolbar">
       <span class="label">Select lesson:</span>
-      <select id="lesson" aria-label="Select lesson"></select>
+      <select id="lesson"></select>
       <span id="status" class="status">Please select a lesson to begin.</span>
       <select id="voiceSelect"></select>
     </div>
@@ -80,16 +90,16 @@ let quizState = null;
 let lockedUntilPass = null;
 let theoryShown = false;
 
-/* ===== CLEAN TEXT ===== */
+/* ===== Clean text ===== */
 function cleanAIText(s){
   return (s||"")
-    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'') // remove emojis
-    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'') // remove symbols
+    .replace(/[\u{1F600}-\u{1FAFF}]/gu,'')
+    .replace(/[*_~`#>|•▪︎●◦\-\u2022]/g,'')
     .replace(/\s{2,}/g,' ')
     .trim();
 }
 
-/* ===== UI helpers ===== */
+/* ===== UI ===== */
 function addMsg(text, who="bot", withControls=false){
   const clean = cleanAIText(text).replace(/\n{2,}/g,"\n\n");
   const html = clean.replace(/\n/g,"<br><br>");
